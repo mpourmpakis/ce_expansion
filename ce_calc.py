@@ -165,8 +165,7 @@ def calculate_CE(cluster):
         atom2 = cluster[bond[1]]
 
         addend = lookup_table[atom1.symbol][atom2.symbol][cn_table[bond[0]]]
-        augend = lookup_table[atom2.symbol][atom1.symbol][cn_table[bond[1]]]
-        accumulator += (addend+augend)
+        accumulator += addend
 
     # Energy in eV
     energy = accumulator / len(cluster)
