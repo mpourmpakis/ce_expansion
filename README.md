@@ -1,1 +1,3 @@
-# ce_expansion
+# CE_expansion
+
+Expanding CE's since 2018
