@@ -1,40 +1,44 @@
+#!/usr/bin/env python
+import ce_shuffle
+import structure_gen
+import time
 
 def i_structure():
-    atoms_i2 = structuregen("Icosahedron", [2])
-    atoms_i3 = structuregen("Icosahedron", [3])
-    atoms_i4 = structuregen("Icosahedron", [4])
-    atoms_i5 = structuregen("Icosahedron", [5])
+    atoms_i2 = structure_gen.structuregen("Icosahedron", [2])
+    atoms_i3 = structure_gen.structuregen("Icosahedron", [3])
+    atoms_i4 = structure_gen.structuregen("Icosahedron", [4])
+    atoms_i5 = structure_gen.structuregen("Icosahedron", [5])
     return atoms_i2, atoms_i3, atoms_i4, atoms_i5
 
 
 def d_structure():
-    atoms_d2 = structuregen("Decahedron", [2, 2, 2])
-    atoms_d3 = structuregen("Decahedron", [3, 3, 3])
-    atoms_d4 = structuregen("Decahedron", [4, 4, 4])
-    atoms_d5 = structuregen("Decahedron", [5, 5, 5])
+    atoms_d2 = structure_gen.structuregen("Decahedron", [2, 2, 2])
+    atoms_d3 = structure_gen.structuregen("Decahedron", [3, 3, 3])
+    atoms_d4 = structure_gen.structuregen("Decahedron", [4, 4, 4])
+    atoms_d5 = structure_gen.structuregen("Decahedron", [5, 5, 5])
     return atoms_d2, atoms_d3, atoms_d4, atoms_d5
 
 
 def c_structure():
-    atoms_c2 = structuregen("Lattice", [2, 2, 2])
-    atoms_c3 = structuregen("Lattice", [3, 3, 3])
-    atoms_c4 = structuregen("Lattice", [4, 4, 4])
-    atoms_c5 = structuregen("Lattice", [5, 5, 5])
+    atoms_c2 = structure_gen.structuregen("Lattice", [2, 2, 2])
+    atoms_c3 = structure_gen.structuregen("Lattice", [3, 3, 3])
+    atoms_c4 = structure_gen.structuregen("Lattice", [4, 4, 4])
+    atoms_c5 = structure_gen.structuregen("Lattice", [5, 5, 5])
     return atoms_c2, atoms_c3, atoms_c4, atoms_c5
 
 
 def s_structure():
-    atoms_s2 = structuregen("Lattice", [2, 2, 2])
-    atoms_s3 = structuregen("Lattice", [3, 3, 3])
-    atoms_s4 = structuregen("Lattice", [4, 4, 4])
-    atoms_s5 = structuregen("Lattice", [5, 5, 5])
+    atoms_s2 = structure_gen.structuregen("Lattice", [2, 2, 2])
+    atoms_s3 = structure_gen.structuregen("Lattice", [3, 3, 3])
+    atoms_s4 = structure_gen.structuregen("Lattice", [4, 4, 4])
+    atoms_s5 = structure_gen.structuregen("Lattice", [5, 5, 5])
     return atoms_s2, atoms_s3, atoms_s4, atoms_s5
 
 
 def icosa(atoms_i2, atoms_i3, atoms_i4, atoms_i5):
     t = time.clock()
     print 'start = ' + str(t)
-    atomchanger(atoms_i2, 'Cu', 'Ag', 'Icosahedron', 2)
+    ce_shuffle.atomchanger(atoms_i2, 'Cu', 'Ag', 'Icosahedron', 2)
     t2 = time.clock()
     print 'I1= ' + str(t2 - t)
 #    atomchanger(atoms_i2, 'Cu', 'Au', 'Icosahedron', 2)
