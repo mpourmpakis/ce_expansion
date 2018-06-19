@@ -1,10 +1,10 @@
-<<<<<<< HEAD
 from ase import Atoms, Atom
-from ase.cluster.icosahedron import Icosahedron
-from ase.cluster.decahedron import Decahedron
 from ase.cluster.cubic import FaceCenteredCubic
+from ase.cluster.decahedron import Decahedron
+from ase.cluster.icosahedron import Icosahedron
 
-#for sphere
+
+# for sphere
 def check_distance(atoms, radius, index):
     distance = atoms.get_distance(-1, index)
     print distance
@@ -13,7 +13,8 @@ def check_distance(atoms, radius, index):
     else:
         return False
 
-#structures
+
+# structures
 def structuregen(shape, parameters):
     if shape == "Icosahedron":
         atoms = Icosahedron('Cu', noshells=parameters[0])
@@ -37,13 +38,9 @@ def structuregen(shape, parameters):
         my_cluster = Atoms(filter(lambda x: check_distance(atoms, radius, x.index), atoms))
         print my_cluster
         return my_cluster
-=======
-from ase import Atoms, Atom
-from ase.cluster.icosahedron import Icosahedron
-from ase.cluster.decahedron import Decahedron
-from ase.cluster.cubic import FaceCenteredCubic
 
-#for sphere
+
+# for sphere
 def check_distance(atoms, radius, index):
     distance = atoms.get_distance(-1, index)
     print distance
@@ -52,7 +49,8 @@ def check_distance(atoms, radius, index):
     else:
         return False
 
-#structures
+
+# structures
 def structuregen(shape, parameters):
     if shape == "Icosahedron":
         atoms = Icosahedron('Cu', noshells=parameters[0])
@@ -76,4 +74,3 @@ def structuregen(shape, parameters):
         my_cluster = Atoms(filter(lambda x: check_distance(atoms, radius, x.index), atoms))
         print my_cluster
         return my_cluster
->>>>>>> b486c4669dfd30ddaf035166647cf05ee02fcb30
