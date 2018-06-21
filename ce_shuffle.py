@@ -13,7 +13,7 @@ def atomchanger(nanop, el1, el2):
     # Read in data from atom object.
 
 
-    totalloops = 5
+    totalloops = 1000
     cemeanlist = [None]*21
     stdevlist = [None]*21
     mincelist = [None]*21
@@ -52,6 +52,9 @@ def atomchanger(nanop, el1, el2):
                 elif celist[i] > maxce:
                     maxce = celist[i]
                     maxatom = nanop
+
+            if i % 50 == 0:
+                print i
 
             if i == totalloops - 1:
                 cemeanlist[k] = numpy.mean(celist)

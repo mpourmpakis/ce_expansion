@@ -73,16 +73,16 @@ def fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnu
     perclist1 = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100] * 3 * len(shellnums)
     perclist2 = [100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0] * 3 * len(shellnums)
 
-    print len(el1list)
-    print len(perclist1)
-    print len(el2list)
-    print len(perclist2)
-    print len(morphlist)
-    print len(formula)
-    print len(standarddev)
-    print len(smplist)
-    print len(mincelist)
-    print len(maxcelist)
+    #print len(el1list)
+    #print len(perclist1)
+    #print len(el2list)
+    #print len(perclist2)
+    #print len(morphlist)
+    #print len(formula)
+    #print len(standarddev)
+    #print len(smplist)
+    #print len(mincelist)
+    #print len(maxcelist)
 
     df = DataFrame({'Element 1': el1list, 'Percentage 1': perclist1, 'Element 2': el2list, 'Percentage 2': perclist2,
                     'Average Cohesive Energy': morphlist, 'Number of Atoms': formula, 'Standard Deviation': standarddev
@@ -107,12 +107,11 @@ def boundce(minatomlist, maxatomlist, shellnums, morphologyname):
     el1list.extend(el1list * (len(shellnums) - 1))
     el2list.extend(el2list * (len(shellnums) - 1))
     for i in range(0, 63*len(shellnums)):
-        k = 2
+        k = shellnums(floor(i/63))
         namemin = morphologyname + 'Shell_#' + str(k) + str(el1list[i]) + str(perclist1[i]) + str(el2list[i]) + str(100 - perclist1[i]) + 'min.xyz'
         namemax = morphologyname + 'Shell_#' + str(k) + str(el1list[i]) + str(perclist1[i]) + str(el2list[i]) + str(100 - perclist1[i]) + 'max.xyz'
-        ase.io.write(namemax, minatomlist[i], format=None, parallel=True, append=False)
-        ase.io.write(namemin, maxatomlist[i], format=None, parallel=True, append=False)
-        k = k + floor(i/63)
+        ase.io.write(namemin, minatomlist[i], format=None, parallel=True, append=False)
+        #ase.io.write(namemax, maxatomlist[i], format=None, parallel=True, append=False)
 
 
 
@@ -123,7 +122,7 @@ def main():
     t = time.clock()
     print 'start = ' + str(t)
 
-    shellnums = [2]
+    shellnums = [5]
     atomform = [None] * len(shellnums)
     morphologyname = 'Icosahedron'
     atoms_list = structure(morphologyname, shellnums)
