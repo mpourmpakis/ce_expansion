@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f22f2b9-a1f9-44e7-98a5-397e77698f1e" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Position_Find.py" beforeDir="false" afterPath="$PROJECT_DIR$/Position_Find.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ce_calc.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/test/ce_main_file.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/ce_main_file.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/ce_shuffle.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/ce_shuffle.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/structure_gen.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/structure_gen.py" afterDir="false" />
     </list>
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,37 +16,11 @@
       <file leaf-file-name="ce_main_file.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/test/ce_main_file.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
-              <caret line="1" column="10" selection-start-line="1" selection-start-column="10" selection-end-line="1" selection-end-column="10" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="structure_gen.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test/structure_gen.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-849">
+            <state relative-caret-position="-434">
+              <caret line="99" column="4" selection-start-line="99" selection-start-column="4" selection-end-line="99" selection-end-column="4" />
               <folding>
-                <element signature="e#0#27#0" expanded="true" />
+                <element signature="e#2911#2930#0" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ce_calc.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test/ce_calc.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2458">
-              <caret line="1" lean-forward="true" selection-start-line="1" selection-end-line="1" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cn_counter.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test/cn_counter.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="102">
-              <caret line="9" column="24" lean-forward="true" selection-start-line="9" selection-start-column="24" selection-end-line="9" selection-end-column="24" />
             </state>
           </provider>
         </entry>
@@ -64,8 +35,9 @@
       <find>generate_rotations</find>
       <find>get_all_rotations</find>
       <find>ce_shuffle</find>
-      <find>ce_counter</find>
       <find>cn_counter</find>
+      <find>ce_counter</find>
+      <find>boundce</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -76,8 +48,9 @@
       <list>
         <option value="$PROJECT_DIR$/Position_Find.py" />
         <option value="$PROJECT_DIR$/shell_separator.py" />
-        <option value="$PROJECT_DIR$/test/ce_main_file.py" />
         <option value="$PROJECT_DIR$/test/ce_shuffle.py" />
+        <option value="$PROJECT_DIR$/test/structure_gen.py" />
+        <option value="$PROJECT_DIR$/test/ce_main_file.py" />
       </list>
     </option>
   </component>
@@ -205,7 +178,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="2" />
+      <option name="time" value="3" />
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
@@ -363,36 +336,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/structure_gen.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-849">
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/shell_separator.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="136">
           <caret line="9" column="27" lean-forward="true" selection-start-line="9" selection-start-column="27" selection-end-line="9" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/ce_calc.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2458">
-          <caret line="1" lean-forward="true" selection-start-line="1" selection-end-line="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/ce_shuffle.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="48" column="18" selection-start-line="48" selection-start-column="18" selection-end-line="48" selection-end-column="18" />
-          <folding>
-            <element signature="e#22#48#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -403,10 +350,40 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/ce_main_file.py">
+    <entry file="file://$PROJECT_DIR$/test/ce_calc.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="17">
-          <caret line="1" column="10" selection-start-line="1" selection-start-column="10" selection-end-line="1" selection-end-column="10" />
+          <caret line="1" selection-start-line="1" selection-end-line="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/ce_shuffle.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-84">
+          <caret line="48" column="18" selection-start-line="48" selection-start-column="18" selection-end-line="48" selection-end-column="18" />
+          <folding>
+            <element signature="e#22#48#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/structure_gen.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="416">
+          <caret line="41" lean-forward="true" selection-start-line="41" selection-end-line="41" />
+          <folding>
+            <element signature="e#0#27#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/ce_main_file.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-434">
+          <caret line="99" column="4" selection-start-line="99" selection-start-column="4" selection-end-line="99" selection-end-column="4" />
+          <folding>
+            <element signature="e#2911#2930#0" />
+          </folding>
         </state>
       </provider>
     </entry>

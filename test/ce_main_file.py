@@ -24,10 +24,6 @@ def structure(shape, shell_nums):
 
     return atoms_list
 
-#skeleton = ase.Atoms()
-#for composition in range(5,80,2):
-#    random_NP = randomizer(skeleton, "Cu", "Au", composition)
-#    calculate_CE(random_NP)
 
 def randomizer(atoms):
     """
@@ -56,6 +52,8 @@ def randomizer(atoms):
 
 
 def fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnum, mincelist, maxcelist):
+    #Prints nanoparticle data to an .xlsx file
+
     el1list = ['Cu'] * 21
     el1list.extend(['Au'] * 21)
     el1list.extend(['Ag'] * 21)
@@ -64,6 +62,8 @@ def fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnu
     el2list.extend(['Au'] * 21)
     formula = []
     smplist = [smpnum]*63*len(shellnums)
+    #Initializes lists to be printed to file
+
     for i in range(0, len(shellnums)):
         formula.extend([atomform[i]] * 63)
 
@@ -73,16 +73,16 @@ def fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnu
     perclist1 = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100] * 3 * len(shellnums)
     perclist2 = [100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0] * 3 * len(shellnums)
 
-    print len(el1list)
-    print len(perclist1)
-    print len(el2list)
-    print len(perclist2)
-    print len(morphlist)
-    print len(formula)
-    print len(standarddev)
-    print len(smplist)
-    print len(mincelist)
-    print len(maxcelist)
+    #print len(el1list)
+    #print len(perclist1)
+    #print len(el2list)
+    #print len(perclist2)
+    #print len(morphlist)
+    #print len(formula)
+    #print len(standarddev)
+    #print len(smplist)
+    #print len(mincelist)
+    #print len(maxcelist)
 
     df = DataFrame({'Element 1': el1list, 'Percentage 1': perclist1, 'Element 2': el2list, 'Percentage 2': perclist2,
                     'Average Cohesive Energy': morphlist, 'Number of Atoms': formula, 'Standard Deviation': standarddev
@@ -96,7 +96,8 @@ def fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnu
 
 
 def boundce(minatomlist, maxatomlist, shellnums, morphologyname):
-
+    #Prints min and max CE nanoparticles at each individual composition
+    
     perclist1 = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100] * 3 * len(shellnums)
     el1list = ['Cu'] * 21
     el1list.extend(['Au'] * 21)
@@ -125,8 +126,13 @@ def main():
     print 'start = ' + str(t)
 
     shellnums = [2]
-    atomform = [None] * len(shellnums)
+    #Determines the number of shells that will be present in the nanoparticle
+
     morphologyname = 'Icosahedron'
+    #Determines the morphology of the nanoparticle
+
+    atomform = [None] * len(shellnums)
+
     atoms_list = structure(morphologyname, shellnums)
     i = 0
     j = 0
