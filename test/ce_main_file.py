@@ -124,7 +124,7 @@ def main():
     t = time.clock()
     print 'start = ' + str(t)
 
-    shellnums = [4]
+    shellnums = [2]
     atomform = [None] * len(shellnums)
     morphologyname = 'Icosahedron'
     atoms_list = structure(morphologyname, shellnums)

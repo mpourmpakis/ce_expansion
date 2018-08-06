@@ -9,7 +9,7 @@ import pickle
 import numpy
 
 
-icos = shell_separator.shell_separator(2)
+icos = shell_separator.shell_separator(4)
 icos.center(about=0)
 
 c5_axes = numpy.array(pickle.load(open('cn6.pickle')))
