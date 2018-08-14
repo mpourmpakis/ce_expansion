@@ -41,7 +41,7 @@ bulk_constants = {"Cu":0,
 for key, value in bulk_cohesive_energies.iteritems():
     bulk_constants[key] = value/np.sqrt(12)
 
-print bulk_constants
+#print bulk_constants
 
 # ===============================================
 # Calculate gamma_coeff * bulk_CE / sqrt(bulk_CN)
@@ -104,5 +104,5 @@ for element_1, inner_dict in precomputed_coeffs.iteritems():
         precomputed_coeffs[element_1][element_2] = CN_precomp
 
 # Finally, print to console to be pasted in other code
-print(precomputed_coeffs)
+#print(precomputed_coeffs)
 
