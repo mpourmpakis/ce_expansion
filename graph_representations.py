@@ -197,7 +197,7 @@ def buildAdjacencyList(atoms_object, radius_dictionary={DEFAULT_ELEMENTS:DEFAULT
 
 
 class AtomGraph(object):
-  def __init__(self, adj_list, colors, coeffs=DEFAULT_BOND_COEFFS, kind0, kind1):
+  def __init__(self, adj_list, colors, kind0, kind1, coeffs=DEFAULT_BOND_COEFFS):
     """
     A graph representing the ase Atoms object to be investigated. First axis is the atom index, second axis containst bonding information.
     First entry of the second axis corresponds to a 1/0 representing the atomic kind
@@ -206,9 +206,10 @@ class AtomGraph(object):
     Args:
     adj_list (np.array) : A numpy array containing adjacency information. Assumed to be produced by the buildAdjacencyList function
     colors (np.array) : A numpy array containing a binary representation of the molecule
-    coeffs (dict) : A dictionary of the various bond coefficients we have precalculated, using coeffs.py. Defaults to the global DEFAULT_BOND_COEFFS.
     kind0 (str) : Atomic symbol indicating what a "0" in colors means
     kind1 (str) : Atomic symbol indicating what a "1" in colors means
+    coeffs (dict) : A dictionary of the various bond coefficients we have precalculated, using coeffs.py. Defaults to the global DEFAULT_BOND_COEFFS.
+
 
     Attributes:
     adj_list (np.array) : A numpy array containing adjacency information
