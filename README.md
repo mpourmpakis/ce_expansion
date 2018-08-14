@@ -1,5 +1,3 @@
-CE Expansion code
+#CE Expansion code
 
-James Dean
-Jonathan Estes
-Mahmoud Ramadan
+##James Dean, Jonathan Estes, Mahmoud Ramadan
