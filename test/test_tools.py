@@ -16,6 +16,7 @@ class TestTools(unittest.TestCase):
       print "Values verified."
     except AssertionError:
       print "Values from current script differ from those found in pickle." 
+      raise
 
 if __name__ == "__main__":
     unittest.main()
