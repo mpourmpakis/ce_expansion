@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 import os
-import numpy as np
-import pickle
-import ase.cluster
 import unittest
 
 # Globals
@@ -29,14 +26,13 @@ class TestDirectory(unittest.TestCase):
   def test_files(self):
     print "\nChecking for existence of files..."
     for filename in ("README.md",
-                     "LICENSE",
-                     PRECOMP_COEFFS,
-                     GEN_COEFFS):
+                     "LICENSE"):
       try:
         self.assertTrue(os.path.exists(filename))
         print filename + " exists."
       except AssertionError:
         print "File " + filename + " not found."
+        raise
 
 if __name__ == "__main__":
   unittest.main()
