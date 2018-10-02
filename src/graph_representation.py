@@ -174,10 +174,9 @@ def buildAdjacencyList(atoms_object, radius_dictionary={DEFAULT_ELEMENTS: DEFAUL
 
     # Construct the list of bonds
     sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
-    bonds = np.array(zip(sources, destinations))
-    # Sort along first column, to ensure when we slice the array it's cut at the correct places
+    # Sort along our destinations
     # Mergesort has a slightly better worst-case time complexity than quicksort or heapsort, and is stable
-    sorted_destinations = destinations[bonds[:, 0].argsort(kind='mergesort')]
+    sorted_destinations = destinations[sources.argsort(kind='mergesort')]
 
     # Figure out how the list of bonds will be sliced, and slice it
     bins = np.bincount(sources)
