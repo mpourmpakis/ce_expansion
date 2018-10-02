@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import ce_shuffle
 import structure_gen
 import time
 import ase.io
@@ -38,7 +37,7 @@ def randomizer(atoms):
     meancelist1, stdlist1, totalloops, mincelist1, maxcelist1, minatomlist1, maxatomlist1 = ce_shuffle.atomchanger(atoms, 'Cu', 'Ag')
     #meancelist1, stdlist1, totalloops, mincelist1, maxcelist1, minatomlist1, maxatomlist1 = ce_shuffle.atomchanger(atoms, element1, element2)
     t2 = time.clock()
-    print '1= ' + str(t2 - t)
+    print('1= ' + str(t2 - t))
     meancelist2, stdlist2, totaloops, mincelist2, maxcelist2, minatomlist2, maxatomlist2 = ce_shuffle.atomchanger(atoms, 'Au', 'Cu')
     t2 = time.clock()
     print '2= ' + str(t2 - t)
@@ -73,16 +72,16 @@ def fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnu
     perclist1 = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100] * 3 * len(shellnums)
     perclist2 = [100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0] * 3 * len(shellnums)
 
-    print len(el1list)
-    print len(perclist1)
-    print len(el2list)
-    print len(perclist2)
-    print len(morphlist)
-    print len(formula)
-    print len(standarddev)
-    print len(smplist)
-    print len(mincelist)
-    print len(maxcelist)
+    print(len(el1list))
+    print(len(perclist1))
+    print(len(el2list))
+    print(len(perclist2))
+    print(len(morphlist))
+    print(len(formula))
+    print(len(standarddev))
+    print(len(smplist))
+    print(len(mincelist))
+    print(len(maxcelist))
 
     df = DataFrame({'Element 1': el1list, 'Percentage 1': perclist1, 'Element 2': el2list, 'Percentage 2': perclist2,
                     'Average Cohesive Energy': morphlist, 'Number of Atoms': formula, 'Standard Deviation': standarddev
@@ -122,7 +121,7 @@ def main():
         runs the selected structure 
     """
     t = time.clock()
-    print 'start = ' + str(t)
+    print('start = ' + str(t))
 
     shellnums = [4]
     atomform = [None] * len(shellnums)
@@ -143,7 +142,7 @@ def main():
         else:
             morphlist.extend(meanshellist)
             standarddev.extend(stdlist)
-    print 'Done'
+    print('Done')
     fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnum, mincelist, maxcelist)
     boundce(minatomlist, maxatomlist, shellnums, morphologyname)
 
