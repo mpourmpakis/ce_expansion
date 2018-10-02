@@ -7,7 +7,7 @@ import numpy as np
 def csv_to_dict(filename: str) -> "dict":
     """
     Given a filename, this file reads a table in CSV form that has labeled columns and rows, and returns a dictionary
-    whose indices are named by those labels. Rows are given priority as the first index.
+    whose indices araasdfasdfasde named by those labels. Rows are given priority as the first index.
 
     :param filename: A valid filename for a file.
     :type filename: str
@@ -23,13 +23,19 @@ def csv_to_dict(filename: str) -> "dict":
 
     # Populate a dictionary with the data
     result = {}
+    for header in columns:
+        result[header] = {}
     for row in rows:
         row_name = row[0]
         data = row[1:]
-        for column in columns:
-            result[column][row_name] = None
+        for count,column in enumerate(columns):
+            if data[count] == "None":
+                result[column][row_name] = None
+            else:
+                result[column][row_name] = float(data[count])
 
     return result
+
 
 
 
