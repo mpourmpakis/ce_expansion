@@ -4,6 +4,18 @@ import pandas
 import numpy as np
 
 
+def csv_to_dict(filename: str) -> "dict":
+    """
+    Given a filename, this file reads a table in CSV form that has labeled columns and rows, and returns a dictionary
+    whose indices are named by those labels. Rows are given priority as the first index.
+
+    :param filename: A valid filename for a file.
+    :type filename: str
+
+    :return: A dictionary composed of the data in the CSV file
+    """
+    return {}
+
 def calculate_gamma(element1: str,
                     element2: str,
                     exp: "Filename for experimental data" = "data/experimental_hbe.csv",
