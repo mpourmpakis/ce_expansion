@@ -38,8 +38,8 @@ def csv_to_dict(filename: str) -> "dict":
 
 def calculate_gamma(element1: str,
                     element2: str,
-                    exp: "Filename for experimental data" = "data/experimental_hbe.csv",
-                    est: "Filename for theoretical data" = "data/estimated_hbe.csv") -> "tuple":
+                    exp: "Filename for experimental data" = "../data/experimental_hbe.csv",
+                    est: "Filename for theoretical data" = "../data/estimated_hbe.csv") -> "tuple":
     """
     Given a pair of elements: "element1" and "element2", this function calculates the gamma coefficient from Yan et al.
 
@@ -82,4 +82,4 @@ def calculate_gamma(element1: str,
                                    [[2 * bde_hetero],
                                     [2]])
 
-    return float(gamma_values[0]), float(gamma_values[1]), bde_table
+    return float(gamma_values[0]), float(gamma_values[1])
