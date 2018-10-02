@@ -18,7 +18,7 @@ def csv_to_dict(filename: str) -> "dict":
     with open(filename) as table:
         columns, *rows = table.readlines()
     columns = columns.strip().split(",")
-    rows = map(lambda row: row.strip().split(","), rows)
+    rows = [row.strip().split(",") for row in rows]
 
     # Populate a dictionary with the data
     result = {}
@@ -27,11 +27,11 @@ def csv_to_dict(filename: str) -> "dict":
     for row in rows:
         row_name = row[0]
         data = row[1:]
-        for count, column in enumerate(columns):
-            if data[count] == "None":
+        for column, value in zip(columns, data):
+            if value == "None":
                 result[column][row_name] = None
             else:
-                result[column][row_name] = float(data[count])
+                result[column][row_name] = float(value)
 
     return result
 
