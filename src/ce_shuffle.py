@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from random import shuffle
 import numpy
-import ce_calc
 from math import floor
 
 def atomchanger(nanop_base, el1, el2):

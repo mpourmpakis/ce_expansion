@@ -12,7 +12,7 @@ class TestFiles(unittest.TestCase):
     def test_files(self):
         print("\nChecking for existence of sources files...")
         for filename in ("src/ce_calc.py",
-                         "src/ce_main_file.py",
+                         "src/main.py",
                          "src/ce_shuffle.py",
                          "src/cn_counter.py",
                          "src/graph_representations.py",

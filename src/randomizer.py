@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-import ce_shuffle
+from __future__ import absolute_import
 import structure_gen
+import ce_shuffle
 import time
 import itertools
 
@@ -60,7 +61,7 @@ def icosa(atoms_i2, atoms_i3, atoms_i4, atoms_i5):
         for a1, a2 in itertools.combinations(metals, 2):
             ce_shuffle.atomchanger(icosalist[i-2], a1, a2, 'Icosahedron', i)
             t2 = time.clock()
-            print 'I' + str(timei) + ' = ' + str(t2 - t)
+            print('I' + str(timei) + ' = ' + str(t2 - t))
             timei += 1
     return t2
 
@@ -76,7 +77,7 @@ def deca(atoms_d2, atoms_d3, atoms_d4, atoms_d5, t):
         for a1, a2 in itertools.combinations(metals, 2):
             ce_shuffle.atomchanger(decalist[i-2], a1, a2, 'Decahedron', i)
             t2 = time.clock()
-            print 'D' + str(timei) + ' = ' + str(t2 - t)
+            print('D' + str(timei) + ' = ' + str(t2 - t))
             timei += 1
 
 
@@ -92,7 +93,7 @@ def cubic(atoms_c2, atoms_c3, atoms_c4, atoms_c5, t):
         for a1, a2 in itertools.combinations(metals, 2):
             ce_shuffle.atomchanger(cubelist[i-2], a1, a2, 'Cube', i)
             t2 = time.clock()
-            print 'C' + str(timei) + ' = ' + str(t2 - t)
+            print('C' + str(timei) + ' = ' + str(t2 - t))
             timei += 1
     return t2
 
@@ -108,7 +109,7 @@ def sphere(atoms_s2, atoms_s3, atoms_s4, atoms_s5, t):
         for a1, a2 in itertools.combinations(metals, 2):
             ce_shuffle.atomchanger(spherelist[i-2], a1, a2, 'Sphere', i)
             t2 = time.clock()
-            print 'S' + str(timei) + ' = ' + str(t2 - t)
+            print('S' + str(timei) + ' = ' + str(t2 - t))
             timei +=1
     return t2
 
@@ -127,7 +128,7 @@ def main():
     t4 = sphere(s2, s3, s4, s5, t3)
     deca(d2, d3, d4, d5, t4)
 
-    print 'Done'
+    print('Done')
 
 
 main()

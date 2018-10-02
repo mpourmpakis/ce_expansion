@@ -33,7 +33,7 @@ for a in range(0,101,5):
     k=k+1
     #print len(surface_atoms)
     
-print perc_Cu_surface
+print(perc_Cu_surface)
 
 df = DataFrame({'Number of Atoms': atom_size,'Cu Percentage': Cu_Composition, 'Ag Percentage': Ag_Composition, 
                      'Perc Cu on Surface': perc_Cu_surface})
