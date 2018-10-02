@@ -2,7 +2,7 @@
 
 import os
 import test
-import src.graph_representations
+import src.graph_representation
 import unittest
 import pickle
 import ase.cluster
@@ -15,7 +15,7 @@ class TestFiles(unittest.TestCase):
                          "src/main.py",
                          "src/ce_shuffle.py",
                          "src/cn_counter.py",
-                         "src/graph_representations.py",
+                         "src/graph_representation.py",
                          "src/randomizer.py",
                          "src/structure_gen.py"):
             try:
