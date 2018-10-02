@@ -27,16 +27,13 @@ def csv_to_dict(filename: str) -> "dict":
     for row in rows:
         row_name = row[0]
         data = row[1:]
-        for count,column in enumerate(columns):
+        for count, column in enumerate(columns):
             if data[count] == "None":
                 result[column][row_name] = None
             else:
                 result[column][row_name] = float(data[count])
 
     return result
-
-
-
 
 
 def calculate_gamma(element1: str,
