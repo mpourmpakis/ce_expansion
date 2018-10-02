@@ -40,7 +40,7 @@ def randomizer(atoms):
     print('1= ' + str(t2 - t))
     meancelist2, stdlist2, totaloops, mincelist2, maxcelist2, minatomlist2, maxatomlist2 = ce_shuffle.atomchanger(atoms, 'Au', 'Cu')
     t2 = time.clock()
-    print '2= ' + str(t2 - t)
+    print('2= ' + str(t2 - t))
     meancelist3, stdlist3, totalloops, mincelist3, maxcelist3, minatomlist3, maxatomlist3= ce_shuffle.atomchanger(atoms, 'Ag', 'Au')
     t2 = time.clock()
     meancelist = meancelist1 + meancelist2 + meancelist3
@@ -50,7 +50,7 @@ def randomizer(atoms):
     maxatomlist = maxatomlist1 + maxatomlist2 + maxatomlist3
     stdlist = stdlist1 + stdlist2 + stdlist3
 
-    print '3 = ' + str(t2 - t)
+    print('3 = ' + str(t2 - t))
     return meancelist, stdlist, totalloops, mincelist, maxcelist, minatomlist, maxatomlist
 
 
@@ -132,7 +132,7 @@ def main():
     for atom in atoms_list:
         meanshellist, stdlist, smpnum, mincelist, maxcelist, minatomlist, maxatomlist = randomizer(atom)
         atomform[j] = len(atom.get_chemical_symbols())
-        print atomform
+        print(atomform)
 
         j += 1
         if i == 0:
