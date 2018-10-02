@@ -14,7 +14,25 @@ def csv_to_dict(filename: str) -> "dict":
 
     :return: A dictionary composed of the data in the CSV file
     """
-    return {}
+
+    # Read the file into a series of rows and columns
+    with open(filename) as table:
+        columns, *rows = table.readlines()
+    columns = columns.strip().split(",")
+    rows = map(lambda row: row.strip().split(","), rows)
+
+    # Populate a dictionary with the data
+    result = {}
+    for row in rows:
+        row_name = row[0]
+        data = row[1:]
+        for column in columns:
+            result[column][row_name] = None
+
+    return result
+
+
+
 
 def calculate_gamma(element1: str,
                     element2: str,
