@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 from random import shuffle
 import numpy
-import ce_calc
 from math import floor
+
 
 def atomchanger(nanop_base, el1, el2):
     # nanop = ase Atom object
@@ -12,15 +13,14 @@ def atomchanger(nanop_base, el1, el2):
     nanonum = len(nanoplist)  # number of atoms in nanop
     # Read in data from atom object.
 
-
     totalloops = 50
-    cemeanlist = [None]*21
-    stdevlist = [None]*21
-    mincelist = [None]*21
-    maxcelist = [None]*21
-    minatomlist = [None]*21
+    cemeanlist = [None] * 21
+    stdevlist = [None] * 21
+    mincelist = [None] * 21
+    maxcelist = [None] * 21
+    minatomlist = [None] * 21
     maxatomlist = [None] * 21
-    k=0
+    k = 0
 
     for j in range(0, 101):
         divider = floor(j * nanonum / 100)
@@ -47,17 +47,17 @@ def atomchanger(nanop_base, el1, el2):
                 mince = celist[i]
                 minatom = nanop
                 maxatom = nanop
-            
+
             if celist[i] < mince:
                 mince = celist[i]
                 minatom = nanop
- 
+
             elif celist[i] > maxce:
                 maxce = celist[i]
                 maxatom = nanop
 
-            #if i%50 == 0:
-                #print i
+            # if i%50 == 0:
+            # print i
 
         cemeanlist[k] = numpy.mean(celist)
         stdevlist[k] = numpy.std(celist)

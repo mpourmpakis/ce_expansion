@@ -1,40 +1,44 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import test
-import src.graph_representations
+import src.graph_representation
 import unittest
 import pickle
 import ase.cluster
 
+
 class TestFiles(unittest.TestCase):
-  def test_files(self):
-    print "\nChecking for existence of sources files..."
-    for filename in ("src/ce_calc.py",
-                     "src/ce_main_file.py",
-                     "src/ce_shuffle.py",
-                     "src/cn_counter.py",
-                     "src/graph_representations.py",
-                     "src/randomizer.py",
-                     "src/structure_gen.py"):
-      try:
-        self.assertTrue(os.path.exists(filename))
-        print filename + " exists."
-      except AssertionError:
-        print filename + " does not exist."
-        raise
+    def test_files(self):
+        print("\nChecking for existence of sources files...")
+        for filename in ("src/ce_calc.py",
+                         "src/main.py",
+                         "src/ce_shuffle.py",
+                         "src/cn_counter.py",
+                         "src/graph_representation.py",
+                         "src/randomizer.py",
+                         "src/structure_gen.py"):
+            try:
+                self.assertTrue(os.path.exists(filename))
+                print(filename + " exists.")
+            except AssertionError:
+                print(filename + " does not exist.")
+                raise
+
 
 class TestGraphRep(unittest.TestCase):
-  def setUp(self):
-    with open(test.PRECOMP_CLUSTER,"r") as stored:
-      self.stored_cluster = pickle.load(stored)
-    with open(test.PRECOMP_ADJ_MAT,"r") as stored:
-      self.stored_adj_mat = pickle.load(stored)
-    with open(test.PRECOMP_ADJ_LIST,"r") as stored:
-      self.stored_adj_list = pickle.load(stored)
-  def test_ase(self):
-    print "\nTesting ASE cluster generation..."
-    current_cluster = ase.cluster.Icosahedron("Cu",3)
+    def setUp(self):
+        with open(test.PRECOMP_CLUSTER, "r") as stored:
+            self.stored_cluster = pickle.load(stored)
+        with open(test.PRECOMP_ADJ_MAT, "r") as stored:
+            self.stored_adj_mat = pickle.load(stored)
+        with open(test.PRECOMP_ADJ_LIST, "r") as stored:
+            self.stored_adj_list = pickle.load(stored)
+
+    def test_ase(self):
+        print("\nTesting ASE cluster generation...")
+        current_cluster = ase.cluster.Icosahedron("Cu", 3)
+
 
 # TODO: make this work
 
@@ -48,4 +52,4 @@ class TestGraphRep(unittest.TestCase):
 #    self.assertEqual(current_list, self.stored_adj_list)
 
 if __name__ == "__main__":
-  unittest.__main__()
+    unittest.__main__()
