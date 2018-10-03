@@ -33,15 +33,15 @@ bulk_CN = 12.0
 # Calculate bulk bulk CE / sqrt(bulk_CN)
 # ======================================
 # Initialization
-bulk_constants = {"Cu":0,
-                  "Ag":0,
-                  "Au":0}
+bulk_constants = {"Cu": 0,
+                  "Ag": 0,
+                  "Au": 0}
 
 # Precompute Bulk CE / sqrt(bulk_CN)
 for key, value in bulk_cohesive_energies.iteritems():
-    bulk_constants[key] = value/np.sqrt(12)
+    bulk_constants[key] = value / np.sqrt(12)
 
-#print bulk_constants
+# print bulk_constants
 
 # ===============================================
 # Calculate gamma_coeff * bulk_CE / sqrt(bulk_CN)
@@ -51,7 +51,7 @@ precomputed_coeffs = {"Cu": {"Cu": 0,
                              "Ag": 0,
                              "Au": 0},
                       "Ag": {"Cu": 0,
-                             "Ag": 0 ,
+                             "Ag": 0,
                              "Au": 0},
                       "Au": {"Cu": 0,
                              "Ag": 0,
@@ -61,7 +61,7 @@ precomputed_coeffs = {"Cu": {"Cu": 0,
 # Precompute gamma coeff * bulk CE / sqrt(bulk_CN)
 for element_1, inner_dict in gamma_coeffs.iteritems():
     for element_2 in gamma_coeffs:
-        precomputed_coeffs[element_1][element_2]= bulk_constants[element_1]*inner_dict[element_2]
+        precomputed_coeffs[element_1][element_2] = bulk_constants[element_1] * inner_dict[element_2]
 
 # =====================================================
 # Construct a lookup table for each CN for each element
@@ -80,12 +80,12 @@ CN_coeffs = {"Cu": {"Cu": 0,
              }
 
 # CN cannot be 0 (divide by 0) and cannot be more than 12 (because the fully-coordinated bulk is 12)
-CN_precomp = [None]*13
-for count,CN in enumerate(range(0,13)):
+CN_precomp = [None] * 13
+for count, CN in enumerate(range(0, 13)):
     if CN == 0:
         continue
     else:
-        CN_precomp[count]=1/np.sqrt(CN)
+        CN_precomp[count] = 1 / np.sqrt(CN)
 
 # Build up the lookup table
 # Syntax for the dictionary is:
@@ -104,5 +104,4 @@ for element_1, inner_dict in precomputed_coeffs.iteritems():
         precomputed_coeffs[element_1][element_2] = CN_precomp
 
 # Finally, print to console to be pasted in other code
-#print(precomputed_coeffs)
-
+# print(precomputed_coeffs)
