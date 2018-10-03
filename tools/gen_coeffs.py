@@ -30,8 +30,6 @@ def read_data_table(filename: "str") -> "dict":
 a = read_data_table("../data/bulkdata.csv")
 print(a)
 
-sys.exit()
-
 
 def calculate_total_gamma(element1: "str",
                           element2: "str") -> "tuple":
