@@ -127,6 +127,3 @@ def generate_coefficient_dictionary(element1: "str",
                   element2: {element1: element2_coeffs}}
 
     return coeff_dict
-
-a=generate_coefficient_dictionary("Cu", "Ag")
-print(a)
