@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import ase.io
 import ase.neighborlist
 import numpy as np

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from ase import Atoms, Atom
 from ase.cluster.cubic import FaceCenteredCubic
 from ase.cluster.decahedron import Decahedron
