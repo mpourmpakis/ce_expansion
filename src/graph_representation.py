@@ -136,7 +136,8 @@ DEFAULT_BOND_COEFFS = {'Au': {'Au': [None,  # 0
                        }
 
 
-def buildAdjacencyMatrix(atoms_object, radius_dictionary={DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
+def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
+                         radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
     """
     Sparse matrix representation from an ase atoms object.
 
@@ -158,7 +159,8 @@ def buildAdjacencyMatrix(atoms_object, radius_dictionary={DEFAULT_ELEMENTS: DEFA
     return adjacency_matrix
 
 
-def buildAdjacencyList(atoms_object, radius_dictionary={DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
+def buildAdjacencyList(atoms_object: "ase.Atoms",
+                       radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
     """
       Adjacency list representation for an ase atoms object.
 
@@ -199,7 +201,11 @@ def buildAdjacencyList(atoms_object, radius_dictionary={DEFAULT_ELEMENTS: DEFAUL
 
 
 class AtomGraph(object):
-    def __init__(self, adj_list, colors, kind0, kind1, coeffs=DEFAULT_BOND_COEFFS):
+    def __init__(self, adj_list: "np.array",
+                 colors: "np.array",
+                 kind0: "str",
+                 kind1: "str",
+                 coeffs: "dict" = DEFAULT_BOND_COEFFS):
         """
         A graph representing the ase Atoms object to be investigated. First axis is the atom index, second axis containst bonding information.
         First entry of the second axis corresponds to a 1/0 representing the atomic kind
@@ -228,10 +234,10 @@ class AtomGraph(object):
     def __len__(self):
         return len(self.adj_list)
 
-    def __getitem__(self, atom_key):
+    def __getitem__(self, atom_key: "int") -> "tuple":
         return (self.symbols[self.colors[atom_key]], self.adj_list[atom_key])
 
-    def getCN(self, atom_key):
+    def getCN(self, atom_key: "int") -> "int":
         """
         Returns the coordination number of the given atom.
 
@@ -240,13 +246,13 @@ class AtomGraph(object):
         """
         return len(self[atom_key][1])
 
-    def getAllCNs(self):
+    def getAllCNs(self) -> "np.array":
         """
         Returns a numpy array containing all CN's in the cluster.
         """
         return np.array([entry.size for entry in self.adj_list])
 
-    def getHalfBond(self, atom_key, bond_key):
+    def getHalfBond(self, atom_key: "int") -> "float":
         """
         Returns the half-bond energy of a given bond for a certain atom.
 
@@ -261,7 +267,7 @@ class AtomGraph(object):
         atom2 = self.colors[self.adj_list[atom_key]]
         return self.coeffs[atom1][atom2][self.getCN(atom_key)]
 
-    def getLocalCE(self, atom_key):
+    def getLocalCE(self, atom_key: "int") -> "float":
         """
         Returns the sum of half-bond energies for a particular atom.
 
@@ -276,7 +282,7 @@ class AtomGraph(object):
             local_CE += self.getHalfBond(atom_key, bond_key)
         return local_CE
 
-    def getTotalCE(self):
+    def getTotalCE(self) -> "float":
         """
         Returns the cohesive energy of the cluster as a whole.
 
