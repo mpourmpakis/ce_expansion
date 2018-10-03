@@ -1,6 +1,51 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import tools.gen_gamma
+
+
+def calculate_total_gamma(element1: "str",
+                          element2: "str") -> "tuple":
+    """
+    Calculates the total gamma coefficient. The total gamma coefficient is defined as the product of the gamma
+    coefficient, the bulk cohesive energy, and the inverse of the square root of the coordination number of the bulk.
+
+    :param element1: The first element, A, in the bimetallic pair AB
+    :type element1: str
+    :param element2: The second element, B, in the bimetallic pair AB
+    :type element2: str
+
+    :return: A tuple containing the total gamma coefficients of A and B (in that order) in the bimetallic pair AB
+    """
+    return 0.0, 0.0
+
+
+def generate_coefficient_dictionary(element1: "str",
+                                    element2: "str",
+                                    cn_bulk: "int",
+                                    min_coord: "int" = 0,
+                                    max_coord: "int" = -1) -> "dict":
+    """
+    Generates the total Gamma coefficients for a bimetallic pair AB from min_coord to max_coord. Coordination
+    number 0 is given the value None. The total Gamma coefficient is defined as the product of the gamma coefficient,
+    the bulk cohesive energy, and the inverse of the square root of the coordination number of the bulk.
+
+    :param element1: The first element, A, in the bimetallic pair AB
+    :type element1: str
+    :param element2: The second element, B, in the bimetallic pair AB
+    :type element2: str
+    :param cn_bulk: The coordination number of the bulk.
+    :type cn_bulk: int
+    :param min_coord: The minimum coordination number to investigate. Defaults to 0.
+    :type min_coord: int
+    :param max_coord: The maximum coordination number to investigate. The default value of -1 indicates the maximum
+                      coordination number to investigate is that of the bulk.
+
+    :return: A dictionary of form dict[element1][element2][CN] = float
+    """
+
+    return {}
+
 
 # Gamma Coefficients (eV)
 # Calling gamma_coeffs["Cu"]["Au"] returns the Cu-Au bond coefficient for Cu
