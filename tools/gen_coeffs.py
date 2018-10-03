@@ -2,7 +2,35 @@
 
 import numpy as np
 import tools.gen_gamma
+import re, sys
 
+
+def read_data_table(filename: "str") -> "dict":
+    """
+    Reads in a CSV file containing columnwise data for various elements, and returns a dictionary containing the data.
+    Lines beginning with "#" are ignored
+    :param filename: A valid filename for a csv file
+    :type filename: str
+
+    :return: A dictionary containing the data of interest
+    """
+    values = {}
+    with open(filename, "r") as data:
+        for line in data:
+            if re.match("^(\s+#|#|\s+$)",line):
+                continue
+            elif re.search("^(\s|\s+)$", line):
+                continue
+            key,value = line.strip().split(",")
+            values[key] = float(value)
+
+
+    return values
+
+a = read_data_table("../data/bulkdata.csv")
+print(a)
+
+sys.exit()
 def calculate_total_gamma(element1: "str",
                           element2: "str") -> "tuple":
     """
@@ -16,7 +44,22 @@ def calculate_total_gamma(element1: "str",
 
     :return: A tuple containing the total gamma coefficients of A and B (in that order) in the bimetallic pair AB
     """
-    return 0.0, 0.0
+    # Look up CE_bulk
+    CE_bulk1 = 0.0
+    CE_bulk2 = 0.0
+
+    # Look up bulk CN
+    CN_bulk1 = 12
+    CN_bulk2 = 12
+
+    # Calculate gamma
+    gamma1, gamma2 = tools.gen_gamma.calculate_gamma(element1, element2)
+
+    # Calculate the total gamma coefficients
+    total_gamma = (gamma1 * CE_bulk1 / np.sqrt(CN_bulk1),
+                   gamma2 * CE_bulk2 / np.sqrt(CN_bulk2))
+
+    return total_gamma
 
 
 def generate_coefficient_dictionary(element1: "str",
