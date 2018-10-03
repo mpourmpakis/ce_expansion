@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#TODO: Cleanup; camelCase
+
 from random import shuffle
 import numpy
 from math import floor
