@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import re
 
 
 def csv_to_dict(filename: str) -> "dict":
@@ -16,7 +17,18 @@ def csv_to_dict(filename: str) -> "dict":
 
     # Read the file into a series of rows and columns
     with open(filename) as table:
-        columns, *rows = table.readlines()
+        rows = []
+        found_header = False
+        for line in table:
+            if re.match("^(\s+#|#|\s+$)", line):
+                continue
+            elif re.search("^(\s|\s+)$", line):
+                continue
+            if found_header:
+                rows.append(line)
+            else:
+                columns = line
+                found_header = True
     columns = columns.strip().split(",")
     rows = [row.strip().split(",") for row in rows]
 

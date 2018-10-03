@@ -2,7 +2,7 @@
 
 import numpy as np
 import tools.gen_gamma
-import re, sys
+import re
 
 
 def read_data_table(filename: "str") -> "dict":
@@ -17,20 +17,22 @@ def read_data_table(filename: "str") -> "dict":
     values = {}
     with open(filename, "r") as data:
         for line in data:
-            if re.match("^(\s+#|#|\s+$)",line):
+            if re.match("^(\s+#|#|\s+$)", line):
                 continue
-            elif re.search("^(\s|\s+)$", line):
+            elif re.match("^(\s|\s+)$", line):
                 continue
-            key,value = line.strip().split(",")
+            key, value = line.strip().split(",")
             values[key] = float(value)
 
-
     return values
+
 
 a = read_data_table("../data/bulkdata.csv")
 print(a)
 
 sys.exit()
+
+
 def calculate_total_gamma(element1: "str",
                           element2: "str") -> "tuple":
     """
