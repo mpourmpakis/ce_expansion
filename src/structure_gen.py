@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# TODO: Clean this code up, make it more readable
 
-import ase.cluster, ase.lattice
+import ase.cluster
+import ase.lattice
 
 
 def create_cube(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
@@ -16,12 +16,12 @@ def create_cube(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
     :return: An ASE atoms object containing the cube skeleton
     """
 
-    lattice = ase.lattice.cubic.FaceCenteredCubic(kind, size=[num_layers]*3)
+    lattice = ase.lattice.cubic.FaceCenteredCubic(kind, size=[num_layers] * 3)
     cube = ase.build.cut(lattice, extend=1.01)
     return cube
 
 
-def create_sphere(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
+def create_sphere(num_layers: "int", kind: "str" = "Cu", unit_cell_length: "float" = 3.61) -> "ase.Atoms":
     """
     Inscribes a sphere inside a cube and makes it a nanoparticle. Perfect symmetry not guaranteed.
 
@@ -29,18 +29,25 @@ def create_sphere(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
     :type num_layers: int
     :param kind: The element making up the skeleton. Defaults to "Cu"
     :type kind: str
+    :param unit_cell_length: The edge-length of the unit cell.
+    :type unit_cell_length: float
 
     :return: An ASE atoms object containing the sphere skeleton.
     """
 
-    atoms = create_cube(num_layers, kind)
+    # Create the cube
+    cube = create_cube(num_layers, kind)
 
-    cen = atoms.positions.mean(0)
+    # Simple geometry
+    center = cube.positions.mean(0)
+    cutoff_radius = num_layers * unit_cell_length / 1.99
+    distance_list = map(ase.np.linalg.norm,
+                        ase.geometry.get_distances(cube.get_positions(), p2=center)[1])
 
-    radius = (num_layers - 1) * 3.61 / 2
+    # Build the sphere using atoms that are within the cutoff
+    sphere = ase.Atoms()
+    for atom, distance in zip(cube, distance_list):
+        if distance <= cutoff_radius:
+            sphere += atom
 
-    atoms.append(ase.Atom(kind, cen))
-
-
-    my_cluster = 0  ase.Atoms(filter(lambda x: check_distance(atoms, radius, x.index), atoms))
-    return my_cluster
+    return sphere
