@@ -4,7 +4,7 @@ import ase.cluster
 import ase.lattice
 
 
-def create_cube(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
+def cube(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
     """
     Creates an FCC cube with faces on the {100} family of planes.
 
@@ -21,7 +21,7 @@ def create_cube(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
     return cube
 
 
-def create_sphere(num_layers: "int", kind: "str" = "Cu", unit_cell_length: "float" = 3.61) -> "ase.Atoms":
+def sphere(num_layers: "int", kind: "str" = "Cu", unit_cell_length: "float" = 3.61) -> "ase.Atoms":
     """
     Inscribes a sphere inside a cube and makes it a nanoparticle. Perfect symmetry not guaranteed.
 
@@ -36,18 +36,26 @@ def create_sphere(num_layers: "int", kind: "str" = "Cu", unit_cell_length: "floa
     """
 
     # Create the cube
-    cube = create_cube(num_layers, kind)
+    trimmed_cube = cube(num_layers, kind)
 
     # Simple geometry
-    center = cube.positions.mean(0)
+    center = trimmed_cube.positions.mean(0)
     cutoff_radius = num_layers * unit_cell_length / 1.99
     distance_list = map(ase.np.linalg.norm,
-                        ase.geometry.get_distances(cube.get_positions(), p2=center)[1])
+                        ase.geometry.get_distances(trimmed_cube.get_positions(), p2=center)[1])
 
     # Build the sphere using atoms that are within the cutoff
     sphere = ase.Atoms()
-    for atom, distance in zip(cube, distance_list):
+    for atom, distance in zip(trimmed_cube, distance_list):
         if distance <= cutoff_radius:
             sphere += atom
 
     return sphere
+
+
+def elongated_pentagonal_bipyramid():
+    pass
+
+
+def cuboctahedron():
+    pass
