@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def randomizer():
+def randomizer(ordering):
     """
     Randomizes the structure with some selected atomic symbols.
     """
