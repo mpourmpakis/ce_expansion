@@ -1,42 +1,53 @@
 #!/usr/bin/env python3
 
-from ase import Atoms, Atom
-from ase.cluster.cubic import FaceCenteredCubic
-from ase.cluster.decahedron import Decahedron
-from ase.cluster.icosahedron import Icosahedron
+import ase.cluster
+import ase.lattice
 
 
-# for sphere
-def check_distance(atoms, radius, index):
-    distance = atoms.get_distance(-1, index)
-    print(distance)
-    if distance <= radius and distance != 0:
-        return True
-    else:
-        return False
+def create_cube(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
+    """
+    Creates an FCC cube with faces on the {100} family of planes.
+
+    :param num_layers: Number of unit cells along each side of the cube.
+    :type num_layers: int
+    :param kind: The element making up the skeleton. Defaults to "Cu"
+    :type kind: str
+
+    :return: An ASE atoms object containing the cube skeleton
+    """
+
+    lattice = ase.lattice.cubic.FaceCenteredCubic(kind, size=[num_layers] * 3)
+    cube = ase.build.cut(lattice, extend=1.01)
+    return cube
 
 
-# structures
-def structuregen(shape, parameters):
-    if shape == "Icosahedron":
-        atoms = Icosahedron('Cu', noshells=parameters[0])
-        return atoms
-    elif shape == "Decahedron":
-        atoms = Decahedron('Cu', p=parameters[0], q=parameters[1], r=parameters[2])
-        return atoms
-    elif shape == "Lattice":
-        atoms = FaceCenteredCubic('Cu', ((1, 0, 0), (0, 1, 0), (0, 0, 1)), parameters)
-        return atoms
-    elif shape == "Sphere":
-        atoms = FaceCenteredCubic('Cu', ((1, 0, 0), (0, 1, 0), (0, 0, 1)), parameters)
-        cen = atoms.positions.mean(0)
-        radius = (parameters[0] - 1) * 3.61 / 2
-        atoms.append(Atom("Cu", cen))
-        # Filter
-        # 1st arg is a function returning T or F
-        #    Check_distance needs 3 args: atoms object, radius, and a count
-        # The rest of the arguments are lists of things that get plugged in
+def create_sphere(num_layers: "int", kind: "str" = "Cu", unit_cell_length: "float" = 3.61) -> "ase.Atoms":
+    """
+    Inscribes a sphere inside a cube and makes it a nanoparticle. Perfect symmetry not guaranteed.
 
-        my_cluster = Atoms(filter(lambda x: check_distance(atoms, radius, x.index), atoms))
-        print(my_cluster)
-        return my_cluster
+    :param num_layers: The size of the lattice containing the inscribed sphere.
+    :type num_layers: int
+    :param kind: The element making up the skeleton. Defaults to "Cu"
+    :type kind: str
+    :param unit_cell_length: The edge-length of the unit cell.
+    :type unit_cell_length: float
+
+    :return: An ASE atoms object containing the sphere skeleton.
+    """
+
+    # Create the cube
+    cube = create_cube(num_layers, kind)
+
+    # Simple geometry
+    center = cube.positions.mean(0)
+    cutoff_radius = num_layers * unit_cell_length / 1.99
+    distance_list = map(ase.np.linalg.norm,
+                        ase.geometry.get_distances(cube.get_positions(), p2=center)[1])
+
+    # Build the sphere using atoms that are within the cutoff
+    sphere = ase.Atoms()
+    for atom, distance in zip(cube, distance_list):
+        if distance <= cutoff_radius:
+            sphere += atom
+
+    return sphere

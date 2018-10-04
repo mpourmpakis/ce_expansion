@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# TODO: Clean this up; remove repetition. Remove repetition.
+
 from __future__ import absolute_import
 import structure_gen
 import ce_shuffle

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# TODO: Clean-up and debug. Remove repetition. Also, remove repetition.
+
 import structure_gen
 import time
 import ase.io

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# TODO: Cleanup.
 
 import ase.io
 import ase.neighborlist

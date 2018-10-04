@@ -9,6 +9,8 @@ DEFAULT_RADIUS = 2.8
 with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
     DEFAULT_BOND_COEFFS = pickle.load(precalcs)
 
+import ase.cluster
+
 
 def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
                          radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
@@ -118,7 +120,7 @@ class AtomGraph(object):
         Args:
         atom_key (int) : Index of the atom of interest
         """
-        return len(self[atom_key][1])
+        return self.adj_list[atom_key].size
 
     def getAllCNs(self) -> "np.array":
         """
@@ -126,7 +128,15 @@ class AtomGraph(object):
         """
         return np.array([entry.size for entry in self.adj_list])
 
-    def getHalfBond(self, atom_key: "int") -> "float":
+    def get_chemical_symbol(self, index: "int") -> "str":
+        """
+        Returns the chemical symbol of an atom at the particular index.
+        :param index:
+        :return:
+        """
+        return self.symbols[self.colors[index]]
+
+    def getHalfBond(self, atom_key: "int", bond_key: "int") -> "float":
         """
         Returns the half-bond energy of a given bond for a certain atom.
 
@@ -137,11 +147,12 @@ class AtomGraph(object):
         Returns:
         float : The half-bond energy of that bond at that atom, in units of eV
         """
-        atom1 = self.colors[atom_key]
-        atom2 = self.colors[self.adj_list[atom_key]]
+
+        atom1 = self.symbols[self.colors[atom_key]]
+        atom2 = self.symbols[self.colors[self.adj_list[atom_key][bond_key]]]
         return self.coeffs[atom1][atom2][self.getCN(atom_key)]
 
-    def getLocalCE(self, atom_key: "int") -> "float":
+    def getAtomicCE(self, atom_key: "int") -> "float":
         """
         Returns the sum of half-bond energies for a particular atom.
 
@@ -163,7 +174,8 @@ class AtomGraph(object):
         Returns
         float : The CE, in units of eV
         """
-        total_CE = 0
-        for atom_key in len(self):
-            total_CE += self.getLocalCE(atom_key)
+        total_energy = 0
+        for atom in range(0, len(self.colors)):
+            total_energy += self.getAtomicCE(atom)
+        total_CE = total_energy / len(self.colors)
         return total_CE
