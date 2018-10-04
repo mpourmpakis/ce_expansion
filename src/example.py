@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# TODO: Clean-up and debug. Remove repetition. Also, remove repetition.
 
-import structure_gen
 import time
-import ase.io
-from pandas import DataFrame
 from math import floor
+
+import ase.io
+import structure_gen
+from pandas import DataFrame
 
 
 # shell_nums is a list with the shell sizes
@@ -121,35 +121,32 @@ def boundce(minatomlist, maxatomlist, shellnums, morphologyname):
         ase.io.write(namemax, maxatomlist[i], format=None, parallel=True, append=False)
 
 
-def main():
-    """
-        runs the selected structure 
-    """
-    t = time.clock()
-    print('start = ' + str(t))
+"""
+    runs the selected structure 
+"""
+t = time.clock()
+print('start = ' + str(t))
 
-    shellnums = [4]
-    atomform = [None] * len(shellnums)
-    morphologyname = 'Icosahedron'
-    atoms_list = structure(morphologyname, shellnums)
-    i = 0
-    j = 0
-    for atom in atoms_list:
-        meanshellist, stdlist, smpnum, mincelist, maxcelist, minatomlist, maxatomlist = randomizer(atom)
-        atomform[j] = len(atom.get_chemical_symbols())
-        print(atomform)
+shellnums = [4]
+atomform = [None] * len(shellnums)
+morphologyname = 'Icosahedron'
+atoms_list = structure(morphologyname, shellnums)
+i = 0
+j = 0
+for atom in atoms_list:
+    meanshellist, stdlist, smpnum, mincelist, maxcelist, minatomlist, maxatomlist = randomizer(atom)
+    atomform[j] = len(atom.get_chemical_symbols())
+    print(atomform)
 
-        j += 1
-        if i == 0:
-            morphlist = meanshellist
-            standarddev = stdlist
-            i = 1
-        else:
-            morphlist.extend(meanshellist)
-            standarddev.extend(stdlist)
-    print('Done')
-    fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnum, mincelist, maxcelist)
-    boundce(minatomlist, maxatomlist, shellnums, morphologyname)
+    j += 1
+    if i == 0:
+        morphlist = meanshellist
+        standarddev = stdlist
+        i = 1
+    else:
+        morphlist.extend(meanshellist)
+        standarddev.extend(stdlist)
+print('Done')
+fileprint(morphlist, morphologyname, shellnums, atomform, standarddev, smpnum, mincelist, maxcelist)
+boundce(minatomlist, maxatomlist, shellnums, morphologyname)
 
-
-main()

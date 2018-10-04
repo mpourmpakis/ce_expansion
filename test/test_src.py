@@ -12,7 +12,7 @@ import test
 class TestFiles(unittest.TestCase):
     def test_files(self):
         print("\nChecking for existence of sources files...")
-        for filename in ("src/main.py",
+        for filename in ("src/example.py",
                          "src/graph_representation.py",
                          "src/structure_gen.py"):
             try:
