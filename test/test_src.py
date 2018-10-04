@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 
 import os
-import test
-import src.graph_representation
-import unittest
 import pickle
+import unittest
+
 import ase.cluster
+
+import test
 
 
 class TestFiles(unittest.TestCase):
     def test_files(self):
         print("\nChecking for existence of sources files...")
-        for filename in ("src/ce_calc.py",
-                         "src/main.py",
-                         "src/ce_shuffle.py",
-                         "src/cn_counter.py",
+        for filename in ("src/example.py",
                          "src/graph_representation.py",
-                         "src/randomizer.py",
                          "src/structure_gen.py"):
             try:
                 self.assertTrue(os.path.exists(filename))
