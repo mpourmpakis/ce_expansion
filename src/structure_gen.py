@@ -53,9 +53,29 @@ def sphere(num_layers: "int", kind: "str" = "Cu", unit_cell_length: "float" = 3.
     return sphere
 
 
-def elongated_pentagonal_bipyramid():
-    pass
+def elongated_pentagonal_bipyramid(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
+    """
+    Creates an elongated pentagonal bipyramidal NP.
+
+    :param num_layers: Number of layers in the EPB
+    :type num_layers: int
+    :param kind: These are monometallic. What element will be used. Defaults to "Cu"
+    :type kind: str
+
+    :return: An ASE atoms object containing the elongated pentagonal bipyramid skeleton.
+    """
+    return ase.cluster.Decahedron("Cu", num_layers, num_layers, 0)
 
 
-def cuboctahedron():
-    pass
+def cuboctahedron(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
+    """
+    Creates a cuboctahedral NP.
+
+    :param num_layers: Number of layers in the cuboctahedron.
+    :type num_layers: int
+    :param kind: These are monometallic. What element will bee used. Defaults to "Cu".
+    :type kind: str
+
+    :return: An ASE atoms object containing the cuboctahedron skeleton.
+    """
+    return ase.cluster.Octahedron(kind, 2 * num_layers + 1, cutoff=num_layers)
