@@ -29,6 +29,9 @@ class Ordering(object):
 
         self.update()
 
+    def __repr__(self):
+        return self._string
+
     def __len__(self):
         return len(self._string)
 
@@ -54,6 +57,11 @@ class Ordering(object):
         self.index += 1
         return result
 
+    def set_string(self, newstring):
+        self._string = newstring
+        self.update()
+        return None
+
     def update(self):
         """
         Updates the atomic symbols of the bound atoms object to reflect the current string.
@@ -61,5 +69,5 @@ class Ordering(object):
         :return: None
         """
         for value, atom in zip(self._string, self._atoms):
-            atom.symbol = self.kinds[value]
+            atom.symbol = self.kinds[int(value)]
         return None
