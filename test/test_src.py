@@ -14,6 +14,7 @@ class TestFiles(unittest.TestCase):
         print("\nChecking for existence of sources files...")
         for filename in ("src/example.py",
                          "src/atomgraph.py",
+                         "src/adjacency.py",
                          "src/structure_gen.py"):
             try:
                 self.assertTrue(os.path.exists(filename))
