@@ -13,7 +13,8 @@ class TestFiles(unittest.TestCase):
     def test_files(self):
         print("\nChecking for existence of sources files...")
         for filename in ("src/example.py",
-                         "src/graph_representation.py",
+                         "src/atomgraph.py",
+                         "src/adjacency.py",
                          "src/structure_gen.py"):
             try:
                 self.assertTrue(os.path.exists(filename))
@@ -24,6 +25,7 @@ class TestFiles(unittest.TestCase):
 
 
 class TestGraphRep(unittest.TestCase):
+    # TODO Add additional checks for the graph representation object
     def setUp(self):
         with open(test.PRECOMP_CLUSTER, "r") as stored:
             self.stored_cluster = pickle.load(stored)
@@ -37,16 +39,7 @@ class TestGraphRep(unittest.TestCase):
         current_cluster = ase.cluster.Icosahedron("Cu", 3)
 
 
-# TODO: make this work
-
-#  def test_adj_matrix(self):
-#    print "\nChecking generated adjacency matrix..."
-#    current_matrix = src.graph_representations.buildAdjacencyMatrix(self.stored_cluster)
-#    self.assertEqual(current_matrix, self.stored_adj_mat)
-#  def test_adj_list(self):
-#    print "\nChecking generated adjacency list..."
-#    current_list = src.graph_representations.buildAdjacencyList(self.stored_cluster)
-#    self.assertEqual(current_list, self.stored_adj_list)
+# TODO: Add tests for the chemical ordering
 
 if __name__ == "__main__":
     unittest.__main__()
