@@ -12,7 +12,6 @@ with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
 
 class AtomGraph(object):
     def __init__(self, adj_list: "np.array",
-                 ordering: "np.array",
                  kind0: "str",
                  kind1: "str",
                  coeffs: "dict" = DEFAULT_BOND_COEFFS):
@@ -25,7 +24,6 @@ class AtomGraph(object):
         Args:
         adj_list (np.array) : A numpy array containing adjacency information. Assumed to be produced by the
         buildAdjacencyList function
-        ordering (np.array) : A numpy array containing a binary representation of the molecule
         kind0 (str) : Atomic symbol indicating what a "0" in ordering means
         kind1 (str) : Atomic symbol indicating what a "1" in ordering means
         coeffs (dict) : A dictionary of the various bond coefficients we have precalculated, using coeffs.py. Defaults
@@ -34,22 +32,20 @@ class AtomGraph(object):
 
         Attributes:
         adj_list (np.array) : A numpy array containing adjacency information
-        ordering (np.array) : A numpy array containing a binary representation of the molecule
-        symbols (tuple) : Atomic symbols indicating what the binary representations of the elements in self.ordering
+        symbols (tuple) : Atomic symbols indicating what the binary representations of the elements in ordering
                         means
 
         """
 
         self.adj_list = adj_list
-        self.ordering = ordering
         self.coeffs = coeffs
         self.symbols = (kind0, kind1)
 
+        # total number of atoms
+        self.n_atoms = len(adj_list)
+
     def __len__(self):
         return len(self.adj_list)
-
-    def __getitem__(self, atom_key: "int") -> "tuple":
-        return self.symbols[self.ordering[atom_key]], self.adj_list[atom_key]
 
     def getCN(self, atom_key: "int") -> "int":
         """
@@ -66,17 +62,8 @@ class AtomGraph(object):
         """
         return np.array([entry.size for entry in self.adj_list])
 
-    def get_chemical_symbol(self, index: "int") -> "str":
-        """
-        Returns the chemical symbol of an atom at the particular index.
-
-        :param index: Index of the atom of interest.
-
-        :return: A string containing the atomic symbol of interest.
-        """
-        return self.symbols[self.ordering[index]]
-
-    def getHalfBond(self, atom_key: "int", bond_key: "int") -> "float":
+    def __getHalfBond__(self, atom_key: "int", bond_key: "int",
+                        ordering) -> "float":
         """
         Returns the half-bond energy of a given bond for a certain atom.
 
@@ -88,11 +75,11 @@ class AtomGraph(object):
         float : The half-bond energy of that bond at that atom, in units of eV
         """
 
-        atom1 = self.symbols[self.ordering[atom_key]]
-        atom2 = self.symbols[self.ordering[self.adj_list[atom_key][bond_key]]]
+        atom1 = self.symbols[ordering[atom_key]]
+        atom2 = self.symbols[ordering[self.adj_list[atom_key][bond_key]]]
         return self.coeffs[atom1][atom2][self.getCN(atom_key)]
 
-    def getAtomicCE(self, atom_key: "int") -> "float":
+    def getAtomicCE(self, atom_key: "int", ordering) -> "float":
         """
         Returns the sum of half-bond energies for a particular atom.
 
@@ -104,10 +91,10 @@ class AtomGraph(object):
         """
         local_CE = 0
         for bond_key in range(len(self.adj_list[atom_key])):
-            local_CE += self.getHalfBond(atom_key, bond_key)
+            local_CE += self.__getHalfBond__(atom_key, bond_key, ordering)
         return local_CE
 
-    def getTotalCE(self) -> "float":
+    def getTotalCE(self, ordering) -> "float":
         """
         Returns the cohesive energy of the cluster as a whole.
 
@@ -115,7 +102,19 @@ class AtomGraph(object):
         float : The CE, in units of eV
         """
         total_energy = 0
-        for atom in range(0, len(self.ordering)):
-            total_energy += self.getAtomicCE(atom)
-        total_CE = total_energy / len(self.ordering)
+        for atom in range(0, len(ordering)):
+            total_energy += self.getAtomicCE(atom, ordering)
+        total_CE = total_energy / len(ordering)
         return total_CE
+
+if __name__ == '__main__':
+    from adjacency import buildAdjacencyList
+    import ase.cluster
+
+    atom = ase.cluster.Icosahedron('Cu', 3)
+    a = buildAdjacencyList(atom)
+    x = AtomGraph(a, 'Cu', 'Au')
+
+    od = [0] * len(atom)
+
+    print(x.getTotalCE(od))

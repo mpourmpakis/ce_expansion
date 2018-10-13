@@ -73,3 +73,8 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
             "The following atoms have bonds yet do not appear to be bound to any item: " + str(adjacency_list[-1]))
     else:
         return np.delete(adjacency_list, -1)
+
+if __name__ == '__main__':
+    import ase.cluster
+    atom = ase.cluster.Icosahedron('Cu', 3)
+    a = buildAdjacencyList(atom)
