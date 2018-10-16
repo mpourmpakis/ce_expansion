@@ -136,22 +136,25 @@ if __name__ == '__main__':
     from adjacency import buildAdjacencyList
     import ase.cluster
 
-    max_runs = 50
-    n_dope = 50
-    pop = 10
-    kill_rate = 0.1
+    metal1 = 'Cu'
+    metal2 = 'Au'
+
+    max_runs = 500
+    n_dope = 13
+    pop = 50
+    kill_rate = 0.4
     mate_rate = 0.5
     mute_rate = 0.1
 
-    atom = ase.cluster.Icosahedron('Cu', 4)
+    atom = ase.cluster.Icosahedron(metal1, 4)
     adj = buildAdjacencyList(atom)
-    ag = AtomGraph(adj, 'Cu', 'Au')
+    ag = AtomGraph(adj, metal1, metal2)
 
     p = Pop(ag, n_dope=n_dope, popsize=pop, mate_rate=mate_rate,
             mute_rate=mute_rate, kill_rate=kill_rate)
     p.run(max_runs)
 
-    res = ' Min: %i\nMean: %.2f\n STD: %.2f\n' % tuple(p.info[-1, :])
+    res = ' Min: %.2f\nMean: %.2f\n STD: %.2f\n' % tuple(p.info[-1, :])
     res += 'Mute: %.2f\nKill: %.2f\n' % (p.mute_rate, p.kill_rate)
     res += ' Pop: %i\n' % p.popsize
     res += 'nRun: %i\n' % max_runs
@@ -196,4 +199,7 @@ if __name__ == '__main__':
     for i in np.where(p.pop[0].arr == 1)[0]:
         atom[i].symbol = 'Au'
 
-    atom.write("C:/users/mcowa/desktop/a2.png")
+    atom.write("C:/users/mcowa/desktop/%s%i_%s%i.xyz" % (metal1,
+                                                         len(atom) - n_dope,
+                                                         metal2,
+                                                         n_dope))
