@@ -77,7 +77,7 @@ class Chromo(object):
 
 
 class Pop(object):
-    def __init__(self, atomg, n_dope=0, popsize=100, kill_rate=0.2,
+    def __init__(self, atomg, n_dope=1, popsize=100, kill_rate=0.2,
                  mate_rate=0.25, mute_rate=0.1, mute_num=1):
         self.pop = [Chromo(atomg, n_dope=n_dope) for i in range(popsize)]
         self.sort_pop()
@@ -96,11 +96,15 @@ class Pop(object):
         self.pop = self.pop[:self.nkill]
 
         mated = 0
+        # start mating from the 2nd down
+        tomate = 1
         while len(self.pop) < self.popsize:
             if mated < self.n_mate:
-                n1, n2 = random.sample(range(len(self.pop)), 2)
+                n1, n2 = tomate, tomate + 1
+                # n1, n2 = random.sample(range(len(self.pop)), 2)
                 self.pop += self.pop[n1].cross(self.pop[n2])
                 mated += 2
+                tomate += 1
             else:
                 newc = Chromo(self.pop[0].atomg, self.pop[0].n_dope)
                 self.pop += [newc]
@@ -108,14 +112,15 @@ class Pop(object):
         self.pop = self.pop[:self.popsize]
 
         for j in range(self.nmut):
-            self.pop[random.randrange(self.nmut)].mutate(self.mute_num)
+            self.pop[random.randrange(1, self.popsize)].mutate(self.mute_num)
 
         self.sort_pop()
         self.stats()
 
     def run(self, nsteps, std_cut=0):
-        for i in range(nsteps):
+        for i in range(int(nsteps)):
             self.step()
+            print('\tMin: %.5f eV \t %i' % (self.info[-1][0], i), end='\r')
             # if STD less than std_cut end the GA
             if self.info[-1][-1] < std_cut:
                 break
@@ -139,14 +144,14 @@ if __name__ == '__main__':
     metal1 = 'Cu'
     metal2 = 'Au'
 
-    max_runs = 500
-    n_dope = 13
+    n_dope = 8
+    max_runs = 1E2
     pop = 50
-    kill_rate = 0.4
-    mate_rate = 0.5
-    mute_rate = 0.1
+    kill_rate = 0.2
+    mate_rate = 0.4
+    mute_rate = 0.15
 
-    atom = ase.cluster.Icosahedron(metal1, 4)
+    atom = ase.cluster.Icosahedron('Cu', 3)
     adj = buildAdjacencyList(atom)
     ag = AtomGraph(adj, metal1, metal2)
 
@@ -154,52 +159,50 @@ if __name__ == '__main__':
             mute_rate=mute_rate, kill_rate=kill_rate)
     p.run(max_runs)
 
-    res = ' Min: %.2f\nMean: %.2f\n STD: %.2f\n' % tuple(p.info[-1, :])
+    res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(p.info[-1, :])
     res += 'Mute: %.2f\nKill: %.2f\n' % (p.mute_rate, p.kill_rate)
     res += ' Pop: %i\n' % p.popsize
     res += 'nRun: %i\n' % max_runs
-    res += 'Done: %i\n' % (len(p.info) - 1)
-    res += str(p.pop[0].arr) + '\n\n\n'
+    res += 'Form: %s%i_%s%i\n' % (metal1, len(atom) - n_dope, metal2, n_dope)
+    res += 'Done: %i\n' % (len(p.info) - 1) + '\n\n\n'
 
     # print results to terminal
     print(res.strip('\n'))
 
-    """
     with open('results.txt', 'a') as fid:
         fid.write(res)
 
     # see if results are new max
     with open('best.txt', 'r') as rfid:
-        best = int(rfid.readline().strip('\n').split()[-1])
+        best = float(rfid.readline().strip('\n').split()[-1])
 
     # if new max, write it to best.txt
-    if best < p.info[-1, 0]:
-        print('NEW MAX!'.center(50, '-'))
+    if best > p.info[-1, 0]:
+        print('NEW MIN!'.center(50, '-'))
         with open('best.txt', 'w') as bestfid:
             bestfid.write(res)
-    """
 
     fig, ax = plt.subplots(figsize=(7, 7))
 
     ax.fill_between(range(len(p.info)), p.info[:, 1] + p.info[:, 2],
                     p.info[:, 1] - p.info[:, 2], color='lightblue',
                     label='STD')
-    ax.plot(range(len(p.info)), p.info[:, 1] + p.info[:, 2])
-    ax.plot(range(len(p.info)), p.info[:, 1] - p.info[:, 2])
+    # ax.plot(range(len(p.info)), p.info[:, 1] + p.info[:, 2])
+    # ax.plot(range(len(p.info)), p.info[:, 1] - p.info[:, 2])
 
     ax.plot(p.info[:, 1], color='k', label='MEAN')
     ax.plot(p.info[:, 0], ':', color='k', label='MIN')
     ax.legend()
     ax.set_ylabel('Score')
     ax.set_xlabel('Step')
-    ax.set_title('Min Val: %.3f' % (p.pop[0].score))
+    ax.set_title('Min Val: %.5f' % (p.pop[0].score))
     fig.tight_layout()
     fig.show()
 
-    for i in np.where(p.pop[0].arr == 1)[0]:
-        atom[i].symbol = 'Au'
+    for i, dope in enumerate(p.pop[0].arr):
+        atom[i].symbol = metal2 if dope else metal1
 
-    atom.write("C:/users/mcowa/desktop/%s%i_%s%i.xyz" % (metal1,
-                                                         len(atom) - n_dope,
-                                                         metal2,
-                                                         n_dope))
+    atom.write("C:/users/yla/desktop/%s%i_%s%i.xyz" % (metal1,
+                                                    len(atom) - n_dope,
+                                                    metal2,
+                                                    n_dope))

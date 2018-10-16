@@ -1,0 +1,12 @@
+ Min: -3.13313
+Mean: -3.117
+ STD: 0.008
+Mute: 0.15
+Kill: 0.15
+ Pop: 500
+nRun: 100
+Form: Cu139_Au8
+Done: 100
+
+
+

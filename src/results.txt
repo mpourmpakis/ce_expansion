@@ -1,11 +1,96 @@
- Max: 2457600
-Mean: 2457600.00
- STD: 0.00
-Mute: 0.20
-Kill: 0.80
+ Min: -3.15527
+Mean: -3.134
+ STD: 0.011
+Mute: 0.15
+Kill: 0.15
  Pop: 500
-nRun: 10000
-Done: 1389
-[4, 8, 12, 3, 7, 10, 15, 1, 5, 9, 13, 2, 6, 11, 14]
+nRun: 100
+Form: Cu135_Au12
+Done: 100
+
+
+
+ Min: -3.13313
+Mean: -3.117
+ STD: 0.008
+Mute: 0.15
+Kill: 0.15
+ Pop: 500
+nRun: 100
+Form: Cu139_Au8
+Done: 100
+
+
+
+ Min: -3.12962
+Mean: -3.116
+ STD: 0.009
+Mute: 0.15
+Kill: 0.15
+ Pop: 50
+nRun: 100
+Form: Cu139_Au8
+Done: 100
+
+
+
+ Min: -3.13046
+Mean: -3.117
+ STD: 0.009
+Mute: 0.15
+Kill: 0.15
+ Pop: 50
+nRun: 100
+Form: Cu139_Au8
+Done: 100
+
+
+
+ Min: -3.13046
+Mean: -3.117
+ STD: 0.009
+Mute: 0.15
+Kill: 0.15
+ Pop: 50
+nRun: 100
+Form: Cu139_Au8
+Done: 100
+
+
+
+ Min: -3.13237
+Mean: -3.117
+ STD: 0.009
+Mute: 0.15
+Kill: 0.15
+ Pop: 50
+nRun: 100
+Form: Cu139_Au8
+Done: 100
+
+
+
+ Min: -3.05461
+Mean: -3.011
+ STD: 0.023
+Mute: 0.15
+Kill: 0.15
+ Pop: 50
+nRun: 100
+Form: Cu47_Au8
+Done: 100
+
+
+
+ Min: -3.05287
+Mean: -3.007
+ STD: 0.028
+Mute: 0.15
+Kill: 0.20
+ Pop: 50
+nRun: 100
+Form: Cu47_Au8
+Done: 100
+
 
 
