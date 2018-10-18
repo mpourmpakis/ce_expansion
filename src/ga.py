@@ -1,5 +1,10 @@
+import os
 import sys
+import time
 import random
+from atomgraph import AtomGraph
+from adjacency import buildAdjacencyList
+import ase.cluster
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -69,8 +74,8 @@ class Chromo(object):
                 if swapped >= self.n_dope - 4:
                     break
 
-        return [Chromo(self.atomg, arr=children[:, 0]),
-                Chromo(self.atomg, arr=children[:, 1])]
+        return [Chromo(self.atomg, n_dope=self.n_dope, arr=children[:, 0]),
+                Chromo(self.atomg, n_dope=self.n_dope, arr=children[:, 1])]
 
     def calc_score(self):
         self.score = self.atomg.getTotalCE(self.arr)
@@ -79,7 +84,13 @@ class Chromo(object):
 class Pop(object):
     def __init__(self, atomg, n_dope=1, popsize=100, kill_rate=0.2,
                  mate_rate=0.25, mute_rate=0.1, mute_num=1):
-        self.pop = [Chromo(atomg, n_dope=n_dope) for i in range(popsize)]
+        self.atomg = atomg
+        self.popsize = popsize
+        self.n_dope = n_dope
+
+        # build random population
+        self.build_pop()
+
         self.sort_pop()
         self.info = []
         self.stats()
@@ -90,41 +101,58 @@ class Pop(object):
         self.mute_num = mute_num
         self.mute_rate = mute_rate
         self.kill_rate = kill_rate
-        self.popsize = popsize
 
-    def step(self):
-        self.pop = self.pop[:self.nkill]
+        # track runtime
+        self.runtime = None
 
-        mated = 0
-        # start mating from the 2nd down
-        tomate = 1
-        while len(self.pop) < self.popsize:
-            if mated < self.n_mate:
-                n1, n2 = tomate, tomate + 1
-                # n1, n2 = random.sample(range(len(self.pop)), 2)
-                self.pop += self.pop[n1].cross(self.pop[n2])
-                mated += 2
-                tomate += 1
-            else:
-                newc = Chromo(self.pop[0].atomg, self.pop[0].n_dope)
-                self.pop += [newc]
+    def build_pop(self):
+        self.pop = [Chromo(self.atomg, n_dope=self.n_dope)
+                    for i in range(self.popsize)]
 
-        self.pop = self.pop[:self.popsize]
+    def get_min(self):
+        return self.pop[0].score
 
-        for j in range(self.nmut):
-            self.pop[random.randrange(1, self.popsize)].mutate(self.mute_num)
+    def step(self, rand=False):
+        if rand:
+            self.build_pop()
+        else:
+            self.pop = self.pop[:self.nkill]
+
+            mated = 0
+
+            # start mating from the 2nd down
+            tomate = 1
+            while len(self.pop) < self.popsize:
+                if mated < self.n_mate:
+                    n1, n2 = tomate, tomate + 1
+                    # n1, n2 = random.sample(range(len(self.pop)), 2)
+                    self.pop += self.pop[n1].cross(self.pop[n2])
+                    mated += 2
+                    tomate += 1
+                else:
+                    self.pop.append(Chromo(self.pop[0].atomg,
+                                           n_dope=self.n_dope))
+
+            self.pop = self.pop[:self.popsize]
+
+            for j in range(self.nmut):
+                self.pop[random.randrange(1,
+                                          self.popsize)].mutate(self.mute_num)
 
         self.sort_pop()
         self.stats()
 
-    def run(self, nsteps, std_cut=0):
+    def run(self, nsteps, std_cut=0, rand=False):
+        start = time.time()
         for i in range(int(nsteps)):
-            self.step()
             print('\tMin: %.5f eV \t %i' % (self.info[-1][0], i), end='\r')
+            self.step(rand)
             # if STD less than std_cut end the GA
             if self.info[-1][-1] < std_cut:
                 break
+        print('\tMin: %.5f eV \t %i' % (self.info[-1][0], i + 1), end='\r')
         self.info = np.array(self.info)
+        self.runtime = time.time() - start
 
     def sort_pop(self):
         self.pop = sorted(self.pop,
@@ -136,41 +164,22 @@ class Pop(object):
                           s.mean(),
                           s.std()])
 
-if __name__ == '__main__':
-    from atomgraph import AtomGraph
-    from adjacency import buildAdjacencyList
-    import ase.cluster
 
-    metal1 = 'Cu'
-    metal2 = 'Au'
-
-    n_dope = 8
-    max_runs = 1E2
-    pop = 50
-    kill_rate = 0.2
-    mate_rate = 0.4
-    mute_rate = 0.15
-
-    atom = ase.cluster.Icosahedron('Cu', 3)
-    adj = buildAdjacencyList(atom)
-    ag = AtomGraph(adj, metal1, metal2)
-
-    p = Pop(ag, n_dope=n_dope, popsize=pop, mate_rate=mate_rate,
-            mute_rate=mute_rate, kill_rate=kill_rate)
-    p.run(max_runs)
-
+def results_str(pop, disp=True):
     res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(p.info[-1, :])
     res += 'Mute: %.2f\nKill: %.2f\n' % (p.mute_rate, p.kill_rate)
     res += ' Pop: %i\n' % p.popsize
     res += 'nRun: %i\n' % max_runs
     res += 'Form: %s%i_%s%i\n' % (metal1, len(atom) - n_dope, metal2, n_dope)
     res += 'Done: %i\n' % (len(p.info) - 1) + '\n\n\n'
+    if disp:
+        print(res.strip('\n'))
+    return res
 
-    # print results to terminal
-    print(res.strip('\n'))
 
+def log_results(results):
     with open('results.txt', 'a') as fid:
-        fid.write(res)
+        fid.write(results)
 
     # see if results are new max
     with open('best.txt', 'r') as rfid:
@@ -180,16 +189,18 @@ if __name__ == '__main__':
     if best > p.info[-1, 0]:
         print('NEW MIN!'.center(50, '-'))
         with open('best.txt', 'w') as bestfid:
-            bestfid.write(res)
+            bestfid.write(results)
 
+
+def make_plot(pop):
     fig, ax = plt.subplots(figsize=(7, 7))
 
     ax.fill_between(range(len(p.info)), p.info[:, 1] + p.info[:, 2],
                     p.info[:, 1] - p.info[:, 2], color='lightblue',
                     label='STD')
+
     # ax.plot(range(len(p.info)), p.info[:, 1] + p.info[:, 2])
     # ax.plot(range(len(p.info)), p.info[:, 1] - p.info[:, 2])
-
     ax.plot(p.info[:, 1], color='k', label='MEAN')
     ax.plot(p.info[:, 0], ':', color='k', label='MIN')
     ax.legend()
@@ -197,12 +208,68 @@ if __name__ == '__main__':
     ax.set_xlabel('Step')
     ax.set_title('Min Val: %.5f' % (p.pop[0].score))
     fig.tight_layout()
-    fig.show()
+    return fig, ax
 
+
+def make_xyz(atom, arr, metals, path=None):
     for i, dope in enumerate(p.pop[0].arr):
         atom[i].symbol = metal2 if dope else metal1
 
-    atom.write("C:/users/yla/desktop/%s%i_%s%i.xyz" % (metal1,
-                                                    len(atom) - n_dope,
-                                                    metal2,
-                                                    n_dope))
+    if not path:
+        n_dope = sum(arr)
+        path = os.path.expanduser('~') + \
+            '/desktop/%s%i_%s%i.xyz' % (metals[0], len(atom) - n_dope,
+                                        metals[1], n_dope)
+    atom.write(path)
+    print('Saved as %s' % path)
+
+if __name__ == '__main__':
+    desk = os.path.expanduser('~') + '/desktop/'
+    metal1 = 'Cu'
+    metal2 = 'Au'
+
+    n_dope = 27
+    max_runs = 1E2
+    pop = 75
+    kill_rate = 0.5
+    mate_rate = 0.4
+    mute_rate = 0.15
+
+    atom = ase.cluster.Icosahedron('Cu', 3)
+    adj = buildAdjacencyList(atom)
+    ag = AtomGraph(adj, metal1, metal2)
+
+    # track properties effect on runtime
+    pops = []
+    rts = []
+    mins = []
+
+    x = np.linspace(0.1, 1, 91)
+    xlabel = 'Mate Rate'
+    for mate_rate in x:
+        p = Pop(ag, n_dope=n_dope, popsize=pop, mate_rate=mate_rate,
+                mute_rate=mute_rate, kill_rate=kill_rate)
+        p.run(max_runs)
+        print('')
+
+        pops.append(p.popsize)
+        rts.append(p.runtime)
+        mins.append(p.get_min())
+
+    plt.close('all')
+    fig, ax1 = plt.subplots()
+
+    ax1.plot(x, rts, color='red', label='Runtimes (s)')
+    ax1.set_ylabel('Runtime for %i Runs (s)' % max_runs)
+    ax1.set_xlabel(xlabel)
+
+    ax2 = ax1.twinx()
+    ax2.plot(x, mins, color='blue', label='CE (eV)')
+    ax2.set_ylabel('Minimum CE (eV)')
+    ax2.axes.invert_yaxis()
+    fig.legend(loc='upper center')
+    fig.tight_layout()
+    fig.savefig(desk + '/rt_%s.png' % xlabel.replace(' ', '').lower())
+    fig.show()
+    # res = results_str(p)
+    # log_results(res)
