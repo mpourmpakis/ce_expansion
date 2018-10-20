@@ -110,7 +110,7 @@ class Pop(object):
                     for i in range(self.popsize)]
 
     def get_min(self):
-        return self.pop[0].score
+        return self.info[:, 0].min()
 
     def step(self, rand=False):
         if rand:
@@ -223,16 +223,17 @@ def make_xyz(atom, arr, metals, path=None):
     atom.write(path)
     print('Saved as %s' % path)
 
+
 if __name__ == '__main__':
     desk = os.path.expanduser('~') + '/desktop/'
     metal1 = 'Cu'
     metal2 = 'Au'
 
     n_dope = 27
-    max_runs = 1E2
-    pop = 75
+    max_runs = 50
+    pop = 500
     kill_rate = 0.5
-    mate_rate = 0.4
+    mate_rate = 0.5
     mute_rate = 0.15
 
     atom = ase.cluster.Icosahedron('Cu', 3)
@@ -240,36 +241,70 @@ if __name__ == '__main__':
     ag = AtomGraph(adj, metal1, metal2)
 
     # track properties effect on runtime
-    pops = []
-    rts = []
-    mins = []
+    tot_pops = []
+    tot_rts = []
+    tot_mins = []
 
-    x = np.linspace(0.1, 1, 91)
+    n_its = 10
+    rts = np.zeros(n_its)
+    mins = np.zeros(n_its)
+
+    # random runs data
+    rand_mins = np.array([-3.2444183, -3.23168432,  0.00598345])
+
+    x = np.linspace(0.05, 0.95, 19)
     xlabel = 'Mate Rate'
     for mate_rate in x:
-        p = Pop(ag, n_dope=n_dope, popsize=pop, mate_rate=mate_rate,
-                mute_rate=mute_rate, kill_rate=kill_rate)
-        p.run(max_runs)
-        print('')
+        for j in range(n_its):
+            p = Pop(ag, n_dope=n_dope, popsize=pop, mate_rate=mate_rate,
+                    mute_rate=mute_rate, kill_rate=kill_rate)
+            p.run(max_runs)
+            print('')
 
-        pops.append(p.popsize)
-        rts.append(p.runtime)
-        mins.append(p.get_min())
+            # pops.append(p.popsize)
+            rts[j] = p.runtime
+            mins[j] = p.get_min()
+
+        tot_rts.append([rts.min(), rts.mean(), rts.std()])
+        tot_mins.append([mins.min(), mins.mean(), mins.std()])
+
+    tot_rts = np.array(tot_rts)
+    tot_mins = np.array(tot_mins)
 
     plt.close('all')
-    fig, ax1 = plt.subplots()
+    fig, ax = plt.subplots(2, 1, sharex=True)
+    ax1, ax2 = ax
 
-    ax1.plot(x, rts, color='red', label='Runtimes (s)')
+    ax1.errorbar(x, tot_rts[:, 1], yerr=tot_rts[:, 2], color='blue',
+                 label='Runtimes (s)', ecolor='k', marker='o',
+                 capsize=5, markeredgecolor='k', linestyle='')
+
+    ax1.plot(x, tot_rts[:, 0], 'x', color='k')
+    # ax1.plot(x, rts, color='red', label='Runtimes (s)')
     ax1.set_ylabel('Runtime for %i Runs (s)' % max_runs)
-    ax1.set_xlabel(xlabel)
 
-    ax2 = ax1.twinx()
-    ax2.plot(x, mins, color='blue', label='CE (eV)')
+    ax2.errorbar(x, tot_mins[:, 1], yerr=tot_mins[:, 2], color='red',
+                 label='GA', ecolor='k', marker='o',
+                 capsize=5, markeredgecolor='k', linestyle='')
+
+    ax2.plot(x, tot_mins[:, 0], 'x', color='k')
+
+    # plot results from random iterations
+    ax2.errorbar(0, rand_mins[1], yerr=rand_mins[2], color='gold',
+                 label='Random', ecolor='k', marker='o',
+                 capsize=5, markeredgecolor='k', linestyle='')
+
+    ax2.plot(0, rand_mins[0], 'x', color='k')
+
+    # ax2.plot(x, mins, color='blue', label='CE (eV)')
     ax2.set_ylabel('Minimum CE (eV)')
-    ax2.axes.invert_yaxis()
-    fig.legend(loc='upper center')
+    ax2.set_xlabel(xlabel)
+    ax2.legend()
+    # ax2.axes.invert_yaxis()
+    # fig.legend(loc='upper center')
     fig.tight_layout()
-    fig.savefig(desk + '/rt_%s.png' % xlabel.replace(' ', '').lower())
+    fig.savefig(desk + '/rt_%s_%i.png' % (xlabel.replace(' ', '').lower(),
+                                          pop))
     fig.show()
     # res = results_str(p)
     # log_results(res)
