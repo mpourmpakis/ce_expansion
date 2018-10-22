@@ -96,7 +96,7 @@ class Pop(object):
         self.stats()
 
         self.nkill = int(popsize * kill_rate)
-        self.nmut = int(popsize * mute_rate - self.nkill)
+        self.nmut = int((popsize - self.nkill) * mute_rate)
         self.n_mate = int(popsize * kill_rate * mate_rate)
         self.mute_num = mute_num
         self.mute_rate = mute_rate
@@ -230,11 +230,12 @@ if __name__ == '__main__':
     metal2 = 'Au'
 
     n_dope = 27
-    max_runs = 50
+    max_runs = 5
     pop = 500
-    kill_rate = 0.5
+    kill_rate = 0.75
     mate_rate = 0.5
-    mute_rate = 0.15
+    mute_rate = 0.
+    mute_num = 1
 
     atom = ase.cluster.Icosahedron('Cu', 3)
     adj = buildAdjacencyList(atom)
@@ -252,14 +253,16 @@ if __name__ == '__main__':
     # random runs data
     rand_mins = np.array([-3.2444183, -3.23168432,  0.00598345])
 
-    x = np.linspace(0.05, 0.95, 19)
+    x = np.linspace(0.05, 0.95, 9)
     xlabel = 'Mate Rate'
     for mate_rate in x:
+        print('%s: %.2f' % (xlabel, mate_rate))
         for j in range(n_its):
             p = Pop(ag, n_dope=n_dope, popsize=pop, mate_rate=mate_rate,
-                    mute_rate=mute_rate, kill_rate=kill_rate)
+                    mute_rate=mute_rate, kill_rate=kill_rate,
+                    mute_num=mute_num)
             p.run(max_runs)
-            print('')
+            print(' ' * 50, end='\r')
 
             # pops.append(p.popsize)
             rts[j] = p.runtime
