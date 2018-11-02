@@ -41,6 +41,7 @@ class Chromo(object):
             print('Warning: attempting to mutate, but system is monometallic')
             return
 
+        assert self.arr.sum() == self.n_dope
         # shift a "1" <nps> times
         for i in range(nps):
             ones = list(np.where(self.arr == 1)[0])
@@ -50,32 +51,38 @@ class Chromo(object):
             # shift '1' over to the left
             shift = s - 1
             while 1:
-                if shift not in ones:
+                if self.arr[shift] == 0:
                     self.arr[shift] = 1
                     break
                 shift -= 1
 
+        assert self.arr.sum() == self.n_dope
         self.calc_score()
 
     def cross(self, chrom2):
         x = 0
 
-        # column = child
-        children = np.zeros((self.n_atoms, 2)).astype(int)
-        swapped = 0
-        for i in range(self.n_atoms - 1, -1, -1):
-            if self.arr[i] == chrom2.arr[i]:
-                children[i, :] = self.arr[i]
-            else:
-                children[i, x] = 1
-                children[i, x-1] = 0
-                x = 0 if x else 1
-                swapped += 1
-                if swapped >= self.n_dope - 4:
-                    break
+        child1 = self.arr.copy()
+        child2 = chrom2.arr.copy()
+        s1 = s2 = 2
+        ones = np.where(child1 == 1)[0]
+        diff = np.where(child1 != child2)[0][::-1]
+        for i in diff:
+            if i in ones:
+                if s1:
+                    child1[i] = 0
+                    child2[i] = 1
+                    s1 -= 1
+            elif s2:
+                child1[i] = 1
+                child2[i] = 0
+                s2 -= 1
+            if s1 == s2 == 0:
+                break
 
-        return [Chromo(self.atomg, n_dope=self.n_dope, arr=children[:, 0]),
-                Chromo(self.atomg, n_dope=self.n_dope, arr=children[:, 1])]
+        assert child1.sum() == child2.sum() == self.n_dope
+        return [Chromo(self.atomg, n_dope=self.n_dope, arr=child1),
+                Chromo(self.atomg, n_dope=self.n_dope, arr=child2)]
 
     def calc_score(self):
         self.score = self.atomg.getTotalCE(self.arr)
@@ -222,6 +229,7 @@ def make_xyz(atom, arr, metals, path=None):
                                         metals[1], n_dope)
     atom.write(path)
     print('Saved as %s' % path)
+    return atom
 
 
 if __name__ == '__main__':
@@ -230,11 +238,11 @@ if __name__ == '__main__':
     metal2 = 'Au'
 
     n_dope = 27
-    max_runs = 5
+    max_runs = 50
     pop = 500
-    kill_rate = 0.75
-    mate_rate = 0.5
-    mute_rate = 0.
+    kill_rate = 0.8
+    mate_rate = 0.8
+    mute_rate = 0.2
     mute_num = 1
 
     atom = ase.cluster.Icosahedron('Cu', 3)
@@ -253,7 +261,9 @@ if __name__ == '__main__':
     # random runs data
     rand_mins = np.array([-3.2444183, -3.23168432,  0.00598345])
 
-    x = np.linspace(0.05, 0.95, 9)
+    x = np.linspace(0.1, 0.9, 9)
+    ce = 0
+    min_struct = None
     xlabel = 'Mate Rate'
     for mate_rate in x:
         print('%s: %.2f' % (xlabel, mate_rate))
@@ -262,6 +272,9 @@ if __name__ == '__main__':
                     mute_rate=mute_rate, kill_rate=kill_rate,
                     mute_num=mute_num)
             p.run(max_runs)
+            if ce > p.get_min():
+                ce = p.get_min()
+                min_struct = p.pop[0]
             print(' ' * 50, end='\r')
 
             # pops.append(p.popsize)
@@ -271,6 +284,13 @@ if __name__ == '__main__':
         tot_rts.append([rts.min(), rts.mean(), rts.std()])
         tot_mins.append([mins.min(), mins.mean(), mins.std()])
 
+    formula = metal1 + str(len(atom) - n_dope) + metal2 + str(n_dope)
+    make_xyz(atom, min_struct.arr, [metal1, metal2],
+             desk + '/%s.xyz' % formula)
+    print('Min CE: %.5f eV' % ce)
+
+    f, a = make_plot(p)
+    plt.show()
     tot_rts = np.array(tot_rts)
     tot_mins = np.array(tot_mins)
 
@@ -306,8 +326,9 @@ if __name__ == '__main__':
     # ax2.axes.invert_yaxis()
     # fig.legend(loc='upper center')
     fig.tight_layout()
-    fig.savefig(desk + '/rt_%s_%i.png' % (xlabel.replace(' ', '').lower(),
-                                          pop))
+    fig.savefig(desk + '/rt_%s_%i_dope%i.png' % (xlabel.replace(' ',
+                                                                '').lower(),
+                                                 pop, n_dope))
     fig.show()
     # res = results_str(p)
     # log_results(res)
