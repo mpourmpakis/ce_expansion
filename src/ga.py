@@ -1,7 +1,11 @@
+import operator as op
 import os
 import sys
 import time
 import random
+import pickle
+from functools import reduce
+import itertools
 from atomgraph import AtomGraph
 from adjacency import buildAdjacencyList
 import ase.cluster
@@ -12,9 +16,12 @@ import matplotlib.pyplot as plt
 
 
 class Chromo(object):
-    def __init__(self, atomg, n_dope=0, arr=None):
+    def __init__(self, atomg, n_dope=0, arr=None, x_dope=None):
         self.n_atoms = atomg.n_atoms
-        self.n_dope = n_dope
+        if x_dope is not None:
+            self.n_dope = int(atomg.n_atoms * x_dope)
+        else:
+            self.n_dope = n_dope
         self.atomg = atomg
         self.arr = np.zeros(atomg.n_atoms).astype(int)
 
@@ -25,9 +32,8 @@ class Chromo(object):
             self.arr = arr
             self.n_dope = arr.sum()
         else:
-            self.arr[:n_dope] = 1
-            random.shuffle(self.arr)
-            self.arr = np.array(self.arr)
+            self.arr[:self.n_dope] = 1
+            np.random.shuffle(self.arr)
 
         # calculate initial CE
         self.calc_score()
@@ -90,10 +96,13 @@ class Chromo(object):
 
 class Pop(object):
     def __init__(self, atomg, n_dope=1, popsize=100, kill_rate=0.2,
-                 mate_rate=0.25, mute_rate=0.1, mute_num=1):
+                 mate_rate=0.25, mute_rate=0.1, mute_num=1, x_dope=None):
         self.atomg = atomg
         self.popsize = popsize
-        self.n_dope = n_dope
+        if x_dope:
+            self.n_dope = int(atomg.n_atoms * x_dope)
+        else:
+            self.n_dope = n_dope
 
         # build random population
         self.build_pop()
@@ -218,12 +227,14 @@ def make_plot(pop):
     return fig, ax
 
 
-def make_xyz(atom, arr, metals, path=None):
-    for i, dope in enumerate(p.pop[0].arr):
+def make_xyz(atom, chrom, path=None):
+    metal1, metal2 = chrom.atomg.symbols
+    atom.info['CE'] = chrom.score
+    for i, dope in enumerate(chrom.arr):
         atom[i].symbol = metal2 if dope else metal1
 
     if not path:
-        n_dope = sum(arr)
+        n_dope = sum(chrom.arr)
         path = os.path.expanduser('~') + \
             '/desktop/%s%i_%s%i.xyz' % (metals[0], len(atom) - n_dope,
                                         metals[1], n_dope)
@@ -232,67 +243,211 @@ def make_xyz(atom, arr, metals, path=None):
     return atom
 
 
+def gen_random(atomg, n_dope, n=500):
+    scores = np.zeros(n)
+    for i in range(n):
+        scores[i] = Chromo(atomg, n_dope=n_dope).score
+    return scores.min(), scores.mean(), scores.std()
+
+
+def build_icosahedron(nshell, return_adj=True):
+    apath = '../data/atom_objects/icosahedron/%i.pickle' % nshell
+    if os.path.isfile(apath):
+        with open(apath, 'rb') as fidr:
+            a = pickle.load(fidr)
+    else:
+        a = ase.cluster.Icosahedron('Cu', nshell)
+        with open(apath, 'wb') as fidw:
+            pickle.dump(a, fidw)
+    if return_adj:
+        return a, buildAdjacencyList(a, 'icosahedron_%i' % nshell)
+    else:
+        return a
+
+
+def ncr(n, r):
+    r = min(r, n-r)
+    numer = reduce(op.mul, range(n, n-r, -1), 1)
+    denom = reduce(op.mul, range(1, r+1), 1)
+    return numer//denom
+
+
+def find_min(atomg, n_dope):
+    formula = 'Cu(%i)Au(%i)' % (atomg.n_atoms - n_dope, n_dope)
+    cn_list = atomg.getAllCNs()
+    cnset = sorted(set(cn_list))
+    struct_min = np.zeros(atomg.n_atoms).astype(int)
+    ce = None
+    for cn in cnset:
+        spots = np.where(cn_list == cn)[0][::-1]
+        if len(spots) == n_dope:
+            struct_min[spots] = 1
+            break
+        elif len(spots) > n_dope:
+            low = 0
+            low_struct = None
+            print(ncr(len(spots), n_dope))
+            # stop looking after 'n' counts
+            n = 2000
+            counts = 0
+            for c in itertools.combinations(spots, n_dope):
+                base = struct_min.copy()
+                base[list(c)] = 1
+                checkce = atomg.getTotalCE(base)
+                if checkce < low:
+                    low = checkce
+                    low_struct = base
+                counts += 1
+                if counts == n:
+                    break
+            struct_min = low_struct
+            ce = low
+            break
+        else:
+            struct_min[spots] = 1
+            n_dope -= len(spots)
+    if not ce:
+        ce = atomg.getTotalCE(struct_min)
+    print(formula)
+    print('Min CE: %.3f eV' % ce)
+    return ce
+
+
 if __name__ == '__main__':
+    plt.close('all')
     desk = os.path.expanduser('~') + '/desktop/'
     metal1 = 'Cu'
     metal2 = 'Au'
 
-    n_dope = 27
-    max_runs = 50
+    max_runs = 100
     pop = 500
-    kill_rate = 0.8
+    kill_rate = 0.7
     mate_rate = 0.8
     mute_rate = 0.2
     mute_num = 1
 
-    atom = ase.cluster.Icosahedron('Cu', 3)
-    adj = buildAdjacencyList(atom)
+    # number of times GA runs for a system
+    n_its = 15
+
+    with open('../data/ico_shell2numatoms.pickle', 'rb') as fidr:
+        shell2atoms = pickle.load(fidr)
+
+    # choose number of shells in icosahedron
+    nshells = 2
+    natoms = shell2atoms[nshells]
+    path = 'CuAu/icosahedron/%i/' % natoms
+    if not os.path.isdir(desk + path):
+        os.mkdir(desk + path)
+        os.mkdir(desk + path + 'plots')
+        os.mkdir(desk + path + 'structures')
+
+    n = np.arange(0, natoms + 1)
+    x = n / natoms
+
+    with open('../data/monomet_CE/icosahedron.pickle', 'rb') as fidr:
+        icos = pickle.load(fidr)
+    rands = np.zeros((len(x), 3))
+    ces = np.zeros(len(x))
+    atom, adj = build_icosahedron(nshells)
     ag = AtomGraph(adj, metal1, metal2)
 
-    # track properties effect on runtime
-    tot_pops = []
-    tot_rts = []
-    tot_mins = []
+    print('%s %s in %i atom Icosahedron' % (metal1, metal2, natoms))
+    # ga = np.load('../data/CuAu_%i_icosahedron_data.npy' % (shell2atoms[nshells]))
+    # aa = np.array([find_min(ag, i) for i in range(ag.n_atoms + 1)])
+    # plt.plot(ga[:, 0], aa, label='alg1')
+    # plt.plot(ga[:, 0], ga[:, 2], label='GA')
+    # plt.xlabel('n')
+    # plt.ylabel('CE (eV)')
+    # plt.legend()
+    # plt.title('Icosahedron: $Cu_{%i-n}\\ Au_n$' % ag.n_atoms)
+    # plt.savefig(desk + 'ico_%i.png' % ag.n_atoms, dpi=900)
+    sys.exit()
+    for i, n_dope in enumerate(n):
+        same = 0
+        ce = 0
+        min_struct = None
+        x_dope = x[i]
 
-    n_its = 10
-    rts = np.zeros(n_its)
-    mins = np.zeros(n_its)
+        # don't use GA for monometallic, use lookup instead
+        if x_dope in [0, 1]:
+            ces[i] = icos[natoms][metal2] if x_dope else icos[natoms][metal1]
+            rands[i, :] = [ces[i], ces[i], 0]
+            continue
 
-    # random runs data
-    rand_mins = np.array([-3.2444183, -3.23168432,  0.00598345])
-
-    x = np.linspace(0.1, 0.9, 9)
-    ce = 0
-    min_struct = None
-    xlabel = 'Mate Rate'
-    for mate_rate in x:
-        print('%s: %.2f' % (xlabel, mate_rate))
+        # randomly guess minimum 'n' times
+        rands[i, :] = gen_random(ag, n_dope, n=500)
+        print('X = %.2f, Doped %i / %i' % (x_dope, n_dope, natoms))
         for j in range(n_its):
             p = Pop(ag, n_dope=n_dope, popsize=pop, mate_rate=mate_rate,
                     mute_rate=mute_rate, kill_rate=kill_rate,
                     mute_num=mute_num)
             p.run(max_runs)
+
+            # if the same minimum is found 5 times in a row
+            # assume the minimum has been found and break loop
+            if ce == p.get_min():
+                same += 1
+            else:
+                same = 0
             if ce > p.get_min():
                 ce = p.get_min()
                 min_struct = p.pop[0]
+            if same == 3:
+                break
             print(' ' * 50, end='\r')
 
-            # pops.append(p.popsize)
-            rts[j] = p.runtime
-            mins[j] = p.get_min()
+        ces[i] = ce
+        formula = metal1 + str(natoms - n_dope) + metal2 + str(n_dope)
+        make_xyz(atom, min_struct,
+                 desk + path + 'structures/%s.xyz' % formula)
+        print('Min CE: %.5f eV' % ce)
 
-        tot_rts.append([rts.min(), rts.mean(), rts.std()])
-        tot_mins.append([mins.min(), mins.mean(), mins.std()])
+    # excess energy
+    ees = ces - (x * icos[len(atom)][metal2]) - \
+        ((1 - x) * icos[len(atom)][metal1])
 
-    formula = metal1 + str(len(atom) - n_dope) + metal2 + str(n_dope)
-    make_xyz(atom, min_struct.arr, [metal1, metal2],
-             desk + '/%s.xyz' % formula)
-    print('Min CE: %.5f eV' % ce)
+    # Save data
+    # number doped, percent doped, random min CE, GA min CE, EE
+    data = np.zeros((len(x), 5))
+    data[:, 0] = n
+    data[:, 1] = x
+    data[:, 2] = rands[:, 0]
+    data[:, 3] = ces
+    data[:, 4] = ees
+    np.save('../data/CuAu_%i_icosahedron_data.npy' % natoms, data)
 
-    f, a = make_plot(p)
+    # CE plot
+    f1, a1 = plt.subplots()
+    a1.plot(n, rands[:, 0], 'x', label='Random', color='k')
+    a1.plot(n, ces, 'o', label='GA', color='lightblue',
+            markeredgecolor='k')
+    a1.legend()
+    a1.set_xlabel('$n$')
+    a1.set_ylabel('CE (eV)')
+    a1.set_title('Icosahedron: $%s_{%i-n}\\ %s_n$' % (metal1, len(atom),
+                                                      metal2))
+    f1.tight_layout()
+    f1.savefig(desk + path + 'plots/%s%s_ce.png' % (metal1, metal2),
+               dpi=900)
+
+    # excess energy plot
+    f2, a2 = plt.subplots()
+    a2.plot(n, ees, 'o', color='violet',
+            markeredgecolor='k')
+    a2.set_xlabel('$n$')
+    a2.set_ylabel('Excess Energy, EE (eV)')
+    a2.set_title('Icosahedron: $%s_{%i-n}\\ %s_n$' % (metal1, len(atom),
+                                                      metal2))
+    f2.tight_layout()
+    f2.savefig(desk + path + 'plots/%s%s_excessenergy.png' % (metal1, metal2),
+               dpi=900)
     plt.show()
-    tot_rts = np.array(tot_rts)
-    tot_mins = np.array(tot_mins)
+    """
+    # f, a = make_plot(p)
+    # plt.show()
+    # tot_rts = np.array(tot_rts)
+    # tot_mins = np.array(tot_mins)
+
 
     plt.close('all')
     fig, ax = plt.subplots(2, 1, sharex=True)
@@ -332,3 +487,4 @@ if __name__ == '__main__':
     fig.show()
     # res = results_str(p)
     # log_results(res)
+    """
