@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import pickle
-
+import os
 import ase.neighborlist
 import numpy as np
 
@@ -35,6 +35,7 @@ def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
 
 
 def buildAdjacencyList(atoms_object: "ase.Atoms",
+                       atom_name: "str" = None,
                        radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
     """
       Adjacency list representation for an ase atoms object.
@@ -48,6 +49,11 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
       np.ndarray : A numpy array representing the adjacency list of the ase object
 
     """
+    # Check to see if adjacency list has already been generated
+    # NOTE: based on data file paths, not ideal but functional for the moment
+    fpath = '../data/adjacency_lists/%s.npy' % atom_name
+    if os.path.isfile(fpath):
+        return np.load(fpath)
 
     # Construct the list of bonds
     sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
@@ -72,7 +78,10 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
         raise ValueError(
             "The following atoms have bonds yet do not appear to be bound to any item: " + str(adjacency_list[-1]))
     else:
-        return np.delete(adjacency_list, -1)
+        result = np.delete(adjacency_list, -1)
+        if atom_name:
+            np.save('../data/adjacency_lists/%s.npy' % atom_name, result)
+        return result
 
 if __name__ == '__main__':
     import ase.cluster
