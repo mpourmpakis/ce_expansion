@@ -60,7 +60,7 @@ class AtomGraph(object):
         """
         Returns a numpy array containing all CN's in the cluster.
         """
-        return np.array([entry.size for entry in self.adj_list])
+        return np.array([len(entry) for entry in self.adj_list])
 
     def __getHalfBond__(self, atom_key: "int", bond_key: "int",
                         ordering) -> "float":
