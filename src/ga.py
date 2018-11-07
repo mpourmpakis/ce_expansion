@@ -5,12 +5,13 @@ import time
 import random
 import pickle
 from functools import reduce
-import itertools
+import itertools as it
 from atomgraph import AtomGraph
 from adjacency import buildAdjacencyList
 import ase.cluster
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 # random.seed(9876)
 
@@ -32,7 +33,9 @@ class Chromo(object):
             self.arr = arr
             self.n_dope = arr.sum()
         else:
-            self.arr[:self.n_dope] = 1
+            # self.arr = np.array(find_min(atomg, n_dope, return_n=1)[0])
+            # self.arr[random.sample(range(self.n_atoms), n_dope)] = 1
+            self.arr[:n_dope] = 1
             np.random.shuffle(self.arr)
 
         # calculate initial CE
@@ -96,7 +99,8 @@ class Chromo(object):
 
 class Pop(object):
     def __init__(self, atomg, n_dope=1, popsize=100, kill_rate=0.2,
-                 mate_rate=0.25, mute_rate=0.1, mute_num=1, x_dope=None):
+                 mate_rate=0.25, mute_rate=0.1, mute_num=1, x_dope=None,
+                 check4min=True):
         self.atomg = atomg
         self.popsize = popsize
         if x_dope:
@@ -105,6 +109,8 @@ class Pop(object):
             self.n_dope = n_dope
 
         # build random population
+        self.min_found = False
+        self.check4min = check4min
         self.build_pop()
 
         self.sort_pop()
@@ -119,11 +125,41 @@ class Pop(object):
         self.kill_rate = kill_rate
 
         # track runtime
-        self.runtime = None
+        self.runtime = 0
 
-    def build_pop(self):
+    def build_pop(self, rand=False):
+        if rand:
+            
+            # add 1 of max CN filled
+
+            self.pop = [Chromo(self.atomg, n_dope=self.n_dope) for i in range(self.popsize - 2)]
+            return
+        self.pop = []
+        if self.check4min:
+            alg1 = find_min(self.atomg, self.n_dope)
+            self.pop.append(Chromo(self.atomg, n_dope=self.n_dope, arr=alg1[0]))
+            if alg1[2]:
+                self.min_found = True
+                return
+            else:
+                pops = self.popsize - 1
+        else:
+            pops = self.popsize
+
+        self.pop += [Chromo(self.atomg, n_dope=self.n_dope, arr=z)
+                     for z in find_min(self.atomg, self.n_dope,
+                                       return_n=pops)]
+
+        """
+        if self.check4min:
+            alg1 = find_min(self.atomg, self.n_dope)
+            if alg1[2]:
+                self.pop = [Chromo(self.atomg, n_dope=self.n_dope, arr=alg1[0])]
+                self.min_found = True
+                return
         self.pop = [Chromo(self.atomg, n_dope=self.n_dope)
                     for i in range(self.popsize)]
+        """
 
     def get_min(self):
         return self.info[:, 0].min()
@@ -136,11 +172,11 @@ class Pop(object):
 
             mated = 0
 
-            # start mating from the 2nd down
+            # start mating from the 1st 2nd down
             tomate = 1
             while len(self.pop) < self.popsize:
                 if mated < self.n_mate:
-                    n1, n2 = tomate, tomate + 1
+                    n1, n2 = 0, tomate
                     # n1, n2 = random.sample(range(len(self.pop)), 2)
                     self.pop += self.pop[n1].cross(self.pop[n2])
                     mated += 2
@@ -160,12 +196,14 @@ class Pop(object):
 
     def run(self, nsteps, std_cut=0, rand=False):
         start = time.time()
-        for i in range(int(nsteps)):
-            print('\tMin: %.5f eV \t %i' % (self.info[-1][0], i), end='\r')
-            self.step(rand)
-            # if STD less than std_cut end the GA
-            if self.info[-1][-1] < std_cut:
-                break
+        i = 0
+        if not self.min_found:
+            for i in range(int(nsteps)):
+                print('\tMin: %.5f eV \t %i' % (self.info[-1][0], i), end='\r')
+                self.step(rand)
+                # if STD less than std_cut end the GA
+                if self.info[-1][-1] < std_cut:
+                    break
         print('\tMin: %.5f eV \t %i' % (self.info[-1][0], i + 1), end='\r')
         self.info = np.array(self.info)
         self.runtime = time.time() - start
@@ -244,9 +282,12 @@ def make_xyz(atom, chrom, path=None):
 
 
 def gen_random(atomg, n_dope, n=500):
+    if n_dope == 0 or n_dope == atomg.n_atoms:
+        n = 1
     scores = np.zeros(n)
     for i in range(n):
         scores[i] = Chromo(atomg, n_dope=n_dope).score
+        print(i, end='\r')
     return scores.min(), scores.mean(), scores.std()
 
 
@@ -272,45 +313,83 @@ def ncr(n, r):
     return numer//denom
 
 
-def find_min(atomg, n_dope):
+def find_min(atomg, n_dope, max_search=50, low_first=True, return_n=None):
     formula = 'Cu(%i)Au(%i)' % (atomg.n_atoms - n_dope, n_dope)
-    cn_list = atomg.getAllCNs()
-    cnset = sorted(set(cn_list))
-    struct_min = np.zeros(atomg.n_atoms).astype(int)
-    ce = None
-    for cn in cnset:
-        spots = np.where(cn_list == cn)[0][::-1]
-        if len(spots) == n_dope:
-            struct_min[spots] = 1
-            break
-        elif len(spots) > n_dope:
-            low = 0
-            low_struct = None
-            print(ncr(len(spots), n_dope))
-            # stop looking after 'n' counts
-            n = 2000
-            counts = 0
-            for c in itertools.combinations(spots, n_dope):
-                base = struct_min.copy()
-                base[list(c)] = 1
-                checkce = atomg.getTotalCE(base)
-                if checkce < low:
-                    low = checkce
-                    low_struct = base
-                counts += 1
-                if counts == n:
-                    break
-            struct_min = low_struct
-            ce = low
-            break
-        else:
-            struct_min[spots] = 1
-            n_dope -= len(spots)
+
+    # handle monometallic efficiently
+    if not n_dope or n_dope == atomg.n_atoms:
+        struct_min = np.zeros(atomg.n_atoms) if \
+            not n_dope else np.ones(atomg.n_atoms)
+        struct_min = struct_min.astype(int)
+        ce = atomg.getTotalCE(struct_min)
+        checkall = True
+    else:
+        cn_list = atomg.getAllCNs()
+        cnset = sorted(set(cn_list))
+        if not low_first:
+            cnset = cnset[::-1]
+        struct_min = np.zeros(atomg.n_atoms).astype(int)
+        ce = None
+        for cn in cnset:
+            spots = np.where(cn_list == cn)[0]
+            if len(spots) == n_dope:
+                struct_min[spots] = 1
+                checkall = True
+                break
+            elif len(spots) > n_dope:
+                low = 0
+                low_struct = None
+
+                # check to see how many combinations exist
+                options = ncr(len(spots), n_dope)
+                # print('%.2e' % options)
+
+                # return sample of 'return_n' options
+                if return_n:
+                    if return_n > options:
+                        raise ValueError('not enough options to '
+                                         'produce desired sample size')
+                    sample = []
+                    while len(sample) < return_n:
+                        base = struct_min.copy()
+                        pick = random.sample(list(spots), n_dope)
+                        base[pick] = 1
+                        sample.append(base)
+                    return sample
+
+                # if n combs < max_search, check them all
+                if options <= max_search:
+                    print('Checking all options')
+                    searchopts = it.combinations(spots, n_dope)
+                    checkall = True
+                else:
+                    print("Checking {0:.2%}".format(max_search / options))
+                    searchopts = range(max_search)
+                    checkall = False
+
+                # stop looking after 'max_search' counts
+                for c in searchopts:  # it.combinations(spots, n_dope)
+                    base = struct_min.copy()
+                    if checkall:
+                        pick = list(c)
+                    else:
+                        pick = random.sample(list(spots), n_dope)
+                    base[pick] = 1
+                    checkce = atomg.getTotalCE(base)
+                    if checkce < low:
+                        low = checkce
+                        low_struct = base.copy()
+                struct_min = low_struct
+                ce = low
+                break
+            else:
+                struct_min[spots] = 1
+                n_dope -= len(spots)
     if not ce:
         ce = atomg.getTotalCE(struct_min)
-    print(formula)
-    print('Min CE: %.3f eV' % ce)
-    return ce
+    # print(formula)
+    # print('Min CE: %.3f eV' % ce)
+    return struct_min, ce, checkall
 
 
 if __name__ == '__main__':
@@ -319,74 +398,115 @@ if __name__ == '__main__':
     metal1 = 'Cu'
     metal2 = 'Au'
 
-    max_runs = 100
-    pop = 500
-    kill_rate = 0.7
+    max_runs = 50
+    pop = 100
+    kill_rate = 0.2
     mate_rate = 0.8
     mute_rate = 0.2
     mute_num = 1
 
     # number of times GA runs for a system
-    n_its = 15
+    n_its = 10
 
     with open('../data/ico_shell2numatoms.pickle', 'rb') as fidr:
         shell2atoms = pickle.load(fidr)
 
     # choose number of shells in icosahedron
-    nshells = 2
-    natoms = shell2atoms[nshells]
-    path = 'CuAu/icosahedron/%i/' % natoms
-    if not os.path.isdir(desk + path):
-        os.mkdir(desk + path)
-        os.mkdir(desk + path + 'plots')
-        os.mkdir(desk + path + 'structures')
+    # 24 shells = 10 nm
+    nshells = 24
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for nshells in range(2, 25):
+        natoms = shell2atoms[nshells]
+        path = 'CuAu/icosahedron/%i/' % natoms
+        if not os.path.isdir(desk + path):
+            os.mkdir(desk + path)
+            os.mkdir(desk + path + 'plots')
+            os.mkdir(desk + path + 'structures')
 
-    n = np.arange(0, natoms + 1)
-    x = n / natoms
+        x = np.linspace(0, 1, 11)
+        n = (x * natoms).astype(int)
 
-    with open('../data/monomet_CE/icosahedron.pickle', 'rb') as fidr:
-        icos = pickle.load(fidr)
-    rands = np.zeros((len(x), 3))
-    ces = np.zeros(len(x))
-    atom, adj = build_icosahedron(nshells)
-    ag = AtomGraph(adj, metal1, metal2)
+        # n = np.arange(0, natoms + 1)
+        # x = n / natoms
 
-    print('%s %s in %i atom Icosahedron' % (metal1, metal2, natoms))
+        with open('../data/monomet_CE/icosahedron.pickle', 'rb') as fidr:
+            icos = pickle.load(fidr)
+        rands = np.zeros((len(x), 3))
+        ces = np.zeros(len(x))
+        atom, adj = build_icosahedron(nshells)
+        ag = AtomGraph(adj, metal1, metal2)
+
+        print('%s %s in %i atom Icosahedron' % (metal1, metal2, natoms))
+        d15min = -3.182956966765231
+
+        """
+        c = Chromo(ag, n_dope=0)
+        print(c.score)
+        start = time.time()
+        for i in range(10):
+            c.calc_score()
+        tot = time.time() - start
+        print('Total time for %i runs: %.2f s' % (10, tot))
+        print('\n%.3f s/run' % (tot / 10))
+        """
+
+        for i, dope in enumerate(n):
+            ces[i] = gen_random(ag, dope, 50)[0]
+        ees = ces - (x * icos[len(atom)][metal2]) - \
+            ((1 - x) * icos[len(atom)][metal1])
+        size = [atom.cell[0][0] / 10] * len(x)
+        ax.scatter(x, size, ees, color='k')
+    ax.set_xlabel('$X_{Au}$')
+    ax.set_ylabel('Size (nm)')
+    ax.set_zlabel('EE (eV)')
+    ax.set_title('Cu Au Icosahedrons')
+    plt.savefig(desk + 'size_ce.png', dpi=900)
+    plt.show()
+    sys.exit()
     # ga = np.load('../data/CuAu_%i_icosahedron_data.npy' % (shell2atoms[nshells]))
-    # aa = np.array([find_min(ag, i) for i in range(ag.n_atoms + 1)])
+    # aa = np.array([find_min(ag, i)[1] for i in range(ag.n_atoms + 1)])
     # plt.plot(ga[:, 0], aa, label='alg1')
     # plt.plot(ga[:, 0], ga[:, 2], label='GA')
     # plt.xlabel('n')
     # plt.ylabel('CE (eV)')
     # plt.legend()
     # plt.title('Icosahedron: $Cu_{%i-n}\\ Au_n$' % ag.n_atoms)
+    # plt.show()
     # plt.savefig(desk + 'ico_%i.png' % ag.n_atoms, dpi=900)
-    sys.exit()
+    minfound = []
+    maybemin = []
     for i, n_dope in enumerate(n):
         same = 0
         ce = 0
         min_struct = None
         x_dope = x[i]
 
-        # don't use GA for monometallic, use lookup instead
-        if x_dope in [0, 1]:
-            ces[i] = icos[natoms][metal2] if x_dope else icos[natoms][metal1]
-            rands[i, :] = [ces[i], ces[i], 0]
-            continue
-
         # randomly guess minimum 'n' times
-        rands[i, :] = gen_random(ag, n_dope, n=500)
+        rands[i, :] = gen_random(ag, n_dope, n=50)
         print('X = %.2f, Doped %i / %i' % (x_dope, n_dope, natoms))
+        check4min = True
         for j in range(n_its):
+            if j:
+                check4min = False
             p = Pop(ag, n_dope=n_dope, popsize=pop, mate_rate=mate_rate,
                     mute_rate=mute_rate, kill_rate=kill_rate,
-                    mute_num=mute_num)
+                    mute_num=mute_num, check4min=check4min)
             p.run(max_runs)
 
-            # if the same minimum is found 5 times in a row
+            if p.min_found:
+                ce = p.get_min()
+                min_struct = p.pop[0]
+                minfound.append(i)
+                break
+            else:
+                maybemin.append(i)
+
+            # if the same minimum is found 3 times in a row
             # assume the minimum has been found and break loop
-            if ce == p.get_min():
+            if abs(ce - p.get_min()) < 1e-4:
                 same += 1
+                print(same)
             else:
                 same = 0
             if ce > p.get_min():
@@ -406,6 +526,9 @@ if __name__ == '__main__':
     ees = ces - (x * icos[len(atom)][metal2]) - \
         ((1 - x) * icos[len(atom)][metal1])
 
+    randees = rands[:, 0] - (x * icos[len(atom)][metal2]) - \
+        ((1 - x) * icos[len(atom)][metal1])
+
     # Save data
     # number doped, percent doped, random min CE, GA min CE, EE
     data = np.zeros((len(x), 5))
@@ -416,32 +539,41 @@ if __name__ == '__main__':
     data[:, 4] = ees
     np.save('../data/CuAu_%i_icosahedron_data.npy' % natoms, data)
 
+
+
     # CE plot
     f1, a1 = plt.subplots()
     a1.plot(n, rands[:, 0], 'x', label='Random', color='k')
-    a1.plot(n, ces, 'o', label='GA', color='lightblue',
-            markeredgecolor='k')
+    a1.plot(n[maybemin], ces[maybemin], 'o', label='GA',
+            color='lightblue', markeredgecolor='k')
+    a1.plot(n[minfound], ces[minfound], 'o', label='Brute Force Min',
+            color='orange', markeredgecolor='k')
     a1.legend()
     a1.set_xlabel('$n$')
     a1.set_ylabel('CE (eV)')
-    a1.set_title('Icosahedron: $%s_{%i-n}\\ %s_n$' % (metal1, len(atom),
-                                                      metal2))
+    a1.set_title('Cohesive Energy, Icosahedron: '
+                 '$%s_{%i-n}\\ %s_n$' % (metal1, len(atom), metal2))
     f1.tight_layout()
     f1.savefig(desk + path + 'plots/%s%s_ce.png' % (metal1, metal2),
                dpi=900)
 
     # excess energy plot
     f2, a2 = plt.subplots()
-    a2.plot(n, ees, 'o', color='violet',
-            markeredgecolor='k')
+    a2.plot(n, randees, 'x', label='Random', color='k')
+    a2.plot(n[maybemin], ees[maybemin], 'o', label='GA',
+            color='lightblue', markeredgecolor='k')
+    a2.plot(n[minfound], ees[minfound], 'o', label='Brute Force Min',
+            color='orange', markeredgecolor='k')
     a2.set_xlabel('$n$')
     a2.set_ylabel('Excess Energy, EE (eV)')
-    a2.set_title('Icosahedron: $%s_{%i-n}\\ %s_n$' % (metal1, len(atom),
-                                                      metal2))
+    a2.set_title('Excess Energy, Icosahedron: '
+                 '$%s_{%i-n}\\ %s_n$' % (metal1, len(atom), metal2))
+    a2.legend()
     f2.tight_layout()
     f2.savefig(desk + path + 'plots/%s%s_excessenergy.png' % (metal1, metal2),
                dpi=900)
     plt.show()
+
     """
     # f, a = make_plot(p)
     # plt.show()

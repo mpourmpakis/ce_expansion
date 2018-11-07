@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import pickle
-
 import numpy as np
 
 DEFAULT_ELEMENTS = ("Cu", "Cu")
@@ -38,6 +37,7 @@ class AtomGraph(object):
         """
 
         self.adj_list = adj_list
+        self.cns = [len(a) for a in adj_list]
         self.coeffs = coeffs
         self.symbols = (kind0, kind1)
 
@@ -77,9 +77,9 @@ class AtomGraph(object):
 
         atom1 = self.symbols[ordering[atom_key]]
         atom2 = self.symbols[ordering[self.adj_list[atom_key][bond_key]]]
-        return self.coeffs[atom1][atom2][self.getCN(atom_key)]
+        return self.coeffs[atom1][atom2][self.cns[atom_key]]
 
-    def getAtomicCE(self, atom_key: "int", ordering) -> "float":
+    def getAtomicCE(self, atom_key: "int", cn, ordering) -> "float":
         """
         Returns the sum of half-bond energies for a particular atom.
 
@@ -90,8 +90,12 @@ class AtomGraph(object):
         float : The sum of all half-bond energies at that atom, in units of eV
         """
         local_CE = 0
-        for bond_key in range(len(self.adj_list[atom_key])):
-            local_CE += self.__getHalfBond__(atom_key, bond_key, ordering)
+        atom1 = self.symbols[ordering[atom_key]]
+        adjs = self.adj_list[atom_key]
+        for bond_key in range(cn):
+            atom2 = self.symbols[ordering[adjs[bond_key]]]
+            local_CE += self.coeffs[atom1][atom2][cn]
+            # local_CE += self.__getHalfBond__(atom_key, bond_key, ordering)
         return local_CE
 
     def getTotalCE(self, ordering) -> "float":
@@ -102,9 +106,9 @@ class AtomGraph(object):
         float : The CE, in units of eV
         """
         total_energy = 0
-        for atom in range(0, len(ordering)):
-            total_energy += self.getAtomicCE(atom, ordering)
-        total_CE = total_energy / len(ordering)
+        for atom, cn in enumerate(self.cns):
+            total_energy += self.getAtomicCE(atom, cn, ordering)
+        total_CE = total_energy / self.n_atoms
         return total_CE
 
 if __name__ == '__main__':
