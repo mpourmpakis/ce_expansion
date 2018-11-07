@@ -1,4 +1,5 @@
 import operator as op
+import pandas as pd
 import os
 import sys
 import time
@@ -11,6 +12,7 @@ from adjacency import buildAdjacencyList
 import ase.cluster
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 from mpl_toolkits.mplot3d import Axes3D
 
 # random.seed(9876)
@@ -313,7 +315,7 @@ def ncr(n, r):
     return numer//denom
 
 
-def find_min(atomg, n_dope, max_search=50, low_first=True, return_n=None):
+def find_min(atomg, n_dope, max_search=50, low_first=True, return_n=None, verbose=False):
     formula = 'Cu(%i)Au(%i)' % (atomg.n_atoms - n_dope, n_dope)
 
     # handle monometallic efficiently
@@ -359,11 +361,13 @@ def find_min(atomg, n_dope, max_search=50, low_first=True, return_n=None):
 
                 # if n combs < max_search, check them all
                 if options <= max_search:
-                    print('Checking all options')
+                    if verbose:
+                        print('Checking all options')
                     searchopts = it.combinations(spots, n_dope)
                     checkall = True
                 else:
-                    print("Checking {0:.2%}".format(max_search / options))
+                    if verbose:
+                        print("Checking {0:.2%}".format(max_search / options))
                     searchopts = range(max_search)
                     checkall = False
 
@@ -392,9 +396,38 @@ def find_min(atomg, n_dope, max_search=50, low_first=True, return_n=None):
     return struct_min, ce, checkall
 
 
+def make_3d_plot(path, title=None):
+    if isinstance(path, str):
+        df = pd.read_excel(path, sheet_name='EE Data')
+    else:
+        df = path
+    size = df.diameter.values
+    comps = [i / 10 for i in range(11)]
+    ees = df[[c for c in df.columns if '%' in c]].values
+
+    colormap = plt.get_cmap('coolwarm')
+    normalize = matplotlib.colors.Normalize(vmin=ees.min(), vmax=ees.max())
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for i in range(len(size)):
+        ax.scatter(comps, [size[i]] * len(comps), ees[i, :], c=ees[i, :],
+                   cmap=colormap, norm=normalize, alpha=1, s=50, edgecolor='k')
+    ax.set_xlabel('$X_{Au}$')
+    ax.set_ylabel('Size (nm)')
+    ax.set_zlabel('EE (eV)')
+    if title:
+        ax.set_title(title)
+    return fig
+
+
 if __name__ == '__main__':
     plt.close('all')
     desk = os.path.expanduser('~') + '/desktop/'
+    box = os.path.expanduser('~') + '\\Box Sync\\Michael_Cowan_PhD_research\\' \
+        'data\\np_ce\\icosahedron\\'
+    # metal1 = 'Cu'
+    # metal2 = 'Au'
     metal1 = 'Cu'
     metal2 = 'Au'
 
@@ -406,17 +439,27 @@ if __name__ == '__main__':
     mute_num = 1
 
     # number of times GA runs for a system
-    n_its = 10
+    n_its = 2
 
     with open('../data/ico_shell2numatoms.pickle', 'rb') as fidr:
         shell2atoms = pickle.load(fidr)
 
+    with open('../data/monomet_CE/icosahedron.pickle', 'rb') as fidr:
+        icos = pickle.load(fidr)
+
     # choose number of shells in icosahedron
     # 24 shells = 10 nm
+    eedata = []
+    cedata = []
+    comps = []
+    tot_size = []
     nshells = 24
+
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    for nshells in range(2, 25):
+    colormap = plt.get_cmap('coolwarm')
+
+    for nshells in range(2, 10):  # 14):
         natoms = shell2atoms[nshells]
         path = 'CuAu/icosahedron/%i/' % natoms
         if not os.path.isdir(desk + path):
@@ -424,45 +467,62 @@ if __name__ == '__main__':
             os.mkdir(desk + path + 'plots')
             os.mkdir(desk + path + 'structures')
 
-        x = np.linspace(0, 1, 11)
+        x = np.linspace(0, 1, 21)
         n = (x * natoms).astype(int)
 
-        # n = np.arange(0, natoms + 1)
-        # x = n / natoms
+        n = np.arange(0, natoms + 1)
+        x = n / n.max()
 
-        with open('../data/monomet_CE/icosahedron.pickle', 'rb') as fidr:
-            icos = pickle.load(fidr)
         rands = np.zeros((len(x), 3))
         ces = np.zeros(len(x))
         atom, adj = build_icosahedron(nshells)
         ag = AtomGraph(adj, metal1, metal2)
 
         print('%s %s in %i atom Icosahedron' % (metal1, metal2, natoms))
-        d15min = -3.182956966765231
-
-        """
-        c = Chromo(ag, n_dope=0)
-        print(c.score)
-        start = time.time()
-        for i in range(10):
-            c.calc_score()
-        tot = time.time() - start
-        print('Total time for %i runs: %.2f s' % (10, tot))
-        print('\n%.3f s/run' % (tot / 10))
-        """
 
         for i, dope in enumerate(n):
-            ces[i] = gen_random(ag, dope, 50)[0]
+            ces[i] = gen_random(ag, dope, 5)[0]  # find_min(ag, dope, max_search=1)[1]
+            if dope == 0 and metal1 not in icos[natoms]:
+                icos[natoms][metal1] = ces[i]
+                print('Adding %s for %i atom icosahedron' % (metal1, natoms))
+            if dope == natoms and metal2 not in icos[natoms]:
+                icos[natoms][metal2] = ces[i]
+                print('Adding %s for %i atom icosahedron' % (metal2, natoms))
         ees = ces - (x * icos[len(atom)][metal2]) - \
             ((1 - x) * icos[len(atom)][metal1])
-        size = [atom.cell[0][0] / 10] * len(x)
-        ax.scatter(x, size, ees, color='k')
-    ax.set_xlabel('$X_{Au}$')
+
+        comps += list(x)
+        tot_size += [atom.cell[0][0] / 10] * len(x)
+        cedata += list(ces)
+        eedata += list(ees)
+        # cedata.append([natoms, size[0]] + list(ces))
+        # eedata.append([natoms, size[0]] + list(ees))
+
+    normalize = matplotlib.colors.Normalize(vmin=min(eedata), vmax=max(eedata))
+    ax.plot_trisurf(comps, tot_size, eedata,
+                    cmap=colormap, norm=normalize, anitialized=True)
+    ax.set_xlabel('$X_{%s}$' % metal2)
     ax.set_ylabel('Size (nm)')
     ax.set_zlabel('EE (eV)')
-    ax.set_title('Cu Au Icosahedrons')
-    plt.savefig(desk + 'size_ce.png', dpi=900)
-    plt.show()
+    ax.set_title('%s %s Icosahedron' % (metal1, metal2))
+    fig.show()
+    sys.exit()
+    """
+    cols = ['n_atoms', 'diameter'] + ['%i%%_%s' % (w, metal2)
+                                      for w in np.arange(11) * 10]
+
+    excel = box + 'icosahedron_%s%s_data_sub5.xlsx' % (metal1, metal2)
+
+    cedf = pd.DataFrame(cedata, columns=cols)
+    eedf = pd.DataFrame(eedata, columns=cols)
+
+    writer = pd.ExcelWriter(excel, engine='xlsxwriter')
+    cedf.to_excel(writer, sheet_name='CE Data', index=False)
+    eedf.to_excel(writer, sheet_name='EE Data', index=False)
+    writer.save()
+    writer.close()
+    """
+
     sys.exit()
     # ga = np.load('../data/CuAu_%i_icosahedron_data.npy' % (shell2atoms[nshells]))
     # aa = np.array([find_min(ag, i)[1] for i in range(ag.n_atoms + 1)])
@@ -518,8 +578,8 @@ if __name__ == '__main__':
 
         ces[i] = ce
         formula = metal1 + str(natoms - n_dope) + metal2 + str(n_dope)
-        make_xyz(atom, min_struct,
-                 desk + path + 'structures/%s.xyz' % formula)
+        # make_xyz(atom, min_struct,
+        #         desk + path + 'structures/%s.xyz' % formula)
         print('Min CE: %.5f eV' % ce)
 
     # excess energy
@@ -537,7 +597,7 @@ if __name__ == '__main__':
     data[:, 2] = rands[:, 0]
     data[:, 3] = ces
     data[:, 4] = ees
-    np.save('../data/CuAu_%i_icosahedron_data.npy' % natoms, data)
+    # np.save('../data/CuAu_%i_icosahedron_data.npy' % natoms, data)
 
 
 
