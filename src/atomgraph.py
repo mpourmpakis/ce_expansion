@@ -111,14 +111,75 @@ class AtomGraph(object):
         total_CE = total_energy / self.n_atoms
         return total_CE
 
+    def get_total_ce2(self, ordering, bonds):
+        total = 0
+        for i1 in bonds:
+            a1 = self.symbols[ordering[i1]]
+            for i2 in bonds[i1]:
+                a2 = self.symbols[ordering[i2]]
+                total += self.coeffs[a1][a2][self.cns[i1]]
+                total += self.coeffs[a2][a1][self.cns[i2]]
+        return total / self.n_atoms
+
 if __name__ == '__main__':
     from adjacency import buildAdjacencyList
     import ase.cluster
+    import time
+    import sys
+    import matplotlib.pyplot as plt
 
-    atom = ase.cluster.Icosahedron('Cu', 3)
-    a = buildAdjacencyList(atom)
-    x = AtomGraph(a, 'Cu', 'Au')
+    natoms = []
+    old = []
+    new = []
+    for nshells in range(2, 41):
+        atom = ase.cluster.Icosahedron('Cu', nshells)
+        natoms.append(len(atom))
+        a = buildAdjacencyList(atom)
+        bonds = {}
+        for i in range(len(a)):
+            for con in a[i]:
+                pair = sorted([i, con])
+                # firstcn = [len(a[p]) for p in pair]
+                if pair[0] in bonds:
+                    if pair[1] not in bonds[pair[0]]:
+                        bonds[pair[0]].append(pair[1])
+                elif pair[1] in bonds:
+                    if pair[0] not in bonds[pair[1]]:
+                        bonds[pair[1]].append(pair[0])
+                else:
+                    bonds[pair[0]] = [pair[1]]
+                # key = '_'.join([str(z) for z in sorted([i, con])])
+                # if key not in bonds:
+                #    bonds[key] = [len(a[i]), len(a[con])]
 
-    od = [0] * len(atom)
+        print('Total half bonds: %i' % sum(len(i) for i in a))
+        print('Total full bonds: %i' % sum(len(bonds[j]) for j in bonds))
 
-    print(x.getTotalCE(od))
+        x = AtomGraph(a, 'Cu', 'Au')
+
+        od = [0] * len(atom)
+        od[3] = 1
+
+        nn = 5
+
+        start1 = time.time()
+        for y in range(nn):
+            val1 = x.getTotalCE(od)
+        tot1 = (time.time() - start1) / nn
+        print('Old: %.3f s/run' % tot1)
+
+        start2 = time.time()
+        for z in range(nn):
+            val2 = x.get_total_ce2(od, bonds)
+        tot2 = (time.time() - start2) / nn
+        print('New: %.3f s/run' % tot2)
+        print('CE diff (New - Old) = %.9f eV' % (val2 - val1))
+        old.append(tot1)
+        new.append(tot2)
+
+    plt.plot(natoms, old, label='Old')
+    plt.plot(natoms, new, label='New')
+    plt.xlabel('N Atoms')
+    plt.ylabel('Runtime per CE calc (s)')
+    plt.legend()
+    plt.show()
