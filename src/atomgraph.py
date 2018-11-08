@@ -2,6 +2,7 @@
 
 import pickle
 import numpy as np
+import multiprocessing
 
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
@@ -121,6 +122,43 @@ class AtomGraph(object):
                 total += self.coeffs[a2][a1][self.cns[i2]]
         return total / self.n_atoms
 
+    def get_halfbond_ce3(self, i1, a1=None):
+        t = 0
+        if not a1:
+            a1 = self.symbols[self.ordering[i1]]
+        for i2 in self.bonds[i1]:
+            a2 = self.symbols[self.ordering[i2]]
+            t += self.coeffs[a1][a2][self.cns[i1]]
+            t += self.coeffs[a2][a1][self.cns[i2]]
+        return t
+
+    def get_total_ce3(self, ordering, bonds):
+        self.ordering = ordering
+        self.bonds = bonds
+        total = 0
+        p = multiprocessing.Pool(processes=4)
+        total = sum(p.imap_unordered(self.get_halfbond_ce3, self.bonds.keys()))
+        p.terminate()
+        return total / self.n_atoms
+
+
+def build_adj2(a):
+    bonds = {}
+    for i in range(len(a)):
+        for con in a[i]:
+            pair = sorted([i, con])
+            # firstcn = [len(a[p]) for p in pair]
+            if pair[0] in bonds:
+                if pair[1] not in bonds[pair[0]]:
+                    bonds[pair[0]].append(pair[1])
+            elif pair[1] in bonds:
+                if pair[0] not in bonds[pair[1]]:
+                    bonds[pair[1]].append(pair[0])
+            else:
+                bonds[pair[0]] = [pair[1]]
+    return bonds
+
+
 if __name__ == '__main__':
     from adjacency import buildAdjacencyList
     import ase.cluster
@@ -135,22 +173,8 @@ if __name__ == '__main__':
         atom = ase.cluster.Icosahedron('Cu', nshells)
         natoms.append(len(atom))
         a = buildAdjacencyList(atom)
-        bonds = {}
-        for i in range(len(a)):
-            for con in a[i]:
-                pair = sorted([i, con])
-                # firstcn = [len(a[p]) for p in pair]
-                if pair[0] in bonds:
-                    if pair[1] not in bonds[pair[0]]:
-                        bonds[pair[0]].append(pair[1])
-                elif pair[1] in bonds:
-                    if pair[0] not in bonds[pair[1]]:
-                        bonds[pair[1]].append(pair[0])
-                else:
-                    bonds[pair[0]] = [pair[1]]
-                # key = '_'.join([str(z) for z in sorted([i, con])])
-                # if key not in bonds:
-                #    bonds[key] = [len(a[i]), len(a[con])]
+
+        bonds = build_adj2(a)
 
         print('Total half bonds: %i' % sum(len(i) for i in a))
         print('Total full bonds: %i' % sum(len(bonds[j]) for j in bonds))
@@ -174,12 +198,21 @@ if __name__ == '__main__':
         tot2 = (time.time() - start2) / nn
         print('New: %.3f s/run' % tot2)
         print('CE diff (New - Old) = %.9f eV' % (val2 - val1))
+
+        start3 = time.time()
+        for z in range(nn):
+            val3 = x.get_total_ce3(od, bonds)
+        tot3 = (time.time() - start3) / nn
+        print('ASY: %.3f s/run' % tot2)
+
         old.append(tot1)
         new.append(tot2)
 
+    """
     plt.plot(natoms, old, label='Old')
     plt.plot(natoms, new, label='New')
     plt.xlabel('N Atoms')
     plt.ylabel('Runtime per CE calc (s)')
     plt.legend()
     plt.show()
+    """
