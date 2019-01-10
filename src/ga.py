@@ -371,28 +371,27 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
     return struct_min, ce
 
 
-def make_3d_plot(path, title=None):
+def make_3d_plot(path, metals):
+    metal1, metal2 = metals
     if isinstance(path, str):
-        df = pd.read_excel(path, sheet_name='EE Data')
+        df = pd.read_excel(path)
     else:
         df = path
     size = df.diameter.values
-    comps = [i / 10 for i in range(11)]
-    ees = df[[c for c in df.columns if '%' in c]].values
+    comps = df['composition_%s' % metal2].values
+    ees = df.EE.values
 
     colormap = plt.get_cmap('coolwarm')
     normalize = matplotlib.colors.Normalize(vmin=ees.min(), vmax=ees.max())
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    for i in range(len(size)):
-        ax.scatter(comps, [size[i]] * len(comps), ees[i, :], c=ees[i, :],
-                   cmap=colormap, norm=normalize, alpha=1, s=50, edgecolor='k')
-    ax.set_xlabel('$X_{Au}$')
+    ax.plot_trisurf(comps, size, ees,
+                    cmap=colormap, norm=normalize)
+    ax.set_xlabel('$X_{%s}$' % metal2)
     ax.set_ylabel('Size (nm)')
     ax.set_zlabel('EE (eV)')
-    if title:
-        ax.set_title(title)
+    ax.set_title('%s %s Icosahedron' % (metal1, metal2))
     return fig
 
 
@@ -423,9 +422,11 @@ if __name__ == '__main__':
     with open('../data/monomet_CE/icosahedron.pickle', 'rb') as fidr:
         icos = pickle.load(fidr)
 
+    # data for 3D plot
     eedata = []
     cedata = []
     comps = []
+    tot_natoms = []
     tot_size = []
 
     # initialize 3D plot
@@ -434,7 +435,7 @@ if __name__ == '__main__':
     colormap = plt.get_cmap('coolwarm')
 
     # 24 shells = about 10 nm
-    for nshells in range(2, 4):  # 14):
+    for nshells in range(2, 14):  # 14):
         natoms = shell2atoms[nshells]
         path = 'CuAu/icosahedron/%i/' % natoms
         if not os.path.isdir(desk + path):
@@ -479,11 +480,23 @@ if __name__ == '__main__':
         ees = ces - (x * icos[len(atom)][metal2]) - \
             ((1 - x) * icos[len(atom)][metal1])
 
+        tot_natoms += [natoms] * len(x)
         comps += list(x)
         tot_size += [atom.cell[0][0] / 10] * len(x)
         cedata += list(ces)
         eedata += list(ees)
 
+    # SAVE DATA FROM GA RUNS
+    excel = '../data/bimetallic_results/icosahedron/icosahedron_%s%s_data_sub5.xlsx' % (metal1, metal2)
+    df = pd.DataFrame({'n_atoms': tot_natoms, 'diameter': tot_size,
+                       'composition_%s' % metal2: comps, 'CE': cedata,
+                       'EE': eedata})
+    writer = pd.ExcelWriter(excel, engine='xlsxwriter')
+    df.to_excel(writer, index=False)
+    writer.save()
+    writer.close()
+
+    # CREATE 3D PLOT of SIZE, COMP, EE
     normalize = matplotlib.colors.Normalize(vmin=min(eedata), vmax=max(eedata))
     ax.plot_trisurf(comps, tot_size, eedata,
                     cmap=colormap, norm=normalize)
