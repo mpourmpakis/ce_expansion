@@ -84,7 +84,47 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
             np.save('../data/adjacency_lists/%s.npy' % atom_name, result)
         return [[i for i in a] for a in result]
 
+
+def buildBondList(atoms_object: "ase.Atoms",
+                  atom_name: "str" = None,
+                  radius_dictionary: "dict" = {DEFAULT_ELEMENTS:
+                                               DEFAULT_RADIUS}) -> "dict":
+    """
+      Adjacency *bond* list representation based on "buildAdjacencyList"
+
+      Args:
+      atoms_object (ase.Atoms): An ASE atoms object representing the system of
+                                  interest
+      radius_dictionary (dict): A dictionary with the atom-atom radii at-which
+                                  a bond is considered a bond. If no dict is
+                                  supplied, Cu-Cu bonds of max-len 2.8 are
+                                  assumed.
+
+      Returns:
+      dict : A dictonary with an atom index as a key and a list of atoms it's
+               bonded to as the value
+    """
+    adjacency_list = buildAdjacencyList(atoms_object,
+                                        atom_name,
+                                        radius_dictionary)
+    bonds = {}
+    for i in range(len(adjacency_list)):
+        for con in adjacency_list[i]:
+            pair = sorted([i, con])
+            # firstcn = [len(a[p]) for p in pair]
+            if pair[0] in bonds:
+                if pair[1] not in bonds[pair[0]]:
+                    bonds[pair[0]].append(pair[1])
+            elif pair[1] in bonds:
+                if pair[0] not in bonds[pair[1]]:
+                    bonds[pair[1]].append(pair[0])
+            else:
+                bonds[pair[0]] = [pair[1]]
+    return bonds
+
+
 if __name__ == '__main__':
     import ase.cluster
     atom = ase.cluster.Icosahedron('Cu', 3)
     a = buildAdjacencyList(atom)
+    b = buildBondList(atom)
