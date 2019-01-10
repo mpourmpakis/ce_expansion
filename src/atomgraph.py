@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import pickle
-import numpy as np
-import multiprocessing
 
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
@@ -11,7 +9,7 @@ with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
 
 
 class AtomGraph(object):
-    def __init__(self, adj_list: "np.array",
+    def __init__(self, adj_list: "list",
                  kind0: "str",
                  kind1: "str",
                  coeffs: "dict" = DEFAULT_BOND_COEFFS):
@@ -22,7 +20,7 @@ class AtomGraph(object):
         Second entry of the second axis corresponds to the indices of the atoms that atom is bound to
 
         Args:
-        adj_list (np.array) : A numpy array containing adjacency information. Assumed to be produced by the
+        adj_list (list) : A numpy array containing adjacency information. Assumed to be produced by the
         buildAdjacencyList function
         kind0 (str) : Atomic symbol indicating what a "0" in ordering means
         kind1 (str) : Atomic symbol indicating what a "1" in ordering means
@@ -31,7 +29,7 @@ class AtomGraph(object):
 
 
         Attributes:
-        adj_list (np.array) : A numpy array containing adjacency information
+        adj_list (list) : A numpy array containing adjacency information
         symbols (tuple) : Atomic symbols indicating what the binary representations of the elements in ordering
                         means
 
@@ -44,6 +42,7 @@ class AtomGraph(object):
 
         # total number of atoms
         self.n_atoms = len(adj_list)
+        self.bonds = buildBonds(adj_list)
 
     def __len__(self):
         return len(self.adj_list)
@@ -57,11 +56,11 @@ class AtomGraph(object):
         """
         return self.adj_list[atom_key].size
 
-    def getAllCNs(self) -> "np.array":
+    def getAllCNs(self) -> "list":
         """
         Returns a numpy array containing all CN's in the cluster.
         """
-        return np.array([len(entry) for entry in self.adj_list])
+        return [len(entry) for entry in self.adj_list]
 
     def __getHalfBond__(self, atom_key: "int", bond_key: "int",
                         ordering) -> "float":
@@ -112,40 +111,33 @@ class AtomGraph(object):
         total_CE = total_energy / self.n_atoms
         return total_CE
 
-    def get_total_ce2(self, ordering, bonds):
+    def get_total_ce2(self, ordering):
         total = 0
-        for i1 in bonds:
+        for i1 in self.bonds:
             a1 = self.symbols[ordering[i1]]
-            for i2 in bonds[i1]:
+            for i2 in self.bonds[i1]:
                 a2 = self.symbols[ordering[i2]]
                 total += self.coeffs[a1][a2][self.cns[i1]]
                 total += self.coeffs[a2][a1][self.cns[i2]]
         return total / self.n_atoms
 
-    def get_halfbond_ce3(self, i1, a1=None):
-        t = 0
-        if not a1:
-            a1 = self.symbols[self.ordering[i1]]
-        for i2 in self.bonds[i1]:
-            a2 = self.symbols[self.ordering[i2]]
-            t += self.coeffs[a1][a2][self.cns[i1]]
-            t += self.coeffs[a2][a1][self.cns[i2]]
-        return t
 
-    def get_total_ce3(self, ordering, bonds):
-        self.ordering = ordering
-        self.bonds = bonds
-        total = 0
-        p = multiprocessing.Pool(processes=4)
-        total = sum(p.imap_unordered(self.get_halfbond_ce3, self.bonds.keys()))
-        p.terminate()
-        return total / self.n_atoms
+def buildBonds(adjacency_list: "list") -> "dict":
+    """
+      Adjacency *bond* list representation based on "buildAdjacencyList"
 
+      Args:
+      adjacency_list (list): A list that is outputted from
+                               adjacency.buildAdjacencyList
 
-def build_adj2(a):
+      Returns:
+      dict : A dictonary with an atom index as a key and a list of atoms it's
+               bonded to as the value
+    """
+
     bonds = {}
-    for i in range(len(a)):
-        for con in a[i]:
+    for i in range(len(adjacency_list)):
+        for con in adjacency_list[i]:
             pair = sorted([i, con])
             # firstcn = [len(a[p]) for p in pair]
             if pair[0] in bonds:
@@ -158,61 +150,17 @@ def build_adj2(a):
                 bonds[pair[0]] = [pair[1]]
     return bonds
 
-
 if __name__ == '__main__':
     from adjacency import buildAdjacencyList
     import ase.cluster
-    import time
-    import sys
-    import matplotlib.pyplot as plt
 
-    natoms = []
-    old = []
-    new = []
-    for nshells in range(2, 41):
-        atom = ase.cluster.Icosahedron('Cu', nshells)
-        natoms.append(len(atom))
-        a = buildAdjacencyList(atom)
+    atom = ase.cluster.Icosahedron('Cu', 10)
 
-        bonds = build_adj2(a)
+    a = buildAdjacencyList(atom)
 
-        print('Total half bonds: %i' % sum(len(i) for i in a))
-        print('Total full bonds: %i' % sum(len(bonds[j]) for j in bonds))
-
-        x = AtomGraph(a, 'Cu', 'Au')
-
-        od = [0] * len(atom)
-        od[3] = 1
-
-        nn = 5
-
-        start1 = time.time()
-        for y in range(nn):
-            val1 = x.getTotalCE(od)
-        tot1 = (time.time() - start1) / nn
-        print('Old: %.3f s/run' % tot1)
-
-        start2 = time.time()
-        for z in range(nn):
-            val2 = x.get_total_ce2(od, bonds)
-        tot2 = (time.time() - start2) / nn
-        print('New: %.3f s/run' % tot2)
-        print('CE diff (New - Old) = %.9f eV' % (val2 - val1))
-
-        start3 = time.time()
-        for z in range(nn):
-            val3 = x.get_total_ce3(od, bonds)
-        tot3 = (time.time() - start3) / nn
-        print('ASY: %.3f s/run' % tot2)
-
-        old.append(tot1)
-        new.append(tot2)
-
-    """
-    plt.plot(natoms, old, label='Old')
-    plt.plot(natoms, new, label='New')
-    plt.xlabel('N Atoms')
-    plt.ylabel('Runtime per CE calc (s)')
-    plt.legend()
-    plt.show()
-    """
+    x = AtomGraph(a, 'Cu', 'Au')
+    ordering = [0] * x.n_atoms
+    ordering[7] = 1
+    ce1 = x.getTotalCE(ordering)
+    ce2 = x.get_total_ce2(ordering)
+    print('%.2e' % abs(ce1 - ce2))
