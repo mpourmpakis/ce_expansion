@@ -435,6 +435,7 @@ if __name__ == '__main__':
     colormap = plt.get_cmap('coolwarm')
 
     # 24 shells = about 10 nm
+    # 13 shells = about 5 nm
     for nshells in range(2, 14):  # 14):
         natoms = shell2atoms[nshells]
         path = 'CuAu/icosahedron/%i/' % natoms
@@ -448,8 +449,9 @@ if __name__ == '__main__':
         n = (x * natoms).astype(int)
 
         # USE THIS TO TEST EVERY CONCENTRATION
-        # n = np.arange(0, natoms + 1)
-        # x = n / n.max()
+        if natoms < 150:
+            n = np.arange(0, natoms + 1)
+            x = n / n.max()
 
         rands = np.zeros((len(x), 3))
         ces = np.zeros(len(x))
