@@ -284,6 +284,27 @@ def build_icosahedron(nshell, return_adj=True):
         return a
 
 
+def build_fcc_cube(nlayers, return_adj=True):
+    if not os.path.isdir('../data/atom_objects/'):
+        os.mkdir('../data/atom_objects/')
+    if not os.path.isdir('../data/atom_objects/fcc-cube/'):
+        os.mkdir('../data/atom_objects/fcc-cube/')
+    apath = '../data/atom_objects/fcc-cube/%i.pickle' % nlayers
+    if os.path.isfile(apath):
+        with open(apath, 'rb') as fidr:
+            cube = pickle.load(fidr)
+    else:
+        cube = ase.cluster.FaceCenteredCubic('Cu', [(1, 0, 0),
+                                                    (0, 1, 0),
+                                                    (0, 0, 1)], [nlayers] * 3)
+        with open(apath, 'wb') as fidw:
+            pickle.dump(cube, fidw)
+    if return_adj:
+        return cube, buildAdjacencyList(cube, 'fcc-cube_%i' % nlayers)
+    else:
+        return cube
+
+
 def ncr(n, r):
     r = min(r, n-r)
     numer = reduce(op.mul, range(n, n-r, -1), 1)
@@ -371,8 +392,9 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
     return struct_min, ce
 
 
-def make_3d_plot(path, metals):
-    metal1, metal2 = metals
+def make_3d_plot(path, metals=None):
+    shape, metals = os.path.basename(path).split('_')[:2]
+    metal1, metal2 = metals[:2], metals[2:]
     if isinstance(path, str):
         df = pd.read_excel(path)
     else:
@@ -391,7 +413,7 @@ def make_3d_plot(path, metals):
     ax.set_xlabel('$X_{%s}$' % metal2)
     ax.set_ylabel('Size (nm)')
     ax.set_zlabel('EE (eV)')
-    ax.set_title('%s %s Icosahedron' % (metal1, metal2))
+    ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
     return fig
 
 
@@ -400,11 +422,14 @@ if __name__ == '__main__':
     plt.close('all')
     desk = os.path.expanduser('~') + '\\desktop\\'
     box = os.path.expanduser('~') + '\\Box Sync\\' \
-        'Michael_Cowan_PhD_research\\data\\np_ce\\icosahedron\\'
+        'Michael_Cowan_PhD_research\\data\\np_ce\\'
 
     # choose two metals for system
     metal1 = 'Cu'
     metal2 = 'Au'
+
+    # choose shape to study (icosahedron, fcc-cube)
+    shape = 'fcc-cube'
 
     # GA properties
     max_runs = 50
@@ -418,9 +443,12 @@ if __name__ == '__main__':
     with open('../data/ico_shell2numatoms.pickle', 'rb') as fidr:
         shell2atoms = pickle.load(fidr)
 
-    # CEs for monometallic icosahedron NPs
-    with open('../data/monomet_CE/icosahedron.pickle', 'rb') as fidr:
-        icos = pickle.load(fidr)
+    # CEs for monometallic NPs
+    if os.path.isfile('../data/monomet_CE/%s.pickle' % shape):
+        with open('../data/monomet_CE/%s.pickle' % shape, 'rb') as fidr:
+            monos = pickle.load(fidr)
+    else:
+        monos = {}
 
     # data for 3D plot
     eedata = []
@@ -436,9 +464,16 @@ if __name__ == '__main__':
 
     # 24 shells = about 10 nm
     # 13 shells = about 5 nm
-    for nshells in range(2, 14):  # 14):
-        natoms = shell2atoms[nshells]
-        path = 'CuAu/icosahedron/%i/' % natoms
+    for nshells in range(1, 15):  # 14):
+        # build atom, adjacency list, and atomgraph
+        atom, adj = build_fcc_cube(nshells)  # build_icosahedron(nshells)
+        ag = AtomGraph(adj, metal1, metal2)
+
+        natoms = len(atom)
+        if natoms not in monos:
+            monos[natoms] = {}
+
+        path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
         if not os.path.isdir(desk + path):
             os.mkdir(desk + path)
             os.mkdir(desk + path + 'plots')
@@ -455,15 +490,13 @@ if __name__ == '__main__':
 
         rands = np.zeros((len(x), 3))
         ces = np.zeros(len(x))
-        atom, adj = build_icosahedron(nshells)
-        ag = AtomGraph(adj, metal1, metal2)
 
         # INITIALIZE POP object
         pop = Pop(ag, n_dope=n[0], popsize=popsize,
                   kill_rate=kill_rate, mate_rate=mate_rate,
                   mute_rate=mute_rate, mute_num=mute_num)
 
-        print('%s %s in %i atom Icosahedron' % (metal1, metal2, natoms))
+        print('%s %s in %i atom %s' % (metal1, metal2, natoms, shape))
 
         for i, dope in enumerate(n):
             if i:
@@ -471,16 +504,16 @@ if __name__ == '__main__':
                 pop.initialize_new_run()
             pop.run(max_runs)
             ces[i] = pop.get_min()
-            if dope == 0 and metal1 not in icos[natoms]:
-                icos[natoms][metal1] = ces[i]
-                print('Adding %s for %i atom icosahedron' % (metal1, natoms))
-            if dope == natoms and metal2 not in icos[natoms]:
-                icos[natoms][metal2] = ces[i]
-                print('Adding %s for %i atom icosahedron' % (metal2, natoms))
+            if dope == 0 and metal1 not in monos[natoms]:
+                monos[natoms][metal1] = ces[i]
+                print('Adding %s for %i atom %s' % (metal1, natoms, shape))
+            if dope == natoms and metal2 not in monos[natoms]:
+                monos[natoms][metal2] = ces[i]
+                print('Adding %s for %i atom %s' % (metal2, natoms, shape))
 
         # calculate excess energy (ees)
-        ees = ces - (x * icos[len(atom)][metal2]) - \
-            ((1 - x) * icos[len(atom)][metal1])
+        ees = ces - (x * monos[len(atom)][metal2]) - \
+            ((1 - x) * monos[len(atom)][metal1])
 
         tot_natoms += [natoms] * len(x)
         comps += list(x)
@@ -489,7 +522,7 @@ if __name__ == '__main__':
         eedata += list(ees)
 
     # SAVE DATA FROM GA RUNS
-    excel = '../data/bimetallic_results/icosahedron/icosahedron_%s%s_data_sub5.xlsx' % (metal1, metal2)
+    excel = '../data/bimetallic_results/{0}/{0}_{1}{2}_data_sub5.xlsx'.format(shape, metal1, metal2)
     df = pd.DataFrame({'n_atoms': tot_natoms, 'diameter': tot_size,
                        'composition_%s' % metal2: comps, 'CE': cedata,
                        'EE': eedata})
@@ -498,6 +531,10 @@ if __name__ == '__main__':
     writer.save()
     writer.close()
 
+    # save new monometallic NP data
+    with open('../data/monomet_CE/%s.pickle' % shape, 'wb') as fidw:
+        pickle.dump(monos, fidw)
+
     # CREATE 3D PLOT of SIZE, COMP, EE
     normalize = matplotlib.colors.Normalize(vmin=min(eedata), vmax=max(eedata))
     ax.plot_trisurf(comps, tot_size, eedata,
@@ -505,5 +542,5 @@ if __name__ == '__main__':
     ax.set_xlabel('$X_{%s}$' % metal2)
     ax.set_ylabel('Size (nm)')
     ax.set_zlabel('EE (eV)')
-    ax.set_title('%s %s Icosahedron' % (metal1, metal2))
+    ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
     fig.show()

@@ -52,7 +52,7 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
     # Check to see if adjacency list has already been generated
     # NOTE: based on data file paths, not ideal but functional for the moment
     fpath = '../data/adjacency_lists/%s.npy' % atom_name
-    if os.path.isfile(fpath):
+    if os.path.isfile(fpath) and 0:
         adj = np.load(fpath)
         return [[i for i in a] for a in adj]
 
