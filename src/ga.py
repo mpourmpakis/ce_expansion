@@ -48,7 +48,7 @@ class Chromo(object):
         return self.atomg.getAtomicCE(i, self.arr)
 
     def mutate(self, nps=1):
-        if not self.n_dope:
+        if not self.n_dope or self.n_dope == self.n_atoms:
             print('Warning: attempting to mutate, but system is monometallic')
             return
 
@@ -75,6 +75,7 @@ class Chromo(object):
 
         child1 = self.arr.copy()
         child2 = chrom2.arr.copy()
+        assert child1.sum() == child2.sum()
         s1 = s2 = 2
         ones = np.where(child1 == 1)[0]
         diff = np.where(child1 != child2)[0][::-1]
@@ -91,6 +92,12 @@ class Chromo(object):
             if s1 == s2 == 0:
                 break
 
+        if not (child1.sum() == child2.sum() == self.n_dope):
+            print()
+            print(child1.sum())
+            print(child2.sum())
+            print(self.n_dope)
+            input()
         assert child1.sum() == child2.sum() == self.n_dope
         return [Chromo(self.atomg, n_dope=self.n_dope, arr=child1),
                 Chromo(self.atomg, n_dope=self.n_dope, arr=child2)]
@@ -109,6 +116,8 @@ class Pop(object):
         else:
             self.n_dope = n_dope
 
+        self.x_dope = self.n_dope / atomg.n_atoms
+
         self.nkill = int(popsize * kill_rate)
         self.nmut = int((popsize - self.nkill) * mute_rate)
         self.n_mate = int(popsize * kill_rate * mate_rate)
@@ -119,6 +128,7 @@ class Pop(object):
         self.initialize_new_run()
 
     def initialize_new_run(self):
+        self.x_dope = self.n_dope / self.atomg.n_atoms
         self.build_pop()
         self.sort_pop()
 
@@ -173,12 +183,16 @@ class Pop(object):
         if self.n_dope not in [0, self.atomg.n_atoms]:
             start = time.time()
             for i in range(int(nsteps)):
-                print('\tMin: %.5f eV \t %i' % (self.info[-1][0], i), end='\r')
+                print('\tdopeX = %.2f\tMin: %.5f eV \t %i' % (self.x_dope,
+                                                              self.info[-1][0],
+                                                              i), end='\r')
                 self.step(rand)
                 # if STD less than std_cut end the GA
                 if self.info[-1][-1] < std_cut:
                     break
-            print('\tMin: %.5f eV \t %i' % (self.info[-1][0], i + 1), end='\r')
+            print('\tdopeX = %.2f\tMin: %.5f eV \t %i' % (self.x_dope,
+                                                          self.info[-1][0],
+                                                          i + 1), end='\r')
             self.runtime = time.time() - start
         self.info = np.array(self.info)
 
@@ -406,8 +420,12 @@ def make_3d_plot(path, metals=None):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(comps, size, ees,
-                    cmap=colormap, norm=normalize)
+    try:
+        ax.plot_trisurf(comps, size, ees,
+                        cmap=colormap, norm=normalize)
+    except RuntimeError:
+        ax.scatter3D(comps, size, ees,
+                     cmap=colormap, norm=normalize)
     ax.set_xlabel('$X_{%s}$' % metal2)
     ax.set_ylabel('Size (nm)')
     ax.set_zlabel('EE (eV)')
@@ -415,19 +433,31 @@ def make_3d_plot(path, metals=None):
     return fig
 
 
-if __name__ == '__main__':
+def run_ga(metals, shape='fcc-cube', plotit=True,
+           save_data=True, save_structs=True, max_shells=None):
     # clear previous plots and define desktop and Box paths
     plt.close('all')
     desk = os.path.join(os.path.expanduser('~'), 'desktop')
     box = os.path.join(os.path.expanduser('~'), 'Box Sync',
                        'Michael_Cowan_PhD_research', 'data', 'np_ce')
 
-    # choose two metals for system
-    metal1 = 'Cu'
-    metal2 = 'Au'
+    # ensure metals is a list of two elements
+    assert len(metals) == 2
+    assert sum(map(lambda i: isinstance(i, str) and len(i) == 2, metals)) == 2
 
-    # choose shape to study (icosahedron, fcc-cube)
-    shape = 'fcc-cube'
+    # always sort metals by alphabetical order for consistency
+    metal1, metal2 = metals
+
+    # print run info
+    print('\n___________RUN INFO___________\n')
+    print('         Metals: %s, %s' % (metal1, metal2))
+    print('          Shape: %s' % shape)
+    print('Save Structures: %s' % bool(save_structs))
+    print('Save GA Results: %s' % bool(save_data))
+    print(' Create 3D Plot: %s' % bool(plotit))
+    if max_shells:
+        print('     Max Shells: %i' % max_shells)
+    print('______________________________')
 
     # GA properties
     max_runs = 50
@@ -456,15 +486,21 @@ if __name__ == '__main__':
     tot_size = []
 
     # initialize 3D plot
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    colormap = plt.get_cmap('coolwarm')
+    if plotit:
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        colormap = plt.get_cmap('coolwarm')
 
     # 24 shells = about 10 nm
     # 13 shells = about 5 nm
-    # Icosahedron: range(2, 14)
-    # FCC-Cube   : range(1, 15)
-    for nshells in range(1, 3):
+    # range of number of shells to test
+    shape2shell = {'icosahedron': [2, 14],
+                   'fcc-cube': [1, 15]
+                   }
+    nshell_range = shape2shell[shape]
+    if max_shells:
+        nshell_range[1] = max_shells
+    for nshells in range(*nshell_range):
         # build atom, adjacency list, and atomgraph
         atom, adj = build_fcc_cube(nshells)  # build_icosahedron(nshells)
         ag = AtomGraph(adj, metal1, metal2)
@@ -473,17 +509,18 @@ if __name__ == '__main__':
         if natoms not in monos:
             monos[natoms] = {}
 
-        path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
-        struct_path = os.path.join(box, path, 'structures')
-        pathlib.Path(struct_path).mkdir(parents=True,
-                                        exist_ok=True)
+        if save_structs:
+            path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
+            struct_path = os.path.join(box, path, 'structures')
+            pathlib.Path(struct_path).mkdir(parents=True,
+                                            exist_ok=True)
 
         # x = metal2 concentration [0, 1]
         x = np.linspace(0, 1, 11)
         n = (x * natoms).astype(int)
 
         # USE THIS TO TEST EVERY CONCENTRATION
-        if natoms < 150:
+        if natoms < 15:  # 0:
             n = np.arange(0, natoms + 1)
             x = n / n.max()
 
@@ -511,7 +548,8 @@ if __name__ == '__main__':
                 print('Adding %s for %i atom %s' % (metal2, natoms, shape))
 
             # save min structure
-            make_xyz(atom.copy(), pop.pop[0], struct_path)
+            if save_structs:
+                make_xyz(atom.copy(), pop.pop[0], struct_path)
 
         # calculate excess energy (ees)
         ees = ces - (x * monos[len(atom)][metal2]) - \
@@ -523,26 +561,46 @@ if __name__ == '__main__':
         cedata += list(ces)
         eedata += list(ees)
 
-    # SAVE DATA FROM GA RUNS
-    excel = '../data/bimetallic_results/{0}/{0}_{1}{2}_data_sub5.xlsx'.format(shape, metal1, metal2)
-    df = pd.DataFrame({'n_atoms': tot_natoms, 'diameter': tot_size,
-                       'composition_%s' % metal2: comps, 'CE': cedata,
-                       'EE': eedata})
-    writer = pd.ExcelWriter(excel, engine='xlsxwriter')
-    df.to_excel(writer, index=False)
-    writer.save()
-    writer.close()
+    # save data from each GA run
+    if save_data:
+        excel = '../data/bimetallic_results/' \
+                '{0}/{0}_{1}{2}_data_{3}-{4}shells.xlsx'.format(shape,
+                                                                metal1,
+                                                                metal2,
+                                                                *nshell_range)
+        df = pd.DataFrame({'n_atoms': tot_natoms, 'diameter': tot_size,
+                           'composition_%s' % metal2: comps, 'CE': cedata,
+                           'EE': eedata})
+        writer = pd.ExcelWriter(excel, engine='xlsxwriter')
+        df.to_excel(writer, index=False)
+        writer.save()
+        writer.close()
 
     # save new monometallic NP data
     with open('../data/monomet_CE/%s.pickle' % shape, 'wb') as fidw:
         pickle.dump(monos, fidw)
 
-    # CREATE 3D PLOT of SIZE, COMP, EE
-    normalize = matplotlib.colors.Normalize(vmin=min(eedata), vmax=max(eedata))
-    ax.plot_trisurf(comps, tot_size, eedata,
-                    cmap=colormap, norm=normalize)
-    ax.set_xlabel('$X_{%s}$' % metal2)
-    ax.set_ylabel('Size (nm)')
-    ax.set_zlabel('EE (eV)')
-    ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
-    fig.show()
+    # create 3D plot of size, comp, EE
+    if plotit:
+        normalize = matplotlib.colors.Normalize(vmin=min(eedata),
+                                                vmax=max(eedata))
+        ax.plot_trisurf(comps, tot_size, eedata,
+                        cmap=colormap, norm=normalize)
+        ax.set_xlabel('$X_{%s}$' % metal2)
+        ax.set_ylabel('Size (nm)')
+        ax.set_zlabel('EE (eV)')
+        ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
+        fig.show()
+
+if __name__ == '__main__':
+    # metals = 'Ag', 'Cu'
+    # metals = 'Ag', 'Au'
+    metals = 'Cu', 'Au'
+
+    metals = 'Au', 'Cu'
+
+    # shape = 'fcc-cube'
+    shape = 'icosahedron'
+
+    run_ga(metals, shape, save_data=False, save_structs=False,
+           max_shells=3, plotit=False)
