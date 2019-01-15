@@ -474,8 +474,6 @@ if __name__ == '__main__':
             monos[natoms] = {}
 
         path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
-        # pathlib.Path(desk + path + 'plots').mkdir(parents=True,
-        #                                           exist_ok=True)
         struct_path = os.path.join(box, path, 'structures')
         pathlib.Path(struct_path).mkdir(parents=True,
                                         exist_ok=True)
