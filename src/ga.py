@@ -528,8 +528,8 @@ if __name__ == '__main__':
     # SAVE DATA FROM GA RUNS
     excel = '../data/bimetallic_results/{0}/{0}_{1}{2}_data_sub5.xlsx'.format(shape, metal1, metal2)
     df = pd.DataFrame({'n_atoms': tot_natoms, 'diameter': tot_size,
-                    'composition_%s' % metal2: comps, 'CE': cedata,
-                    'EE': eedata})
+                       'composition_%s' % metal2: comps, 'CE': cedata,
+                       'EE': eedata})
     writer = pd.ExcelWriter(excel, engine='xlsxwriter')
     df.to_excel(writer, index=False)
     writer.save()
