@@ -4,12 +4,14 @@ import os
 import sys
 import time
 import random
+import pathlib
 import pickle
 from functools import reduce
 import itertools as it
 from atomgraph import AtomGraph
 from adjacency import buildAdjacencyList
 import ase.cluster
+import ase.io
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -238,19 +240,19 @@ def make_plot(p):
     return fig, ax
 
 
-def make_xyz(atom, chrom, path=None):
+def make_xyz(atom, chrom, path, verbose=False):
     metal1, metal2 = chrom.atomg.symbols
     atom.info['CE'] = chrom.score
     for i, dope in enumerate(chrom.arr):
         atom[i].symbol = metal2 if dope else metal1
 
-    if not path:
-        n_dope = sum(chrom.arr)
-        path = os.path.expanduser('~') + \
-            '/desktop/%s%i_%s%i.xyz' % (metals[0], len(atom) - n_dope,
-                                        metals[1], n_dope)
-    atom.write(path)
-    print('Saved as %s' % path)
+    n_dope = sum(chrom.arr)
+    fname = '%s%i_%s%i.xyz' % (metal1, len(atom) - n_dope,
+                               metal2, n_dope)
+    path = os.path.join(path, fname)
+    ase.io.write(path, atom)
+    if verbose:
+        print('Saved as %s' % path)
     return atom
 
 
@@ -266,10 +268,8 @@ def gen_random(atomg, n_dope, n=500):
 
 def build_icosahedron(nshell, return_adj=True):
     # ensure necessary directories exist within local repository
-    if not os.path.isdir('../data/atom_objects/'):
-        os.mkdir('../data/atom_objects/')
-    if not os.path.isdir('../data/atom_objects/icosahedron/'):
-        os.mkdir('../data/atom_objects/icosahedron/')
+    pathlib.Path('../data/atom_objects/icosahedron/').mkdir(parents=True,
+                                                            exist_ok=True)
     apath = '../data/atom_objects/icosahedron/%i.pickle' % nshell
     if os.path.isfile(apath):
         with open(apath, 'rb') as fidr:
@@ -285,10 +285,8 @@ def build_icosahedron(nshell, return_adj=True):
 
 
 def build_fcc_cube(nlayers, return_adj=True):
-    if not os.path.isdir('../data/atom_objects/'):
-        os.mkdir('../data/atom_objects/')
-    if not os.path.isdir('../data/atom_objects/fcc-cube/'):
-        os.mkdir('../data/atom_objects/fcc-cube/')
+    pathlib.Path('../data/atom_objects/fcc-cube').mkdir(parents=True,
+                                                        exist_ok=True)
     apath = '../data/atom_objects/fcc-cube/%i.pickle' % nlayers
     if os.path.isfile(apath):
         with open(apath, 'rb') as fidr:
@@ -420,9 +418,9 @@ def make_3d_plot(path, metals=None):
 if __name__ == '__main__':
     # clear previous plots and define desktop and Box paths
     plt.close('all')
-    desk = os.path.expanduser('~') + '\\desktop\\'
-    box = os.path.expanduser('~') + '\\Box Sync\\' \
-        'Michael_Cowan_PhD_research\\data\\np_ce\\'
+    desk = os.path.join(os.path.expanduser('~'), 'desktop')
+    box = os.path.join(os.path.expanduser('~'), 'Box Sync',
+                       'Michael_Cowan_PhD_research', 'data', 'np_ce')
 
     # choose two metals for system
     metal1 = 'Cu'
@@ -464,7 +462,9 @@ if __name__ == '__main__':
 
     # 24 shells = about 10 nm
     # 13 shells = about 5 nm
-    for nshells in range(1, 15):  # 14):
+    # Icosahedron: range(2, 14)
+    # FCC-Cube   : range(1, 15)
+    for nshells in range(1, 3):
         # build atom, adjacency list, and atomgraph
         atom, adj = build_fcc_cube(nshells)  # build_icosahedron(nshells)
         ag = AtomGraph(adj, metal1, metal2)
@@ -474,10 +474,11 @@ if __name__ == '__main__':
             monos[natoms] = {}
 
         path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
-        if not os.path.isdir(desk + path):
-            os.mkdir(desk + path)
-            os.mkdir(desk + path + 'plots')
-            os.mkdir(desk + path + 'structures')
+        # pathlib.Path(desk + path + 'plots').mkdir(parents=True,
+        #                                           exist_ok=True)
+        struct_path = os.path.join(box, path, 'structures')
+        pathlib.Path(struct_path).mkdir(parents=True,
+                                        exist_ok=True)
 
         # x = metal2 concentration [0, 1]
         x = np.linspace(0, 1, 11)
@@ -511,6 +512,9 @@ if __name__ == '__main__':
                 monos[natoms][metal2] = ces[i]
                 print('Adding %s for %i atom %s' % (metal2, natoms, shape))
 
+            # save min structure
+            make_xyz(atom.copy(), pop.pop[0], struct_path)
+
         # calculate excess energy (ees)
         ees = ces - (x * monos[len(atom)][metal2]) - \
             ((1 - x) * monos[len(atom)][metal1])
@@ -524,8 +528,8 @@ if __name__ == '__main__':
     # SAVE DATA FROM GA RUNS
     excel = '../data/bimetallic_results/{0}/{0}_{1}{2}_data_sub5.xlsx'.format(shape, metal1, metal2)
     df = pd.DataFrame({'n_atoms': tot_natoms, 'diameter': tot_size,
-                       'composition_%s' % metal2: comps, 'CE': cedata,
-                       'EE': eedata})
+                    'composition_%s' % metal2: comps, 'CE': cedata,
+                    'EE': eedata})
     writer = pd.ExcelWriter(excel, engine='xlsxwriter')
     df.to_excel(writer, index=False)
     writer.save()
