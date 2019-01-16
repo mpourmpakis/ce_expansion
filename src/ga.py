@@ -468,8 +468,11 @@ def run_ga(metals, shape, plotit=True,
     mute_num = 1
 
     # CEs for monometallic NPs
-    if os.path.isfile('../data/monomet_CE/%s.pickle' % shape):
-        with open('../data/monomet_CE/%s.pickle' % shape, 'rb') as fidr:
+    mono_path = '../data/monometallic_CE/'
+    mono_pickle = mono_path + '%s.pickle' % shape
+    pathlib.Path(mono_path).mkdir(parents=True, exist_ok=True)
+    if os.path.isfile(mono_pickle):
+        with open(mono_pickle, 'rb') as fidr:
             monos = pickle.load(fidr)
     else:
         monos = {}
@@ -574,7 +577,7 @@ def run_ga(metals, shape, plotit=True,
         writer.close()
 
     # save new monometallic NP data
-    with open('../data/monomet_CE/%s.pickle' % shape, 'wb') as fidw:
+    with open(mono_pickle, 'wb') as fidw:
         pickle.dump(monos, fidw)
 
     # create 3D plot of size, comp, EE
