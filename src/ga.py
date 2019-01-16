@@ -138,12 +138,18 @@ class Pop(object):
         # track runtime
         self.runtime = 0
 
-    def build_pop(self, n_fill_cn=0):
+    def build_pop(self):
+        # create popsize - 2 random structures
         self.pop = [Chromo(self.atomg, n_dope=self.n_dope)
-                    for i in range(self.popsize - n_fill_cn)]
-        self.pop += [Chromo(self.atomg, n_dope=self.n_dope, arr=z)
-                     for z in fill_cn(self.atomg, self.n_dope,
-                                      return_n=n_fill_cn)]
+                    for i in range(self.popsize - 2)]
+
+        # add max and min CN filled structs
+        self.pop += [Chromo(self.atomg, n_dope=self.n_dope,
+                            arr=fill_cn(self.atomg, self.n_dope,
+                                        low_first=True, return_n=1)[0])]
+        self.pop += [Chromo(self.atomg, n_dope=self.n_dope,
+                            arr=fill_cn(self.atomg, self.n_dope,
+                                        low_first=False, return_n=1)[0])]
 
     def get_min(self):
         return self.info[:, 0].min()
@@ -280,41 +286,33 @@ def gen_random(atomg, n_dope, n=500):
     return scores.min(), scores.mean(), scores.std()
 
 
-def build_icosahedron(nshell, return_adj=True):
+def build_structure(shape, nshell, return_adj=True):
     # ensure necessary directories exist within local repository
-    pathlib.Path('../data/atom_objects/icosahedron/').mkdir(parents=True,
-                                                            exist_ok=True)
-    apath = '../data/atom_objects/icosahedron/%i.pickle' % nshell
+    pathlib.Path('../data/atom_objects/%s/' % shape).mkdir(parents=True,
+                                                           exist_ok=True)
+    apath = '../data/atom_objects/%s/%i.pickle' % (shape, nshell)
     if os.path.isfile(apath):
         with open(apath, 'rb') as fidr:
-            a = pickle.load(fidr)
+            atom = pickle.load(fidr)
     else:
-        a = ase.cluster.Icosahedron('Cu', nshell)
-        with open(apath, 'wb') as fidw:
-            pickle.dump(a, fidw)
-    if return_adj:
-        return a, buildAdjacencyList(a, 'icosahedron_%i' % nshell)
-    else:
-        return a
 
+        # build atom object
+        if shape == 'icosahedron':
+            atom = ase.cluster.Icosahedron('Cu', nshell)
+        elif shape == 'fcc-cube':
+            atom = ase.cluster.FaceCenteredCubic('Cu', [(1, 0, 0),
+                                                        (0, 1, 0),
+                                                        (0, 0, 1)],
+                                                 [nshell] * 3)
+        else:
+            raise TypeError('%s has not been implemented')
 
-def build_fcc_cube(nlayers, return_adj=True):
-    pathlib.Path('../data/atom_objects/fcc-cube').mkdir(parents=True,
-                                                        exist_ok=True)
-    apath = '../data/atom_objects/fcc-cube/%i.pickle' % nlayers
-    if os.path.isfile(apath):
-        with open(apath, 'rb') as fidr:
-            cube = pickle.load(fidr)
-    else:
-        cube = ase.cluster.FaceCenteredCubic('Cu', [(1, 0, 0),
-                                                    (0, 1, 0),
-                                                    (0, 0, 1)], [nlayers] * 3)
         with open(apath, 'wb') as fidw:
-            pickle.dump(cube, fidw)
+            pickle.dump(atom, fidw)
     if return_adj:
-        return cube, buildAdjacencyList(cube, 'fcc-cube_%i' % nlayers)
+        return atom, buildAdjacencyList(atom, '%s_%i' % (shape, nshell))
     else:
-        return cube
+        return atom
 
 
 def ncr(n, r):
@@ -336,7 +334,7 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
         ce = atomg.getTotalCE(struct_min)
         checkall = True
     else:
-        cn_list = atomg.getAllCNs()
+        cn_list = np.array(atomg.getAllCNs())
         cnset = sorted(set(cn_list))
         if not low_first:
             cnset = cnset[::-1]
@@ -401,6 +399,8 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
                 n_dope -= len(spots)
     if not ce:
         ce = atomg.getTotalCE(struct_min)
+    if return_n:
+        return [struct_min]
     return struct_min, ce
 
 
@@ -433,7 +433,7 @@ def make_3d_plot(path, metals=None):
     return fig
 
 
-def run_ga(metals, shape='fcc-cube', plotit=True,
+def run_ga(metals, shape, plotit=True,
            save_data=True, save_structs=True, max_shells=None):
     # clear previous plots and define desktop and Box paths
     plt.close('all')
@@ -467,10 +467,6 @@ def run_ga(metals, shape='fcc-cube', plotit=True,
     mute_rate = 0.2
     mute_num = 1
 
-    # dict giving number of atoms in icosahedron NP based on nshells
-    with open('../data/ico_shell2numatoms.pickle', 'rb') as fidr:
-        shell2atoms = pickle.load(fidr)
-
     # CEs for monometallic NPs
     if os.path.isfile('../data/monomet_CE/%s.pickle' % shape):
         with open('../data/monomet_CE/%s.pickle' % shape, 'rb') as fidr:
@@ -502,7 +498,7 @@ def run_ga(metals, shape='fcc-cube', plotit=True,
         nshell_range[1] = max_shells
     for nshells in range(*nshell_range):
         # build atom, adjacency list, and atomgraph
-        atom, adj = build_fcc_cube(nshells)  # build_icosahedron(nshells)
+        atom, adj = build_structure(shape, nshells)
         ag = AtomGraph(adj, metal1, metal2)
 
         natoms = len(atom)
@@ -539,6 +535,7 @@ def run_ga(metals, shape='fcc-cube', plotit=True,
                 pop.n_dope = dope
                 pop.initialize_new_run()
             pop.run(max_runs)
+            print(' ' * 100, end='\r')
             ces[i] = pop.get_min()
             if dope == 0 and metal1 not in monos[natoms]:
                 monos[natoms][metal1] = ces[i]
@@ -603,4 +600,4 @@ if __name__ == '__main__':
     shape = 'icosahedron'
 
     run_ga(metals, shape, save_data=False, save_structs=False,
-           max_shells=3, plotit=False)
+           max_shells=5, plotit=True)
