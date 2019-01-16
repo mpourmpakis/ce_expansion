@@ -519,7 +519,7 @@ def run_ga(metals, shape, plotit=True,
         n = (x * natoms).astype(int)
 
         # USE THIS TO TEST EVERY CONCENTRATION
-        if natoms < 15:  # 0:
+        if natoms < 150:
             n = np.arange(0, natoms + 1)
             x = n / n.max()
 
