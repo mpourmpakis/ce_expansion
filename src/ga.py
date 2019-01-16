@@ -446,7 +446,7 @@ def run_ga(metals, shape, plotit=True,
     assert sum(map(lambda i: isinstance(i, str) and len(i) == 2, metals)) == 2
 
     # always sort metals by alphabetical order for consistency
-    metal1, metal2 = metals
+    metal1, metal2 = sorted(metals)
 
     # print run info
     print('\n___________RUN INFO___________\n')
@@ -594,10 +594,8 @@ if __name__ == '__main__':
     # metals = 'Ag', 'Au'
     metals = 'Cu', 'Au'
 
-    metals = 'Au', 'Cu'
-
     # shape = 'fcc-cube'
     shape = 'icosahedron'
 
-    run_ga(metals, shape, save_data=False, save_structs=False,
-           max_shells=5, plotit=True)
+    run_ga(metals, shape, save_data=True,
+           save_structs=True, plotit=False)
