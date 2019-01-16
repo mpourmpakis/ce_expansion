@@ -19,6 +19,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # random.seed(9876)
 
+# center output strings around <CENTER> characters
+CENTER = 40
+
 
 class Chromo(object):
     def __init__(self, atomg, n_dope=0, arr=None, x_dope=None):
@@ -189,16 +192,18 @@ class Pop(object):
         if self.n_dope not in [0, self.atomg.n_atoms]:
             start = time.time()
             for i in range(int(nsteps)):
-                print('\tdopeX = %.2f\tMin: %.5f eV \t %i' % (self.x_dope,
-                                                              self.info[-1][0],
-                                                              i), end='\r')
+                val = 'dopeX = %.2f\tMin: %.5f eV \t %i' % (self.x_dope,
+                                                            self.info[-1][0],
+                                                            i)
+                print(val.center(CENTER), end='\r')
                 self.step(rand)
                 # if STD less than std_cut end the GA
                 if self.info[-1][-1] < std_cut:
                     break
-            print('\tdopeX = %.2f\tMin: %.5f eV \t %i' % (self.x_dope,
-                                                          self.info[-1][0],
-                                                          i + 1), end='\r')
+            val = 'dopeX = %.2f\tMin: %.5f eV \t %i' % (self.x_dope,
+                                                        self.info[-1][0],
+                                                        i + 1)
+            print(val.center(CENTER), end='\r')
             self.runtime = time.time() - start
         self.info = np.array(self.info)
 
@@ -449,15 +454,15 @@ def run_ga(metals, shape, plotit=True,
     metal1, metal2 = sorted(metals)
 
     # print run info
-    print('\n___________RUN INFO___________\n')
-    print('         Metals: %s, %s' % (metal1, metal2))
-    print('          Shape: %s' % shape)
-    print('Save Structures: %s' % bool(save_structs))
-    print('Save GA Results: %s' % bool(save_data))
-    print(' Create 3D Plot: %s' % bool(plotit))
+    print('\n----------------RUN INFO----------------')
+    print('             Metals: %s, %s' % (metal1, metal2))
+    print('              Shape: %s' % shape)
+    print('    Save Structures: %s' % bool(save_structs))
+    print('    Save GA Results: %s' % bool(save_data))
+    print('     Create 3D Plot: %s' % bool(plotit))
     if max_shells:
-        print('     Max Shells: %i' % max_shells)
-    print('______________________________')
+        print('         Max Shells: %i' % max_shells)
+    print('----------------------------------------')
 
     # GA properties
     max_runs = 50
@@ -499,7 +504,8 @@ def run_ga(metals, shape, plotit=True,
     nshell_range = shape2shell[shape]
     if max_shells:
         nshell_range[1] = max_shells
-    for nshells in range(*nshell_range):
+    nstructs = len(range(*nshell_range))
+    for struct_i, nshells in enumerate(range(*nshell_range)):
         # build atom, adjacency list, and atomgraph
         atom, adj = build_structure(shape, nshells)
         ag = AtomGraph(adj, metal1, metal2)
@@ -531,7 +537,8 @@ def run_ga(metals, shape, plotit=True,
                   kill_rate=kill_rate, mate_rate=mate_rate,
                   mute_rate=mute_rate, mute_num=mute_num)
 
-        print('%s %s in %i atom %s' % (metal1, metal2, natoms, shape))
+        starting_outp = '%s%s in %i atom %s' % (metal1, metal2, natoms, shape)
+        print(starting_outp.center(CENTER))
 
         for i, dope in enumerate(n):
             if i:
@@ -542,14 +549,18 @@ def run_ga(metals, shape, plotit=True,
             ces[i] = pop.get_min()
             if dope == 0 and metal1 not in monos[natoms]:
                 monos[natoms][metal1] = ces[i]
-                print('Adding %s for %i atom %s' % (metal1, natoms, shape))
+                # print('Adding %s for %i atom %s' % (metal1, natoms, shape))
             if dope == natoms and metal2 not in monos[natoms]:
                 monos[natoms][metal2] = ces[i]
-                print('Adding %s for %i atom %s' % (metal2, natoms, shape))
+                # print('Adding %s for %i atom %s' % (metal2, natoms, shape))
 
             # save min structure
             if save_structs:
                 make_xyz(atom.copy(), pop.pop[0], struct_path)
+        print('----------------------------------------')
+        outp = 'Completed Structure %i of %i' % (struct_i + 1, nstructs)
+        print(outp.center(CENTER))
+        print('----------------------------------------')
 
         # calculate excess energy (ees)
         ees = ces - (x * monos[len(atom)][metal2]) - \
@@ -594,11 +605,11 @@ def run_ga(metals, shape, plotit=True,
 
 if __name__ == '__main__':
     # metals = 'Ag', 'Cu'
-    # metals = 'Ag', 'Au'
-    metals = 'Cu', 'Au'
+    metals = 'Ag', 'Au'
+    # metals = 'Cu', 'Au'
 
     # shape = 'fcc-cube'
     shape = 'icosahedron'
 
-    run_ga(metals, shape, save_data=True,
-           save_structs=True, plotit=False)
+    run_ga(metals, shape, save_data=False, max_shells=3,
+           save_structs=False, plotit=False)
