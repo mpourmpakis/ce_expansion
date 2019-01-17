@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import random
+from datetime import datetime as dt
 import pathlib
 import pickle
 from functools import reduce
@@ -192,17 +193,17 @@ class Pop(object):
         if self.n_dope not in [0, self.atomg.n_atoms]:
             start = time.time()
             for i in range(int(nsteps)):
-                val = 'dopeX = %.2f\tMin: %.5f eV \t %i' % (self.x_dope,
-                                                            self.info[-1][0],
-                                                            i)
+                val = 'dopeX = %.2f\tMin: %.5f eV\t%i' % (self.x_dope,
+                                                          self.info[-1][0],
+                                                          i)
                 print(val.center(CENTER), end='\r')
                 self.step(rand)
                 # if STD less than std_cut end the GA
                 if self.info[-1][-1] < std_cut:
                     break
-            val = 'dopeX = %.2f\tMin: %.5f eV \t %i' % (self.x_dope,
-                                                        self.info[-1][0],
-                                                        i + 1)
+            val = 'dopeX = %.2f\tMin: %.5f eV\t%i' % (self.x_dope,
+                                                      self.info[-1][0],
+                                                      i + 1)
             print(val.center(CENTER), end='\r')
             self.runtime = time.time() - start
         self.info = np.array(self.info)
@@ -231,7 +232,7 @@ def results_str(p, disp=True):
     return res
 
 
-def log_results(p):
+def log_ga_sim(p):
     results = results_str(p, disp=False)
 
     with open('results.txt', 'a') as fid:
@@ -246,6 +247,10 @@ def log_results(p):
         print('NEW MIN!'.center(50, '-'))
         with open('best.txt', 'w') as bestfid:
             bestfid.write(results)
+
+
+def log_ga_batch(path):
+    return
 
 
 def make_plot(p):
@@ -439,7 +444,7 @@ def make_3d_plot(path, metals=None):
 
 
 def run_ga(metals, shape, plotit=True,
-           save_data=True, save_structs=True, max_shells=None):
+           save_data=True, log_results=True, max_shells=None):
     # clear previous plots and define desktop and Box paths
     plt.close('all')
     desk = os.path.join(os.path.expanduser('~'), 'desktop')
@@ -457,7 +462,6 @@ def run_ga(metals, shape, plotit=True,
     print('\n----------------RUN INFO----------------')
     print('             Metals: %s, %s' % (metal1, metal2))
     print('              Shape: %s' % shape)
-    print('    Save Structures: %s' % bool(save_structs))
     print('    Save GA Results: %s' % bool(save_data))
     print('     Create 3D Plot: %s' % bool(plotit))
     if max_shells:
@@ -482,18 +486,18 @@ def run_ga(metals, shape, plotit=True,
     else:
         monos = {}
 
+    # track if any new mono calcs are added
+    new_mono_calcs = False
+
+    # keep track of total new minimum CE structs (based on saved structs)
+    tot_new_min_structs = 0
+
     # data for 3D plot
     eedata = []
     cedata = []
     comps = []
     tot_natoms = []
     tot_size = []
-
-    # initialize 3D plot
-    if plotit:
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        colormap = plt.get_cmap('coolwarm')
 
     # 24 shells = about 10 nm
     # 13 shells = about 5 nm
@@ -505,6 +509,10 @@ def run_ga(metals, shape, plotit=True,
     if max_shells:
         nshell_range[1] = max_shells
     nstructs = len(range(*nshell_range))
+
+    # log runtime
+    starttime = time.time()
+
     for struct_i, nshells in enumerate(range(*nshell_range)):
         # build atom, adjacency list, and atomgraph
         atom, adj = build_structure(shape, nshells)
@@ -514,11 +522,11 @@ def run_ga(metals, shape, plotit=True,
         if natoms not in monos:
             monos[natoms] = {}
 
-        if save_structs:
-            path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
-            struct_path = os.path.join(box, path, 'structures')
-            pathlib.Path(struct_path).mkdir(parents=True,
-                                            exist_ok=True)
+        # build structure path
+        path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
+        struct_path = os.path.join(box, path, 'structures')
+        pathlib.Path(struct_path).mkdir(parents=True,
+                                        exist_ok=True)
 
         # x = metal2 concentration [0, 1]
         x = np.linspace(0, 1, 11)
@@ -540,25 +548,41 @@ def run_ga(metals, shape, plotit=True,
         starting_outp = '%s%s in %i atom %s' % (metal1, metal2, natoms, shape)
         print(starting_outp.center(CENTER))
 
+        # keep track of new minimum CE structs (based on saved structs)
+        new_min_structs = 0
         for i, dope in enumerate(n):
             if i:
                 pop.n_dope = dope
                 pop.initialize_new_run()
             pop.run(max_runs)
-            print(' ' * 100, end='\r')
             ces[i] = pop.get_min()
             if dope == 0 and metal1 not in monos[natoms]:
                 monos[natoms][metal1] = ces[i]
-                # print('Adding %s for %i atom %s' % (metal1, natoms, shape))
+                new_mono_calcs = True
             if dope == natoms and metal2 not in monos[natoms]:
                 monos[natoms][metal2] = ces[i]
-                # print('Adding %s for %i atom %s' % (metal2, natoms, shape))
+                new_mono_calcs = True
 
-            # save min structure
-            if save_structs:
-                make_xyz(atom.copy(), pop.pop[0], struct_path)
+            fname = '%s%i_%s%i.xyz' % (metal1, len(atom) - dope,
+                                       metal2, dope)
+
+            # check to see if older ga run founded lower CE structure
+            if os.path.isfile(os.path.join(struct_path, fname)):
+                oldrunatom = ase.io.read(os.path.join(struct_path, fname))
+
+                # if lower (by at least 1e-4), save new structure
+                if (pop.get_min() - oldrunatom.info['CE']) < -1e-5:
+                    make_xyz(atom.copy(), pop.pop[0], struct_path)
+                    new_min_structs += 1
+                    tot_new_min_structs += 1
+                else:
+                    ces[i] = oldrunatom.info['CE']
+
+        print(' ' * 100, end='\r')
         print('----------------------------------------')
-        outp = 'Completed Structure %i of %i' % (struct_i + 1, nstructs)
+        outp = 'Completed %i of %i' % (struct_i + 1, nstructs)
+        if new_min_structs:
+            outp += ' (%i new mins)' % new_min_structs
         print(outp.center(CENTER))
         print('----------------------------------------')
 
@@ -571,6 +595,8 @@ def run_ga(metals, shape, plotit=True,
         tot_size += [atom.cell[0][0] / 10] * len(x)
         cedata += list(ces)
         eedata += list(ees)
+
+    complete = time.time() - starttime
 
     # save data from each GA run
     if save_data:
@@ -587,12 +613,18 @@ def run_ga(metals, shape, plotit=True,
         writer.save()
         writer.close()
 
-    # save new monometallic NP data
-    with open(mono_pickle, 'wb') as fidw:
-        pickle.dump(monos, fidw)
+    # save new monometallic NP data if any new calcs have been added
+    if new_mono_calcs:
+        print('New monometallic calcs have been saved'.center(CENTER))
+        print('----------------------------------------')
+        with open(mono_pickle, 'wb') as fidw:
+            pickle.dump(monos, fidw)
 
     # create 3D plot of size, comp, EE
     if plotit:
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        colormap = plt.get_cmap('coolwarm')
         normalize = matplotlib.colors.Normalize(vmin=min(eedata),
                                                 vmax=max(eedata))
         ax.plot_trisurf(comps, tot_size, eedata,
@@ -603,13 +635,35 @@ def run_ga(metals, shape, plotit=True,
         ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
         fig.show()
 
+    # log sim results
+    today = dt.now().strftime("%m/%d/%Y")
+    timeofnow = dt.now().strftime("%I:%M %p")
+
+    logtxt = '----------------RUN INFO----------------\n'
+    logtxt += '            Date: %s\n' % today
+    logtxt += '            Time: %s\n' % timeofnow
+    logtxt += '         Runtime: %02i:%02i:%02i:%02i\n'
+    logtxt = logtxt % (complete // 86400, complete % 86400 // 3600,
+                       complete % 3600 // 60, complete % 60)
+    logtxt += '          Metals: %s, %s\n' % (metal1, metal2)
+    logtxt += '           Shape: %s\n' % shape
+    logtxt += '     Shell Range: %i - %i\n' % tuple(nshell_range)
+    logtxt += ' New Min Structs: %i\n' % tot_new_min_structs
+    logtxt += '----------------------------------------\n'
+    logpath = os.path.join(box, 'sims.log')
+    with open(logpath, 'a') as flog:
+        flog.write(logtxt)
+
+
 if __name__ == '__main__':
-    # metals = 'Ag', 'Cu'
-    metals = 'Ag', 'Au'
-    # metals = 'Cu', 'Au'
+    metal_opts = [('Ag', 'Cu'),
+                  ('Ag', 'Au'),
+                  ('Au', 'Cu')
+                  ]
 
-    # shape = 'fcc-cube'
-    shape = 'icosahedron'
+    shape_opts = ['icosahedron', 'fcc-cube']
 
-    run_ga(metals, shape, save_data=False, max_shells=3,
-           save_structs=False, plotit=False)
+    for metals in metal_opts:
+        for shape in shape_opts:
+            run_ga(metals, shape, save_data=False, plotit=False,
+                   log_results=True, max_shells=2)
