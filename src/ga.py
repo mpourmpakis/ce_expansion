@@ -454,6 +454,19 @@ def run_ga(metals, shape, plotit=True,
     # always sort metals by alphabetical order for consistency
     metal1, metal2 = sorted(metals)
 
+    # 24 shells = about 10 nm
+    # 13 shells = about 5 nm
+    # range of number of shells to test
+    shape2shell = {'icosahedron': [3, 14],
+                   'fcc-cube': [2, 15]
+                   }
+    nshell_range = shape2shell[shape]
+    if max_shells:
+        nshell_range[1] = max_shells
+    nstructs = len(range(*nshell_range))
+    if not nstructs:
+        return
+
     # print run info
     print('\n----------------RUN INFO----------------')
     print('             Metals: %s, %s' % (metal1, metal2))
@@ -494,17 +507,6 @@ def run_ga(metals, shape, plotit=True,
     comps = []
     tot_natoms = []
     tot_size = []
-
-    # 24 shells = about 10 nm
-    # 13 shells = about 5 nm
-    # range of number of shells to test
-    shape2shell = {'icosahedron': [3, 14],
-                   'fcc-cube': [2, 15]
-                   }
-    nshell_range = shape2shell[shape]
-    if max_shells:
-        nshell_range[1] = max_shells
-    nstructs = len(range(*nshell_range))
 
     # log runtime
     starttime = time.time()
