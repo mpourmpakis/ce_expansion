@@ -249,10 +249,6 @@ def log_ga_sim(p):
             bestfid.write(results)
 
 
-def log_ga_batch(path):
-    return
-
-
 def make_plot(p):
     fig, ax = plt.subplots(figsize=(7, 7))
 
@@ -502,8 +498,8 @@ def run_ga(metals, shape, plotit=True,
     # 24 shells = about 10 nm
     # 13 shells = about 5 nm
     # range of number of shells to test
-    shape2shell = {'icosahedron': [2, 14],
-                   'fcc-cube': [1, 15]
+    shape2shell = {'icosahedron': [3, 14],
+                   'fcc-cube': [2, 15]
                    }
     nshell_range = shape2shell[shape]
     if max_shells:
@@ -665,5 +661,5 @@ if __name__ == '__main__':
 
     for metals in metal_opts:
         for shape in shape_opts:
-            run_ga(metals, shape, save_data=False, plotit=False,
-                   log_results=True, max_shells=2)
+            run_ga(metals, shape, save_data=True, plotit=False,
+                   log_results=True)
