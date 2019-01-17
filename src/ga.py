@@ -310,6 +310,9 @@ def build_structure(shape, nshell, return_adj=True):
                                                         (0, 1, 0),
                                                         (0, 0, 1)],
                                                  [nshell] * 3)
+        elif shape == 'cuboctahedron':
+            atom = ase.cluster.Octahedron('Cu', 2 * nshell + 1,
+                                          cutoff=nshell)
         else:
             raise TypeError('%s has not been implemented')
 
@@ -457,8 +460,9 @@ def run_ga(metals, shape, plotit=True,
     # 24 shells = about 10 nm
     # 13 shells = about 5 nm
     # range of number of shells to test
-    shape2shell = {'icosahedron': [3, 14],
-                   'fcc-cube': [2, 15]
+    shape2shell = {'icosahedron': [2, 14],
+                   'fcc-cube': [1, 15],
+                   'cuboctahedron': [1, 15]
                    }
     nshell_range = shape2shell[shape]
     if max_shells:
@@ -506,6 +510,8 @@ def run_ga(metals, shape, plotit=True,
     cedata = []
     comps = []
     tot_natoms = []
+    nmetal1 = []
+    nmetal2 = []
     tot_size = []
 
     # log runtime
@@ -526,14 +532,18 @@ def run_ga(metals, shape, plotit=True,
         pathlib.Path(struct_path).mkdir(parents=True,
                                         exist_ok=True)
 
-        # x = metal2 concentration [0, 1]
-        x = np.linspace(0, 1, 11)
-        n = (x * natoms).astype(int)
 
         # USE THIS TO TEST EVERY CONCENTRATION
         if natoms < 150:
             n = np.arange(0, natoms + 1)
-            x = n / n.max()
+            x = n / float(natoms)
+        else:
+            # x = metal2 concentration [0, 1]
+            x = np.linspace(0, 1, 11)
+            n = (x * natoms).astype(int)
+
+            # recalc concentration to match n
+            x = n / float(natoms)
 
         rands = np.zeros((len(x), 3))
         ces = np.zeros(len(x))
@@ -575,6 +585,8 @@ def run_ga(metals, shape, plotit=True,
                     tot_new_min_structs += 1
                 else:
                     ces[i] = oldrunatom.info['CE']
+            else:
+                make_xyz(atom.copy(), pop.pop[0], struct_path)
 
         print(' ' * 100, end='\r')
         print('----------------------------------------')
@@ -585,12 +597,14 @@ def run_ga(metals, shape, plotit=True,
         print('----------------------------------------')
 
         # calculate excess energy (ees)
-        ees = ces - (x * monos[len(atom)][metal2]) - \
-            ((1 - x) * monos[len(atom)][metal1])
+        ees = ces - (x * monos[natoms][metal2]) - \
+            ((1 - x) * monos[natoms][metal1])
 
         tot_natoms += [natoms] * len(x)
         comps += list(x)
         tot_size += [atom.cell[0][0] / 10] * len(x)
+        nmetal1 += list(natoms - n)
+        nmetal2 += list(n)
         cedata += list(ces)
         eedata += list(ees)
 
@@ -598,13 +612,16 @@ def run_ga(metals, shape, plotit=True,
 
     # save data from each GA run
     if save_data:
-        excel = '../data/bimetallic_results/' \
-                '{0}/{0}_{1}{2}_data_{3}-{4}shells.xlsx'.format(shape,
-                                                                metal1,
-                                                                metal2,
-                                                                *nshell_range)
-        df = pd.DataFrame({'n_atoms': tot_natoms, 'diameter': tot_size,
-                           'composition_%s' % metal2: comps, 'CE': cedata,
+        shapepath = '../data/bimetallic_results/%s/' % shape
+        pathlib.Path(shapepath).mkdir(parents=True, exist_ok=True)
+        excel = '{0}/{1}_{2}{3}_data.xlsx'.format(shapepath, shape,
+                                                  metal1, metal2)
+        df = pd.DataFrame({'n_atoms': tot_natoms,
+                           'diameter': tot_size,
+                           'composition_%s' % metal2: comps,
+                           'n_%s' % metal1: nmetal1,
+                           'n_%s' % metal2: nmetal2,
+                           'CE': cedata,
                            'EE': eedata})
         writer = pd.ExcelWriter(excel, engine='xlsxwriter')
         df.to_excel(writer, index=False)
@@ -654,12 +671,13 @@ def run_ga(metals, shape, plotit=True,
 
 
 if __name__ == '__main__':
+
     metal_opts = [('Ag', 'Cu'),
                   ('Ag', 'Au'),
                   ('Au', 'Cu')
                   ]
 
-    shape_opts = ['icosahedron', 'fcc-cube']
+    shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron']
 
     for metals in metal_opts:
         for shape in shape_opts:
