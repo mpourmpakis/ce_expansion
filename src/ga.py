@@ -443,7 +443,8 @@ def make_3d_plot(path, metals=None):
 
 
 def run_ga(metals, shape, plotit=True,
-           save_data=True, log_results=True, max_shells=None):
+           save_data=True, log_results=True,
+           batch_runinfo=None, max_shells=None):
     # clear previous plots and define desktop and Box paths
     plt.close('all')
     desk = os.path.join(os.path.expanduser('~'), 'desktop')
@@ -664,6 +665,8 @@ def run_ga(metals, shape, plotit=True,
     logtxt += '           Shape: %s\n' % shape
     logtxt += '     Shell Range: %i - %i\n' % tuple(nshell_range)
     logtxt += ' New Min Structs: %i\n' % tot_new_min_structs
+    if batch_runinfo:
+        logtxt += '   Completed Run: %s\n' % batch_runinfo
     logtxt += '----------------------------------------\n'
     logpath = os.path.join(box, 'sims.log')
     with open(logpath, 'a') as flog:
@@ -678,8 +681,11 @@ if __name__ == '__main__':
                   ]
 
     shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron']
-
+    batch_tot = len(metal_opts) * len(shape_opts)
+    batch_i = 1
     for metals in metal_opts:
         for shape in shape_opts:
             run_ga(metals, shape, save_data=True, plotit=False,
-                   log_results=True)
+                   log_results=True,
+                   batch_runinfo='%i of %i' % (batch_i, batch_tot))
+            batch_i += 1
