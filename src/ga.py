@@ -313,6 +313,8 @@ def build_structure(shape, nshell, return_adj=True):
         elif shape == 'cuboctahedron':
             atom = ase.cluster.Octahedron('Cu', 2 * nshell + 1,
                                           cutoff=nshell)
+        elif shape == 'elongated-pentagonal-bipyramid':
+            atom = ase.cluster.Decahedron('Cu', nshell, nshell, 0)
         else:
             raise TypeError('%s has not been implemented')
 
@@ -463,7 +465,8 @@ def run_ga(metals, shape, plotit=True,
     # range of number of shells to test
     shape2shell = {'icosahedron': [2, 14],
                    'fcc-cube': [1, 15],
-                   'cuboctahedron': [1, 15]
+                   'cuboctahedron': [1, 15],
+                   'elongated-pentagonal-bipyramid': [2, 12]
                    }
     nshell_range = shape2shell[shape]
     if max_shells:
@@ -481,6 +484,19 @@ def run_ga(metals, shape, plotit=True,
     if max_shells:
         print('         Max Shells: %i' % max_shells)
     print('----------------------------------------')
+
+    # attempt to read in previous results
+    excel_columns = ['n_atoms', 'diameter', 'composition_%s' % metal2,
+                     'n_%s' % metal1, 'n_%s' % metal2, 'CE', 'EE']
+
+    shapepath = '../data/bimetallic_results/%s/' % shape
+    pathlib.Path(shapepath).mkdir(parents=True, exist_ok=True)
+    excel = '{0}/{1}_{2}{3}_data.xlsx'.format(shapepath, shape,
+                                              metal1, metal2)
+    if os.path.isfile(excel):
+        df = pd.read_excel(excel)
+    else:
+        df = pd.DataFrame([], columns=excel_columns)
 
     # GA properties
     max_runs = 50
@@ -533,7 +549,6 @@ def run_ga(metals, shape, plotit=True,
         pathlib.Path(struct_path).mkdir(parents=True,
                                         exist_ok=True)
 
-
         # USE THIS TO TEST EVERY CONCENTRATION
         if natoms < 150:
             n = np.arange(0, natoms + 1)
@@ -576,22 +591,34 @@ def run_ga(metals, shape, plotit=True,
                                        metal2, dope)
 
             # check to see if older ga run founded lower CE structure
-            if os.path.isfile(os.path.join(struct_path, fname)):
-                oldrunatom = ase.io.read(os.path.join(struct_path, fname))
+            if save_data:
+                # if older data exists, see if new struct has lower CE
+                if not df.loc[(df['n_atoms'] == natoms) &
+                              (df['n_%s' % metal2] == dope),
+                              'CE'].empty:
 
-                # if lower (by at least 1e-4), save new structure
-                if (pop.get_min() - oldrunatom.info['CE']) < -1e-5:
-                    make_xyz(atom.copy(), pop.pop[0], struct_path)
-                    new_min_structs += 1
-                    tot_new_min_structs += 1
+                    oldrunmin = df.loc[(df['n_atoms'] == natoms) &
+                                       (df['n_%s' % metal2] == dope),
+                                       'CE'].values[0]
+
+                    # update df if new struct has lower CE
+                    if (pop.get_min() - oldrunmin) < -1E-5:
+                        df.loc[(df['n_atoms'] == natoms) &
+                               (df['n_%s' % metal2] == dope),
+                               'CE'] = pop.get_min()
+                        make_xyz(atom.copy(), pop.pop[0], struct_path)
+                        new_min_structs += 1
+                        tot_new_min_structs += 1
+                    else:
+                        ces[i] = oldrunmin
+
+                # if no older data, save new struct
                 else:
-                    ces[i] = oldrunatom.info['CE']
-            else:
-                make_xyz(atom.copy(), pop.pop[0], struct_path)
+                    make_xyz(atom.copy(), pop.pop[0], struct_path)
 
         print(' ' * 100, end='\r')
         print('----------------------------------------')
-        outp = 'Completed %i of %i' % (struct_i + 1, nstructs)
+        outp = 'Completed Size %i of %i' % (struct_i + 1, nstructs)
         if new_min_structs:
             outp += ' (%i new mins)' % new_min_structs
         print(outp.center(CENTER))
@@ -613,19 +640,20 @@ def run_ga(metals, shape, plotit=True,
 
     # save data from each GA run
     if save_data:
-        shapepath = '../data/bimetallic_results/%s/' % shape
-        pathlib.Path(shapepath).mkdir(parents=True, exist_ok=True)
-        excel = '{0}/{1}_{2}{3}_data.xlsx'.format(shapepath, shape,
-                                                  metal1, metal2)
-        df = pd.DataFrame({'n_atoms': tot_natoms,
-                           'diameter': tot_size,
-                           'composition_%s' % metal2: comps,
-                           'n_%s' % metal1: nmetal1,
-                           'n_%s' % metal2: nmetal2,
-                           'CE': cedata,
-                           'EE': eedata})
+        newdf = pd.DataFrame({'n_atoms': tot_natoms,
+                              'diameter': tot_size,
+                              'composition_%s' % metal2: comps,
+                              'n_%s' % metal1: nmetal1,
+                              'n_%s' % metal2: nmetal2,
+                              'CE': cedata,
+                              'EE': eedata})
+
+        data = df.append(newdf, ignore_index=True)
+        data.drop_duplicates(['n_atoms', 'n_%s' % metal2], inplace=True)
+        data.sort_values(by=['n_atoms', 'n_%s' % metal2], inplace=True)
+
         writer = pd.ExcelWriter(excel, engine='xlsxwriter')
-        df.to_excel(writer, index=False)
+        data.to_excel(writer, index=False)
         writer.save()
         writer.close()
 
@@ -674,13 +702,13 @@ def run_ga(metals, shape, plotit=True,
 
 
 if __name__ == '__main__':
-
     metal_opts = [('Ag', 'Cu'),
                   ('Ag', 'Au'),
                   ('Au', 'Cu')
                   ]
 
-    shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron']
+    shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
+                  'elongated-pentagonal-bipyramid']
     batch_tot = len(metal_opts) * len(shape_opts)
     batch_i = 1
     for metals in metal_opts:
