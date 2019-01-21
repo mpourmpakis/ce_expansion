@@ -630,7 +630,7 @@ def run_ga(metals, shape, plotit=True,
 
         tot_natoms += [natoms] * len(x)
         comps += list(x)
-        tot_size += [atom.cell[0][0] / 10] * len(x)
+        tot_size += [atom.cell.max() / 10] * len(x)
         nmetal1 += list(natoms - n)
         nmetal2 += list(n)
         cedata += list(ces)
@@ -707,13 +707,13 @@ if __name__ == '__main__':
                   ('Au', 'Cu')
                   ]
 
-    shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
-                  'elongated-pentagonal-bipyramid']
+    # shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
+    shape_opts = ['elongated-pentagonal-bipyramid']
     batch_tot = len(metal_opts) * len(shape_opts)
     batch_i = 1
     for metals in metal_opts:
         for shape in shape_opts:
             run_ga(metals, shape, save_data=True, plotit=False,
-                   log_results=True,
+                   log_results=True, max_shells=4,
                    batch_runinfo='%i of %i' % (batch_i, batch_tot))
             batch_i += 1
