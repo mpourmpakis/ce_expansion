@@ -714,6 +714,6 @@ if __name__ == '__main__':
     for metals in metal_opts:
         for shape in shape_opts:
             run_ga(metals, shape, save_data=True, plotit=False,
-                   log_results=True, max_shells=4,
+                   log_results=True,
                    batch_runinfo='%i of %i' % (batch_i, batch_tot))
             batch_i += 1
