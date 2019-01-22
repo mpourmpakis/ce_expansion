@@ -707,8 +707,8 @@ if __name__ == '__main__':
                   ('Au', 'Cu')
                   ]
 
-    # shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
-    shape_opts = ['elongated-pentagonal-bipyramid']
+    shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
+                  'elongated-pentagonal-bipyramid']
     batch_tot = len(metal_opts) * len(shape_opts)
     batch_i = 1
     for metals in metal_opts:
