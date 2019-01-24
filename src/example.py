@@ -2,7 +2,7 @@
 
 import ase
 
-from . import atomgraph
+import atomgraph
 
 
 def randomizer(ordering):

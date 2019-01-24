@@ -88,8 +88,8 @@ class AtomGraph(object):
         float : The half-bond energy of that bond at that atom, in units of eV
         """
 
-        atom1 = self.symbols[self.ordering[atom_key]]
-        atom2 = self.symbols[self.ordering[self.adj_list[atom_key][bond_key]]]
+        atom1 = self.symbols[int(self.ordering[atom_key])]
+        atom2 = self.symbols[int(self.ordering[self.adj_list[atom_key][bond_key]])]
         return self.coeffs[atom1][atom2][self.getCN(atom_key)]
 
     def getAtomicCE(self, atom_key: "int") -> "float":
@@ -119,3 +119,4 @@ class AtomGraph(object):
             total_energy += self.getAtomicCE(atom)
         total_CE = total_energy / len(self.ordering)
         return total_CE
+
