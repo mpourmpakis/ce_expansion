@@ -4,6 +4,7 @@ import pickle
 import os
 import ase.neighborlist
 import numpy as np
+import pathlib
 
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
@@ -51,6 +52,7 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
     """
     # Check to see if adjacency list has already been generated
     # NOTE: based on data file paths, not ideal but functional for the moment
+    pathlib.Path('../data/adjacency_lists/').mkdir(parents=True, exist_ok=True)
     fpath = '../data/adjacency_lists/%s.npy' % atom_name
     if os.path.isfile(fpath) and 0:
         adj = np.load(fpath)
