@@ -473,6 +473,7 @@ def run_ga(metals, shape, plotit=True,
         nshell_range[1] = max_shells
     nstructs = len(range(*nshell_range))
     if not nstructs:
+        print(nshell_range)
         return
 
     # print run info
@@ -520,7 +521,10 @@ def run_ga(metals, shape, plotit=True,
     new_mono_calcs = False
 
     # keep track of total new minimum CE structs (based on saved structs)
-    tot_new_min_structs = 0
+    tot_new_structs = 0
+
+    # count total structs
+    tot_st = 0
 
     # data for 3D plot
     eedata = []
@@ -560,6 +564,9 @@ def run_ga(metals, shape, plotit=True,
 
             # recalc concentration to match n
             x = n / float(natoms)
+
+        # total structures checked ( - 2 to exclude monometallics)
+        tot_st += float(len(n) - 2)
 
         rands = np.zeros((len(x), 3))
         ces = np.zeros(len(x))
@@ -608,7 +615,7 @@ def run_ga(metals, shape, plotit=True,
                                'CE'] = pop.get_min()
                         make_xyz(atom.copy(), pop.pop[0], struct_path)
                         new_min_structs += 1
-                        tot_new_min_structs += 1
+                        tot_new_structs += 1
                     else:
                         ces[i] = oldrunmin
 
@@ -692,7 +699,8 @@ def run_ga(metals, shape, plotit=True,
     logtxt += '          Metals: %s, %s\n' % (metal1, metal2)
     logtxt += '           Shape: %s\n' % shape
     logtxt += '     Shell Range: %i - %i\n' % tuple(nshell_range)
-    logtxt += ' New Min Structs: %i\n' % tot_new_min_structs
+    logtxt += ' New Min Structs: %i\n' % tot_new_structs
+    logtxt += '   %% New Structs: %.2f%%\n' % (100 * tot_new_structs / tot_st)
     if batch_runinfo:
         logtxt += '   Completed Run: %s\n' % batch_runinfo
     logtxt += '----------------------------------------\n'
@@ -712,8 +720,8 @@ if __name__ == '__main__':
     batch_tot = len(metal_opts) * len(shape_opts)
     batch_i = 1
     for metals in metal_opts:
-        for shape in shape_opts:
+        for shape in [shape_opts[0]]:
             run_ga(metals, shape, save_data=True, plotit=False,
-                   log_results=True,
+                   log_results=True, max_shells=4,
                    batch_runinfo='%i of %i' % (batch_i, batch_tot))
             batch_i += 1
