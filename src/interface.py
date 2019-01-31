@@ -17,44 +17,33 @@ DEFAULT_MAX_COORDINATION = 12
 
 _libCalc = ctypes.CDLL('../bin/_lib.so')
 
-# Create python wrappers
-''' Test functions here to get the C interace right
- def ctypes_fib(a):
-     return _libcalc.fib(ctypes.c_int(a))
-    
- def char_to_int(character):
-     return _libCalc.char_to_int(ctypes.c_char(character))
-    
- def print_array(array, size):
-     array_pointer = array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
-     return _libCalc.print_array(array_pointer, ctypes.c_long(size))
-     
- def print_2D(array):
-     array_pointer = array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
-     dim1, dim2 = array.shape
-     return _libCalc.print_2D(ctypes.c_long(dim1),ctypes.c_long(dim2),
-                        array_pointer
-                       )
-   
- def print_3D(array):
-     array_pointer = array.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-     dim1, dim2, dim3 = array.shape
-     return _libCalc.print_3D(ctypes.c_long(dim1), ctypes.c_long(dim2), ctypes.c_long(dim3),
-                        array_pointer
-                        )
-   
-'''
-
 # Actual functions
 _libCalc.calculate_ce.restype = ctypes.c_double;
+
 def pointerized_calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_string):
     '''
-    TODO: Docstring for pointerized calculate_CE
+    Version of the calculate_CE function which takes in pre-converted c/pointer objects
+
+    Args:
+    bond_energies (c_double pointer): A 2x2x12 table of bond energies
+    num_atoms (c_long): Number of atoms in the system
+    cns (c_long pointer): A 1D array of the coordination numbers in the sytem, of length num_atoms
+    num_bonds (c_long): Number of bonds in the system
+    adjacency_table (c_long pointer): An Nx2 table of bonds in the system, of length num_bonds
+    id_string (c_long pointer): An array representing which elements are in the nanoparticle, of length num_atoms
     '''
     return _libCalc.calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_string)
 def calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_string):
     '''
-    TODO: Docstring for calculate_CE
+    Version of the calculate_CE function which takes in pre-converted c/pointer objects
+
+    Args:
+    bond_energies (np.array): A 2x2x12 table of bond energies
+    num_atoms (int): Number of atoms in the system
+    cns (np.array): A 1D array of the coordination numbers in the sytem, of length num_atoms
+    num_bonds (int): Number of bonds in the system
+    adjacency_table (np.array): An Nx2 table of bonds in the system, of length num_bonds
+    id_string (np.array): An array representing which elements are in the nanoparticle, of length num_atoms
     '''
     p_bond_energies = bond_energies.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
     p_cns = cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
@@ -72,6 +61,7 @@ def calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_s
 
                                 
 if __name__ == "__main__":
+    # Just some test stuff
     bond_array = np.ones([DEFAULT_NUM_ELEMENTS, DEFAULT_NUM_ELEMENTS, DEFAULT_MAX_COORDINATION])
     cns = np.array([12, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]) # 13-atom icosahedron
     num_atoms = cns.shape[0]
