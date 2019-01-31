@@ -3,6 +3,7 @@
 import pickle
 import ctypes
 import interface
+import numpy as np
 
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
@@ -40,15 +41,15 @@ class c_AtomGraph(object):
 
         self._bond_energies = np.zeros((2,2,13), dtype=np.float64)
         self.set_bond_energies(kind0, kind1)
-        
+
         self._num_atoms = len(set(bond_list[:,0]))
         self._cns = np.bincount(bond_list[:,0])
 
-        self._bond_energies = self.set_bonding_atoms(kind0, kind1)
+        self._bond_energies = self.set_bond_energies(kind0, kind1)
 
         # Create pointers
         self._long_num_atoms = ctypes.c_long(self._num_atoms)
-        self._p_cns = self._cns.ctypes.data_as(ctypes.POINTER(ctypes.c_lont))
+        self._p_cns = self._cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
         self._long_num_bonds = ctypes.c_long(self._num_bonds)
         self._p_bond_list = self._bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
@@ -80,12 +81,13 @@ class c_AtomGraph(object):
         """
         # Pointerize ordering
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
-        return interface.pointerized_calculate_ce(self.p_bond_energies,
-                                                  self.long_num_atoms,
-                                                  self.p_cns,
-                                                  self.long_num_bonds,
-                                                  self.p_bond_list,
-                                                  self.p_ordering)
+        return interface.pointerized_calculate_ce(self._p_bond_energies,
+                                                  self._long_num_atoms,
+                                                  self._p_cns,
+                                                  self._long_num_bonds,
+                                                  self._p_bond_list,
+                                                  p_ordering)
+
 
 
 
