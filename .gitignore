@@ -1,1 +1,7 @@
 *.xml
+**/__pycache__
+*.pyc
+/src/best.txt
+/src/restuls.txt
+/data/adjacency_lists
+/data/atom_objects/

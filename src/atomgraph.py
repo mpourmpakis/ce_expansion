@@ -117,11 +117,10 @@ class AtomGraph(object):
 
         """
 
-        self.adj_list = adj_list 
-        self.num_bonds = 
-        self.cns = np.array([len(a) for a in adj_list])
-        
-        self.coeffs = coeffs # Todo: This needs to become a 2x2x12 numpy array
+
+        self.adj_list = adj_list
+        self.cns = [len(a) for a in adj_list]
+        self.coeffs = coeffs
         self.symbols = (kind0, kind1)
 
         # total number of atoms
@@ -189,11 +188,10 @@ class AtomGraph(object):
         Returns
         float : The CE, in units of eV
         """
-        #total_energy = 0
-        #for atom, cn in enumerate(self.cns):
-        #    total_energy += self.getAtomicCE(atom, cn, ordering)
-        #total_CE = total_energy / self.n_atoms
-        
+        total_energy = 0
+        for atom, cn in enumerate(self.cns):
+            total_energy += self.getAtomicCE(atom, cn, ordering)
+        total_CE = total_energy / self.n_atoms
         return total_CE
 
     def get_total_ce2(self, ordering):
@@ -249,4 +247,3 @@ if __name__ == '__main__':
     ce1 = x.getTotalCE(ordering)
     ce2 = x.get_total_ce2(ordering)
     print('%.2e' % abs(ce1 - ce2))
-

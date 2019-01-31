@@ -1,0 +1,24 @@
+ Min: -3.25286
+Mean: -3.171
+ STD: 0.054
+Mute: 0.15
+Kill: 0.20
+ Pop: 150
+nRun: 100
+Form: Cu28_Au27
+Done: 100
+
+
+
+ Min: -3.23804
+Mean: -3.171
+ STD: 0.046
+Mute: 0.15
+Kill: 0.20
+ Pop: 150
+nRun: 100
+Form: Cu28_Au27
+Done: 100
+
+
+
