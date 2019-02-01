@@ -112,7 +112,7 @@ class Chromo(object):
 
 class Pop(object):
     def __init__(self, atomg, n_dope=1, popsize=100, kill_rate=0.2,
-                 mate_rate=0.25, mute_rate=0.1, mute_num=1, x_dope=None):
+                 mate_rate=0.8, mute_rate=0.2, mute_num=1, x_dope=None):
         self.atomg = atomg
         self.popsize = popsize
         if x_dope:
@@ -218,6 +218,35 @@ class Pop(object):
                           s.mean(),
                           s.std()])
 
+    def plot_results(self):
+        """
+            Method to create a plot of GA simulation
+            - plots average, std deviation, and minimum score
+              of the population at each step
+        """
+        fig, ax = plt.subplots(figsize=(7, 7))
+
+        # number of steps GA took
+        steps = range(len(self.info))
+
+        # minimum, average, and std deviation scores of population at each step
+        # NOTE: GA's goal is to minimize score
+        low, mean, std = np.split(self.info, [0, 1, 2], axis=1)
+
+        # light blue fill of one std deviation
+        ax.fill_between(range(len(self.info)), mean + std, mean - std,
+                        color='lightblue', label='STD')
+
+        # plot mean as a solid line and minimum as a dotted line
+        ax.plot(mean, color='k', label='MEAN')
+        ax.plot(low, ':', color='k', label='MIN')
+        ax.legend()
+        ax.set_ylabel('Score')
+        ax.set_xlabel('Step')
+        ax.set_title('Min Val: %.5f' % (p.pop[0].score))
+        fig.tight_layout()
+        return fig, ax
+
 
 def results_str(p, disp=True):
     res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(p.info[-1, :])
@@ -247,23 +276,6 @@ def log_ga_sim(p):
         print('NEW MIN!'.center(50, '-'))
         with open('best.txt', 'w') as bestfid:
             bestfid.write(results)
-
-
-def make_plot(p):
-    fig, ax = plt.subplots(figsize=(7, 7))
-
-    ax.fill_between(range(len(p.info)), p.info[:, 1] + p.info[:, 2],
-                    p.info[:, 1] - p.info[:, 2], color='lightblue',
-                    label='STD')
-
-    ax.plot(p.info[:, 1], color='k', label='MEAN')
-    ax.plot(p.info[:, 0], ':', color='k', label='MIN')
-    ax.legend()
-    ax.set_ylabel('Score')
-    ax.set_xlabel('Step')
-    ax.set_title('Min Val: %.5f' % (p.pop[0].score))
-    fig.tight_layout()
-    return fig, ax
 
 
 def make_xyz(atom, chrom, path, verbose=False):
@@ -327,14 +339,54 @@ def build_structure(shape, nshell, return_adj=True):
 
 
 def ncr(n, r):
+    """N choose r function (combinatorics)
+
+    Arguments:
+        n {int} -- [from n choices]
+        r {int} -- [choose r without replacement]
+
+    Returns:
+        [int] -- [total combinations]
+    """
+
     r = min(r, n-r)
-    numer = reduce(op.mul, range(n, n-r, -1), 1)
-    denom = reduce(op.mul, range(1, r+1), 1)
-    return numer//denom
+    numer = reduce(op.mul, range(n, n - r, - 1), 1)
+    denom = reduce(op.mul, range(1, r + 1), 1)
+    return numer // denom
 
 
 def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
             verbose=False):
+    """Algorithm to fill the lowest (or highest) coordination sites with dopants
+    
+    
+    Arguments:
+        atomg {AtomGraph} -- AtomGraph object
+        n_dope {int} -- number of dopants
+    
+    Keyword Arguments:
+        max_search {int} -- if there are a number of possible structures with
+                              partially-filled sites, the function will search
+                              max_search options and return lowest CE structure
+                              (default: {50})
+        low_first {bool} -- if True, fills low CNs, else fills high CNs
+                              (default: {True})
+        return_n {int}   -- if > 0, function will return a list of possible
+                              structures (default: {None})
+        verbose {bool}   -- if True, function will print info to console
+                              (default: {False})
+    
+    Raises:
+        ValueError -- [description]
+    
+    Returns:
+        if return_n > 0:
+            {list} -- list of chemical ordering np.ndarrays if return_n > 0
+        else:
+            {np.ndarray}, {float} -- chemical ordering np.ndarray with its
+                                       calculated CE
+    """
+
     formula = 'Cu(%i)Au(%i)' % (atomg.n_atoms - n_dope, n_dope)
 
     # handle monometallic cases efficiently
@@ -624,6 +676,7 @@ def run_ga(metals, shape, plotit=True,
                     make_xyz(atom.copy(), pop.pop[0], struct_path)
 
         print(' ' * 100, end='\r')
+        print('-' * CENTER)
         print('----------------------------------------')
         outp = 'Completed Size %i of %i' % (struct_i + 1, nstructs)
         if new_min_structs:
@@ -691,19 +744,39 @@ def run_ga(metals, shape, plotit=True,
     timeofnow = dt.now().strftime("%I:%M %p")
 
     logtxt = '----------------RUN INFO----------------\n'
+
+    # today's date
     logtxt += '            Date: %s\n' % today
+
+    # time of completion
     logtxt += '            Time: %s\n' % timeofnow
+
+    # total runtime (days : hours: minutes : seconds)
     logtxt += '         Runtime: %02i:%02i:%02i:%02i\n'
     logtxt = logtxt % (complete // 86400, complete % 86400 // 3600,
                        complete % 3600 // 60, complete % 60)
+
+    # two metals studied (always in alphabetical order)
     logtxt += '          Metals: %s, %s\n' % (metal1, metal2)
+
+    # shape studied (icosahedron, etc.)
     logtxt += '           Shape: %s\n' % shape
+
+    # shapes are built shell-by-shell; number of shells indicates size range
     logtxt += '     Shell Range: %i - %i\n' % tuple(nshell_range)
+
+    # number of new minimum CE structures found (compared to previous runs)
     logtxt += ' New Min Structs: %i\n' % tot_new_structs
+
+    # percentage of new structures (relative to total structures analyzed)
     logtxt += '   %% New Structs: %.2f%%\n' % (100 * tot_new_structs / tot_st)
+
+    # if run is part of a batch submission, indicate how far along the batch job is
     if batch_runinfo:
         logtxt += '   Completed Run: %s\n' % batch_runinfo
     logtxt += '----------------------------------------\n'
+
+    # write to sims.log in my Box Drive path
     logpath = os.path.join(box, 'sims.log')
     with open(logpath, 'a') as flog:
         flog.write(logtxt)
@@ -722,6 +795,6 @@ if __name__ == '__main__':
     for metals in metal_opts:
         for shape in [shape_opts[0]]:
             run_ga(metals, shape, save_data=True, plotit=False,
-                   log_results=True, max_shells=4,
+                   log_results=True,
                    batch_runinfo='%i of %i' % (batch_i, batch_tot))
             batch_i += 1
