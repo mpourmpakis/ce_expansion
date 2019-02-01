@@ -37,20 +37,19 @@ class c_AtomGraph(object):
         self._bond_list = bond_list
         self._num_bonds = len(bond_list)
         self._kinds = (None, None)
-        self.symbols = self._kinds
         self.coeffs = coeffs
 
         self._bond_energies = np.zeros((2,2,13), dtype=np.float64)
         self.set_bond_energies(kind0, kind1)
 
         self.n_atoms = len(set(bond_list[:,0]))
-        self.cns = np.bincount(bond_list[:,0])
+        self._cns = np.bincount(bond_list[:,0])
 
         self._bond_energies = self.set_bond_energies(kind0, kind1)
 
         # Create pointers
         self._long_num_atoms = ctypes.c_long(self.n_atoms)
-        self._p_cns = self.cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+        self._p_cns = self._cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
         self._long_num_bonds = ctypes.c_long(self._num_bonds)
         self._p_bond_list = self._bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
@@ -71,7 +70,6 @@ class c_AtomGraph(object):
                     for cn in range(0, 13):
                         coefficient = self.coeffs[element1][element2][cn]
                         self._bond_energies[i][j][cn] = coefficient
-            self.symbols = self._kinds
 
         # Create pointer
         self._p_bond_energies = self._bond_energies.ctypes.data_as(ctypes.POINTER(ctypes.c_double))

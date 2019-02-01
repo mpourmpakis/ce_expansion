@@ -11,6 +11,10 @@ from functools import reduce
 import itertools as it
 from atomgraph import AtomGraph
 from adjacency import buildAdjacencyList
+
+import atomgraph
+import adjacency
+
 import ase.cluster
 import ase.io
 import numpy as np
@@ -345,7 +349,7 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
         ce = atomg.getTotalCE(struct_min)
         checkall = True
     else:
-        cn_list = np.array(atomg.getAllCNs())
+        cn_list = atomg.cns
         cnset = sorted(set(cn_list))
         if not low_first:
             cnset = cnset[::-1]
@@ -463,7 +467,7 @@ def run_ga(metals, shape, plotit=True,
     # 24 shells = about 10 nm
     # 13 shells = about 5 nm
     # range of number of shells to test
-    shape2shell = {'icosahedron': [2, 14],
+    shape2shell = {'icosahedron': [13, 14],  # [2, 14],
                    'fcc-cube': [1, 15],
                    'cuboctahedron': [1, 15],
                    'elongated-pentagonal-bipyramid': [2, 12]
@@ -541,7 +545,10 @@ def run_ga(metals, shape, plotit=True,
     for struct_i, nshells in enumerate(range(*nshell_range)):
         # build atom, adjacency list, and atomgraph
         atom, adj = build_structure(shape, nshells)
-        ag = AtomGraph(adj, metal1, metal2)
+        
+        new_atom_bonds = adjacency.buildBondsList(atom)  
+        ag = atomgraph.c_AtomGraph(new_atom_bonds, metal1, metal2)
+        #ag = AtomGraph(adj, metal1, metal2)
 
         natoms = len(atom)
         if natoms not in monos:
@@ -722,6 +729,6 @@ if __name__ == '__main__':
     for metals in metal_opts:
         for shape in [shape_opts[0]]:
             run_ga(metals, shape, save_data=True, plotit=False,
-                   log_results=True, max_shells=4,
+                   log_results=True,
                    batch_runinfo='%i of %i' % (batch_i, batch_tot))
             batch_i += 1
