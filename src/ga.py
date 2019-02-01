@@ -231,7 +231,9 @@ class Pop(object):
 
         # minimum, average, and std deviation scores of population at each step
         # NOTE: GA's goal is to minimize score
-        low, mean, std = np.split(self.info, [0, 1, 2], axis=1)
+        low = self.info[:, 0]
+        mean = self.info[:, 1]
+        std = self.info[:, 2]
 
         # light blue fill of one std deviation
         ax.fill_between(range(len(self.info)), mean + std, mean - std,
@@ -243,7 +245,7 @@ class Pop(object):
         ax.legend()
         ax.set_ylabel('Score')
         ax.set_xlabel('Step')
-        ax.set_title('Min Val: %.5f' % (p.pop[0].score))
+        ax.set_title('Min Val: %.5f' % (self.get_min()))
         fig.tight_layout()
         return fig, ax
 
