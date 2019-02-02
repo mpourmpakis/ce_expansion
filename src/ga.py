@@ -15,7 +15,6 @@ import ase.io
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
 
 # random.seed(9876)
 
