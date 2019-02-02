@@ -62,7 +62,7 @@ class AtomGraph(object):
     def __len__(self):
         return self._num_bonds
 
-    def set_composition(self, kind0: "str", kind1: "str"):
+    def set_composition(self, kind0: "str", kind1: "str") -> "None":
         """
         Sets the bond energies to be passed to the C library. Energies come from the coeffs
         attribute.
@@ -84,7 +84,7 @@ class AtomGraph(object):
         # Create pointer
         self._p_bond_energies = self._bond_energies.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
 
-    def getTotalCE(self, ordering: "np.array"):
+    def getTotalCE(self, ordering: "np.array") -> "float":
         """
         Calculates the cohesive energy of the NP using the BC model, as implemented in interface.py
         and lib.c
