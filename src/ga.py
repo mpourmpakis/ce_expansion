@@ -1,20 +1,15 @@
 import operator as op
 import pandas as pd
 import os
-import sys
 import time
 import random
 from datetime import datetime as dt
 import pathlib
 import pickle
-from functools import reduce
+import functools
 import itertools as it
-from atomgraph import AtomGraph
-from adjacency import buildAdjacencyList
-
-import atomgraph
+import atomGraph
 import adjacency
-
 import ase.cluster
 import ase.io
 import numpy as np
@@ -432,7 +427,7 @@ def build_structure(shape, nshell, return_adj=True):
         with open(apath, 'wb') as fidw:
             pickle.dump(atom, fidw)
     if return_adj:
-        return atom, buildAdjacencyList(atom, '%s_%i' % (shape, nshell))
+        return atom, adjacency.buildBondsList(atom)
     else:
         return atom
 
@@ -445,8 +440,8 @@ def ncr(n, r):
     :return:
     """
     r = min(r, n - r)
-    numer = reduce(op.mul, range(n, n - r, -1), 1)
-    denom = reduce(op.mul, range(1, r + 1), 1)
+    numer = functools.reduce(op.mul, range(n, n - r, -1), 1)
+    denom = functools.reduce(op.mul, range(1, r + 1), 1)
     return numer // denom
 
 
@@ -687,8 +682,7 @@ def run_ga(metals, shape, plotit=True,
         atom, adj = build_structure(shape, nshells)
 
         new_atom_bonds = adjacency.buildBondsList(atom)
-        ag = atomgraph.c_AtomGraph(new_atom_bonds, metal1, metal2)
-        # ag = AtomGraph(adj, metal1, metal2)
+        ag = atomgraph.AtomGraph(new_atom_bonds, metal1, metal2)
 
         natoms = len(atom)
         if natoms not in monos:
