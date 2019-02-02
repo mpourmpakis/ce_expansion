@@ -86,5 +86,5 @@ if __name__ == "__main__":
         ]
     ]
     )
-    print("Testing a 13-atom icosahedron:")
+    print("Testing a 13-atom icosahedron with fake coefficients:")
     print(calculate_ce(test_3Darray, num_atoms, cns, num_bonds, bondList, id_string))
