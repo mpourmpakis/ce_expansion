@@ -33,7 +33,8 @@ def pointerized_calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency
 
 def calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_string):
     """
-    Version of the calculate_CE function which takes in pre-converted c/pointer objects
+    Version of the calculate_CE function which creates the pointers on its own. This is slower than the pointerized
+    version.
 
     Args:
     bond_energies (np.array): A 2x2x12 table of bond energies
