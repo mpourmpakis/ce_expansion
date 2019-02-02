@@ -16,9 +16,10 @@ DEFAULT_RADIUS = 2.8
 with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
     DEFAULT_BOND_COEFFS = pickle.load(precalcs)
 
+
 # Functions below
-def buildBondsList(atoms_object: "ase.Atoms", 
-                      radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
+def buildBondsList(atoms_object: "ase.Atoms",
+                   radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
     """
     2D bonds list from an ASE atoms object.
 
@@ -32,6 +33,7 @@ def buildBondsList(atoms_object: "ase.Atoms",
     """
     sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
     return np.column_stack((sources, destinations))
+
 
 def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
                          radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
@@ -107,7 +109,9 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
             np.save('../data/adjacency_lists/%s.npy' % atom_name, result)
         return [[i for i in a] for a in result]
 
+
 if __name__ == '__main__':
     import ase.cluster
+
     atom = ase.cluster.Icosahedron('Cu', 10)
     a = buildAdjacencyList(atom)
