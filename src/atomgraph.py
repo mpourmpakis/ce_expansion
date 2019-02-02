@@ -41,12 +41,12 @@ class c_AtomGraph(object):
         self.coeffs = coeffs
 
         self._bond_energies = np.zeros((2,2,13), dtype=np.float64)
-        self.set_bond_energies(kind0, kind1)
+        self.set_composition(kind0, kind1)
 
         self.n_atoms = len(set(bond_list[:,0]))
         self.cns = np.bincount(bond_list[:,0])
 
-        self._bond_energies = self.set_bond_energies(kind0, kind1)
+        self._bond_energies = self.set_composition(kind0, kind1)
 
         # Create pointers
         self._long_num_atoms = ctypes.c_long(self.n_atoms)
@@ -57,7 +57,7 @@ class c_AtomGraph(object):
     def __len__(self):
         return self.num_bonds
 
-    def set_bond_energies(self, kind0, kind1):
+    def set_composition(self, kind0, kind1):
         """
         Sets the bond energies to be passed to the C library. Energies come from the coeffs
         attribute.
