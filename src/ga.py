@@ -795,7 +795,7 @@ if __name__ == '__main__':
     batch_tot = len(metal_opts) * len(shape_opts)
     batch_i = 1
     for metals in metal_opts:
-        for shape in [shape_opts[0]]:
+        for shape in shape_opts:
             run_ga(metals, shape, save_data=True, plotit=False,
                    log_results=True,
                    batch_runinfo='%i of %i' % (batch_i, batch_tot))
