@@ -13,38 +13,41 @@ with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
 
 class c_AtomGraph(object):
     def __init__(self, bond_list: "np.array",
-                   kind0: "str",
-                   kind1: "str",
-                   coeffs: "dict" = DEFAULT_BOND_COEFFS):
+                 kind0: "str",
+                 kind1: "str",
+                 coeffs: "dict" = DEFAULT_BOND_COEFFS):
         """
         A graph representing the ASE Atoms object to be investigated. This graph is represented as
         an Nx2 list of edges in the nanoparticle. Note that the function signature is slightly
         different than AtomGraph.
 
         Args:
-        bond_list (np.array): An Nx2 numpy array containing a list of bonds inn the nanoparticle.
+        bond_list (np.array): An Nx2 numpy array containing a list of bonds in the nanoparticle.
                               Zero indexed. Assumed to come from adjacency.buildBondList.
-        kind0 (str): What element is a 0?
-        kind1 (str): What element is a 1?
-        bond_energies (dict): A dictionary of the various bond coefficients that we have
-                             precalculated using coeffs.py. Defaults to the global DFTAULT_BOND_COEFFS.
+        kind0 (str): A string indicating the atomic symbol a "0" represents.
+        kind1 (str): A string indicating the atomic symbol a "1" represents.
+        coeffs (dict): A nested dictionary of bond coefficients, of the format dict[source][destination][CN]. Source and
+            destination are strings indicating the element of interest. Defaults to the global DFTAULT_BOND_COEFFS.
+            Coefficients can be calculated using /tools/gen_coeffs.py.
 
         Attributes:
-        bond_list (np.array): A numpy array containing the adjacency information.
-        symbols(tuple): Atomic symbols indicating what the binary representations of elements in the
-                        ordering means.
+        symbols (tuple): A tuple containing the compositional information of the NP. Index 0 is the element a "0"
+            represents. Index 1 is the element a "1" represents. This attribute is updated whenever the NP's composition
+            is updated via the "set_composition" method.
+        coeffs (dict): The nested dictionary passed to the constructor as "coeffs"
+        n_atoms (int): The number of atoms in the NP.
+        cns (np.array): An array containing the coordination number of each atom.
         """
         self._bond_list = bond_list
         self._num_bonds = len(bond_list)
-        self._kinds = (None, None)
-        self.symbols = self._kinds
+        self.symbols = (None, None)
         self.coeffs = coeffs
 
-        self._bond_energies = np.zeros((2,2,13), dtype=np.float64)
+        self._bond_energies = np.zeros((2, 2, 13), dtype=np.float64)
         self.set_composition(kind0, kind1)
 
-        self.n_atoms = len(set(bond_list[:,0]))
-        self.cns = np.bincount(bond_list[:,0])
+        self.n_atoms = len(set(bond_list[:, 0]))
+        self.cns = np.bincount(bond_list[:, 0])
 
         self._bond_energies = self.set_composition(kind0, kind1)
 
@@ -57,26 +60,29 @@ class c_AtomGraph(object):
     def __len__(self):
         return self.num_bonds
 
-    def set_composition(self, kind0, kind1):
+    def set_composition(self, kind0: "str", kind1: "str"):
         """
         Sets the bond energies to be passed to the C library. Energies come from the coeffs
         attribute.
+
+        Args:
+        kind0 (str): The element a "0" represents.
+        kind1 (str): The element a "1" represents.
         """
-        if  (kind0, kind1) == self._kinds:
+        if (kind0, kind1) == self.symbols:
             return self._bond_energies
         else:
-            self._kinds = (kind0, kind1)
+            self.symbols = (kind0, kind1)
             for i, element1 in enumerate(self._kinds):
                 for j, element2 in enumerate(self._kinds):
                     for cn in range(0, 13):
                         coefficient = self.coeffs[element1][element2][cn]
                         self._bond_energies[i][j][cn] = coefficient
-            self.symbols = self._kinds
 
         # Create pointer
         self._p_bond_energies = self._bond_energies.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
 
-    def getTotalCE(self, ordering):
+    def getTotalCE(self, ordering: "np.narray"):
         """
         Calculates the cohesive energy of the NP using the BC model, as implemented in interface.py
         and lib.c
@@ -89,8 +95,6 @@ class c_AtomGraph(object):
                                                   self._long_num_bonds,
                                                   self._p_bond_list,
                                                   p_ordering)
-
-
 
 
 
@@ -120,7 +124,6 @@ class AtomGraph(object):
                         means
 
         """
-
 
         self.adj_list = adj_list
         self.cns = [len(a) for a in adj_list]
@@ -236,6 +239,7 @@ def buildBonds(adjacency_list: "list") -> "dict":
             else:
                 bonds[pair[0]] = [pair[1]]
     return bonds
+
 
 if __name__ == '__main__':
     from adjacency import buildAdjacencyList
