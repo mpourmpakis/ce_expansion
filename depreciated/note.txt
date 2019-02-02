@@ -1,1 +1,1 @@
-Files in this directory will be deletedfor the final release. Keeping them around in case we need them.
+Files in this directory will be deleted for the final release. Keeping them around in case we need them.
