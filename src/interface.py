@@ -10,12 +10,18 @@
    #!/usr/bin/env python
 
 import ctypes
-import numpy as np
+import sys
 
 DEFAULT_NUM_ELEMENTS = 2
 DEFAULT_MAX_COORDINATION = 12
 
-_libCalc = ctypes.CDLL('../bin/_lib.so')
+# Load the correct library for the given platform
+if sys.platform in ['win32', 'cygwin']:
+    _libCalc = ctypes.CDLL('../bin/_lib.dll')
+else:
+    _libCalc = ctypes.CDLL('../bin/_lib.so')
+
+
 
 # Actual functions
 _libCalc.calculate_ce.restype = ctypes.c_double;
