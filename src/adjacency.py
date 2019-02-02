@@ -118,5 +118,5 @@ if __name__ == '__main__':
     adjacency_matrix = buildAdjacencyMatrix(nanoparticle)
     bonds_list = buildBondsList(nanoparticle)
 
-    # print(adjacency_list, adjacency_matrix, bonds_list)
+    print(adjacency_list, adjacency_matrix, bonds_list)
 
