@@ -30,6 +30,13 @@ CENTER = 40
 
 class Chromo(object):
     def __init__(self, atomg, n_dope=0, arr=None, x_dope=None):
+        """
+
+        :param atomg:
+        :param n_dope:
+        :param arr:
+        :param x_dope:
+        """
         self.n_atoms = atomg.n_atoms
         if x_dope is not None:
             self.n_dope = int(atomg.n_atoms * x_dope)
@@ -53,9 +60,19 @@ class Chromo(object):
         self.calc_score()
 
     def get_atomic_ce(self, i):
+        """
+
+        :param i:
+        :return:
+        """
         return self.atomg.getAtomicCE(i, self.arr)
 
     def mutate(self, nps=1):
+        """
+
+        :param nps:
+        :return:
+        """
         if not self.n_dope or self.n_dope == self.n_atoms:
             print('Warning: attempting to mutate, but system is monometallic')
             return
@@ -79,6 +96,11 @@ class Chromo(object):
         self.calc_score()
 
     def cross(self, chrom2):
+        """
+
+        :param chrom2:
+        :return:
+        """
         x = 0
 
         child1 = self.arr.copy()
@@ -111,12 +133,27 @@ class Chromo(object):
                 Chromo(self.atomg, n_dope=self.n_dope, arr=child2)]
 
     def calc_score(self):
+        """
+
+        :return:
+        """
         self.score = self.atomg.getTotalCE(self.arr)
 
 
 class Pop(object):
     def __init__(self, atomg, n_dope=1, popsize=100, kill_rate=0.2,
                  mate_rate=0.25, mute_rate=0.1, mute_num=1, x_dope=None):
+        """
+
+        :param atomg:
+        :param n_dope:
+        :param popsize:
+        :param kill_rate:
+        :param mate_rate:
+        :param mute_rate:
+        :param mute_num:
+        :param x_dope:
+        """
         self.atomg = atomg
         self.popsize = popsize
         if x_dope:
@@ -136,6 +173,10 @@ class Pop(object):
         self.initialize_new_run()
 
     def initialize_new_run(self):
+        """
+
+        :return:
+        """
         self.x_dope = self.n_dope / self.atomg.n_atoms
         self.build_pop()
         self.sort_pop()
@@ -147,6 +188,10 @@ class Pop(object):
         self.runtime = 0
 
     def build_pop(self):
+        """
+
+        :return:
+        """
         # create popsize - 2 random structures
         self.pop = [Chromo(self.atomg, n_dope=self.n_dope)
                     for i in range(self.popsize - 2)]
@@ -160,9 +205,18 @@ class Pop(object):
                                         low_first=False, return_n=1)[0])]
 
     def get_min(self):
+        """
+
+        :return:
+        """
         return self.info[:, 0].min()
 
     def step(self, rand=False):
+        """
+
+        :param rand:
+        :return:
+        """
         if rand:
             self.build_pop(n_fill_cn=0)
         else:
@@ -193,6 +247,13 @@ class Pop(object):
         self.stats()
 
     def run(self, nsteps=50, std_cut=0, rand=False):
+        """
+
+        :param nsteps:
+        :param std_cut:
+        :param rand:
+        :return:
+        """
         # no GA required for monometallic systems
         if self.n_dope not in [0, self.atomg.n_atoms]:
             start = time.time()
@@ -213,10 +274,18 @@ class Pop(object):
         self.info = np.array(self.info)
 
     def sort_pop(self):
+        """
+
+        :return:
+        """
         self.pop = sorted(self.pop,
                           key=lambda j: j.score)
 
     def stats(self):
+        """
+
+        :return:
+        """
         s = np.array([i.score for i in self.pop])
         self.info.append([s[0],
                           s.mean(),
@@ -224,6 +293,12 @@ class Pop(object):
 
 
 def results_str(p, disp=True):
+    """
+
+    :param p:
+    :param disp:
+    :return:
+    """
     res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(p.info[-1, :])
     res += 'Mute: %.2f\nKill: %.2f\n' % (p.mute_rate, p.kill_rate)
     res += ' Pop: %i\n' % p.popsize
@@ -237,6 +312,11 @@ def results_str(p, disp=True):
 
 
 def log_ga_sim(p):
+    """
+
+    :param p:
+    :return:
+    """
     results = results_str(p, disp=False)
 
     with open('results.txt', 'a') as fid:
@@ -254,6 +334,11 @@ def log_ga_sim(p):
 
 
 def make_plot(p):
+    """
+
+    :param p:
+    :return:
+    """
     fig, ax = plt.subplots(figsize=(7, 7))
 
     ax.fill_between(range(len(p.info)), p.info[:, 1] + p.info[:, 2],
@@ -271,6 +356,14 @@ def make_plot(p):
 
 
 def make_xyz(atom, chrom, path, verbose=False):
+    """
+
+    :param atom:
+    :param chrom:
+    :param path:
+    :param verbose:
+    :return:
+    """
     metal1, metal2 = chrom.atomg.symbols
     atom.info['CE'] = chrom.score
     for i, dope in enumerate(chrom.arr):
@@ -287,6 +380,13 @@ def make_xyz(atom, chrom, path, verbose=False):
 
 
 def gen_random(atomg, n_dope, n=500):
+    """
+
+    :param atomg:
+    :param n_dope:
+    :param n:
+    :return:
+    """
     if n_dope == 0 or n_dope == atomg.n_atoms:
         n = 1
     scores = np.zeros(n)
@@ -297,6 +397,13 @@ def gen_random(atomg, n_dope, n=500):
 
 
 def build_structure(shape, nshell, return_adj=True):
+    """
+
+    :param shape:
+    :param nshell:
+    :param return_adj:
+    :return:
+    """
     # ensure necessary directories exist within local repository
     pathlib.Path('../data/atom_objects/%s/' % shape).mkdir(parents=True,
                                                            exist_ok=True)
@@ -331,6 +438,12 @@ def build_structure(shape, nshell, return_adj=True):
 
 
 def ncr(n, r):
+    """
+
+    :param n:
+    :param r:
+    :return:
+    """
     r = min(r, n - r)
     numer = reduce(op.mul, range(n, n - r, -1), 1)
     denom = reduce(op.mul, range(1, r + 1), 1)
@@ -339,6 +452,16 @@ def ncr(n, r):
 
 def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
             verbose=False):
+    """
+
+    :param atomg:
+    :param n_dope:
+    :param max_search:
+    :param low_first:
+    :param return_n:
+    :param verbose:
+    :return:
+    """
     formula = 'Cu(%i)Au(%i)' % (atomg.n_atoms - n_dope, n_dope)
 
     # handle monometallic cases efficiently
@@ -420,6 +543,12 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
 
 
 def make_3d_plot(path, metals=None):
+    """
+
+    :param path:
+    :param metals:
+    :return:
+    """
     shape, metals = os.path.basename(path).split('_')[:2]
     metal1, metal2 = metals[:2], metals[2:]
     if isinstance(path, str):
@@ -451,6 +580,17 @@ def make_3d_plot(path, metals=None):
 def run_ga(metals, shape, plotit=True,
            save_data=True, log_results=True,
            batch_runinfo=None, max_shells=None):
+    """
+
+    :param metals:
+    :param shape:
+    :param plotit:
+    :param save_data:
+    :param log_results:
+    :param batch_runinfo:
+    :param max_shells:
+    :return:
+    """
     # clear previous plots and define desktop and Box paths
     plt.close('all')
     desk = os.path.join(os.path.expanduser('~'), 'desktop')
