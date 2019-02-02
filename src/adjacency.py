@@ -113,5 +113,10 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
 if __name__ == '__main__':
     import ase.cluster
 
-    atom = ase.cluster.Icosahedron('Cu', 10)
-    a = buildAdjacencyList(atom)
+    nanoparticle = ase.cluster.Icosahedron('Cu', 2)
+    adjacency_list = buildAdjacencyList(nanoparticle)
+    adjacency_matrix = buildAdjacencyMatrix(nanoparticle)
+    bonds_list = buildBondsList(nanoparticle)
+
+    # print(adjacency_list, adjacency_matrix, bonds_list)
+
