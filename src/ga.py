@@ -331,10 +331,10 @@ def build_structure(shape, nshell, return_adj=True):
 
 
 def ncr(n, r):
-    r = min(r, n-r)
-    numer = reduce(op.mul, range(n, n-r, -1), 1)
-    denom = reduce(op.mul, range(1, r+1), 1)
-    return numer//denom
+    r = min(r, n - r)
+    numer = reduce(op.mul, range(n, n - r, -1), 1)
+    denom = reduce(op.mul, range(1, r + 1), 1)
+    return numer // denom
 
 
 def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
@@ -545,10 +545,10 @@ def run_ga(metals, shape, plotit=True,
     for struct_i, nshells in enumerate(range(*nshell_range)):
         # build atom, adjacency list, and atomgraph
         atom, adj = build_structure(shape, nshells)
-        
-        new_atom_bonds = adjacency.buildBondsList(atom)  
+
+        new_atom_bonds = adjacency.buildBondsList(atom)
         ag = atomgraph.c_AtomGraph(new_atom_bonds, metal1, metal2)
-        #ag = AtomGraph(adj, metal1, metal2)
+        # ag = AtomGraph(adj, metal1, metal2)
 
         natoms = len(atom)
         if natoms not in monos:
@@ -640,7 +640,7 @@ def run_ga(metals, shape, plotit=True,
 
         # calculate excess energy (ees)
         ees = ces - (x * monos[natoms][metal2]) - \
-            ((1 - x) * monos[natoms][metal1])
+              ((1 - x) * monos[natoms][metal1])
 
         tot_natoms += [natoms] * len(x)
         comps += list(x)
