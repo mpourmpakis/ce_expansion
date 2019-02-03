@@ -2,92 +2,12 @@
 
 import pickle
 import ctypes
-import interface
 import numpy as np
 
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
 with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
     DEFAULT_BOND_COEFFS = pickle.load(precalcs)
-
-
-class c_AtomGraph(object):
-    def __init__(self, bond_list: "np.array",
-                   kind0: "str",
-                   kind1: "str",
-                   coeffs: "dict" = DEFAULT_BOND_COEFFS):
-        """
-        A graph representing the ASE Atoms object to be investigated. This graph is represented as
-        an Nx2 list of edges in the nanoparticle. Note that the function signature is slightly
-        different than AtomGraph.
-
-        Args:
-        bond_list (np.array): An Nx2 numpy array containing a list of bonds inn the nanoparticle.
-                              Zero indexed. Assumed to come from adjacency.buildBondList.
-        kind0 (str): What element is a 0?
-        kind1 (str): What element is a 1?
-        bond_energies (dict): A dictionary of the various bond coefficients that we have
-                             precalculated using coeffs.py. Defaults to the global DFTAULT_BOND_COEFFS.
-
-        Attributes:
-        bond_list (np.array): A numpy array containing the adjacency information.
-        symbols(tuple): Atomic symbols indicating what the binary representations of elements in the
-                        ordering means.
-        """
-        self._bond_list = bond_list
-        self._num_bonds = len(bond_list)
-        self._kinds = (None, None)
-        self.coeffs = coeffs
-
-        self._bond_energies = np.zeros((2,2,13), dtype=np.float64)
-        self.set_bond_energies(kind0, kind1)
-
-        self.n_atoms = len(set(bond_list[:,0]))
-        self._cns = np.bincount(bond_list[:,0])
-
-        self._bond_energies = self.set_bond_energies(kind0, kind1)
-
-        # Create pointers
-        self._long_num_atoms = ctypes.c_long(self.n_atoms)
-        self._p_cns = self._cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
-        self._long_num_bonds = ctypes.c_long(self._num_bonds)
-        self._p_bond_list = self._bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
-
-    def __len__(self):
-        return self.num_bonds
-
-    def set_bond_energies(self, kind0, kind1):
-        """
-        Sets the bond energies to be passed to the C library. Energies come from the coeffs
-        attribute.
-        """
-        if  (kind0, kind1) == self._kinds:
-            return self._bond_energies
-        else:
-            self._kinds = (kind0, kind1)
-            for i, element1 in enumerate(self._kinds):
-                for j, element2 in enumerate(self._kinds):
-                    for cn in range(0, 13):
-                        coefficient = self.coeffs[element1][element2][cn]
-                        self._bond_energies[i][j][cn] = coefficient
-
-        # Create pointer
-        self._p_bond_energies = self._bond_energies.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-
-    def getTotalCE(self, ordering):
-        """
-        Calculates the cohesive energy of the NP using the BC model, as implemented in interface.py
-        and lib.c
-        """
-        # Pointerize ordering
-        p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
-        return interface.pointerized_calculate_ce(self._p_bond_energies,
-                                                  self._long_num_atoms,
-                                                  self._p_cns,
-                                                  self._long_num_bonds,
-                                                  self._p_bond_list,
-                                                  p_ordering)
-
 
 
 
