@@ -17,9 +17,9 @@ int char_to_int(char character){
 double calculate_ce(double bond_energies[num_elements][num_elements][max_coordination], //Table of bond energies
                     long int num_atoms, // Number of atoms in the nanoparticle
                     #if COMPILE_FOR_WINDOWS
-                    int64_t cns[num_atoms],
+                        int64_t cns[num_atoms],
                     #else
-                    long int cns[num_atoms],
+                        long int cns[num_atoms],
                     #endif
                     long int num_bonds, // Number of bonds in the system
                     long int adj_table [num_bonds][2], // Adjacency table
