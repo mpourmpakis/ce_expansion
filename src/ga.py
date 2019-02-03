@@ -8,7 +8,7 @@ import pathlib
 import pickle
 import functools
 import itertools as it
-import atomGraph
+import atomgraph
 import adjacency
 import ase.cluster
 import ase.io
@@ -31,15 +31,15 @@ class Chromo(object):
         :param arr:
         :param x_dope:
         """
-        self.n_atoms = atomg.n_atoms
+        self.num_atoms = atomg.num_atoms
         if x_dope is not None:
-            self.n_dope = int(atomg.n_atoms * x_dope)
+            self.n_dope = int(atomg.num_atoms * x_dope)
         else:
             self.n_dope = n_dope
         self.atomg = atomg
-        self.arr = np.zeros(atomg.n_atoms).astype(int)
+        self.arr = np.zeros(atomg.num_atoms).astype(int)
 
-        if n_dope > self.n_atoms:
+        if n_dope > self.num_atoms:
             raise ValueError("Can't dope more atoms than there are atoms...")
 
         # if an array is given, use it - else random generate array
@@ -53,21 +53,13 @@ class Chromo(object):
         # calculate initial CE
         self.calc_score()
 
-    def get_atomic_ce(self, i):
-        """
-
-        :param i:
-        :return:
-        """
-        return self.atomg.getAtomicCE(i, self.arr)
-
     def mutate(self, nps=1):
         """
 
         :param nps:
         :return:
         """
-        if not self.n_dope or self.n_dope == self.n_atoms:
+        if not self.n_dope or self.n_dope == self.num_atoms:
             print('Warning: attempting to mutate, but system is monometallic')
             return
 
@@ -151,11 +143,11 @@ class Pop(object):
         self.atomg = atomg
         self.popsize = popsize
         if x_dope:
-            self.n_dope = int(atomg.n_atoms * x_dope)
+            self.n_dope = int(atomg.num_atoms * x_dope)
         else:
             self.n_dope = n_dope
 
-        self.x_dope = self.n_dope / atomg.n_atoms
+        self.x_dope = self.n_dope / atomg.num_atoms
 
         self.nkill = int(popsize * kill_rate)
         self.nmut = int((popsize - self.nkill) * mute_rate)
@@ -171,7 +163,7 @@ class Pop(object):
 
         :return:
         """
-        self.x_dope = self.n_dope / self.atomg.n_atoms
+        self.x_dope = self.n_dope / self.atomg.num_atoms
         self.build_pop()
         self.sort_pop()
 
@@ -249,7 +241,7 @@ class Pop(object):
         :return:
         """
         # no GA required for monometallic systems
-        if self.n_dope not in [0, self.atomg.n_atoms]:
+        if self.n_dope not in [0, self.atomg.num_atoms]:
             start = time.time()
             for i in range(int(nsteps)):
                 val = 'dopeX = %.2f\tMin: %.5f eV\t%i' % (self.x_dope,
@@ -285,7 +277,7 @@ class Pop(object):
                           s.mean(),
                           s.std()])
 
-
+# Console printing functions
 def results_str(p, disp=True):
     """
 
@@ -326,7 +318,7 @@ def log_ga_sim(p):
         with open('best.txt', 'w') as bestfid:
             bestfid.write(results)
 
-
+# Plotting functions
 def make_plot(p):
     """
 
@@ -348,7 +340,7 @@ def make_plot(p):
     fig.tight_layout()
     return fig, ax
 
-
+# File I/O
 def make_xyz(atom, chrom, path, verbose=False):
     """
 
@@ -381,7 +373,7 @@ def gen_random(atomg, n_dope, n=500):
     :param n:
     :return:
     """
-    if n_dope == 0 or n_dope == atomg.n_atoms:
+    if n_dope == 0 or n_dope == atomg.num_atoms:
         n = 1
     scores = np.zeros(n)
     for i in range(n):
@@ -456,12 +448,12 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
     :param verbose:
     :return:
     """
-    formula = 'Cu(%i)Au(%i)' % (atomg.n_atoms - n_dope, n_dope)
+    formula = 'Cu(%i)Au(%i)' % (atomg.num_atoms - n_dope, n_dope)
 
     # handle monometallic cases efficiently
-    if not n_dope or n_dope == atomg.n_atoms:
-        struct_min = np.zeros(atomg.n_atoms) if \
-            not n_dope else np.ones(atomg.n_atoms)
+    if not n_dope or n_dope == atomg.num_atoms:
+        struct_min = np.zeros(atomg.num_atoms) if \
+            not n_dope else np.ones(atomg.num_atoms)
         struct_min = struct_min.astype(int)
         ce = atomg.getTotalCE(struct_min)
         checkall = True
@@ -470,7 +462,7 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
         cnset = sorted(set(cn_list))
         if not low_first:
             cnset = cnset[::-1]
-        struct_min = np.zeros(atomg.n_atoms).astype(int)
+        struct_min = np.zeros(atomg.num_atoms).astype(int)
         ce = None
         for cn in cnset:
             spots = np.where(cn_list == cn)[0]
@@ -625,7 +617,7 @@ def run_ga(metals, shape, plotit=True,
     print('----------------------------------------')
 
     # attempt to read in previous results
-    excel_columns = ['n_atoms', 'diameter', 'composition_%s' % metal2,
+    excel_columns = ['num_atoms', 'diameter', 'composition_%s' % metal2,
                      'n_%s' % metal1, 'n_%s' % metal2, 'CE', 'EE']
 
     shapepath = '../data/bimetallic_results/%s/' % shape
@@ -740,17 +732,17 @@ def run_ga(metals, shape, plotit=True,
             # check to see if older ga run founded lower CE structure
             if save_data:
                 # if older data exists, see if new struct has lower CE
-                if not df.loc[(df['n_atoms'] == natoms) &
+                if not df.loc[(df['num_atoms'] == natoms) &
                               (df['n_%s' % metal2] == dope),
                               'CE'].empty:
 
-                    oldrunmin = df.loc[(df['n_atoms'] == natoms) &
+                    oldrunmin = df.loc[(df['num_atoms'] == natoms) &
                                        (df['n_%s' % metal2] == dope),
                                        'CE'].values[0]
 
                     # update df if new struct has lower CE
                     if (pop.get_min() - oldrunmin) < -1E-5:
-                        df.loc[(df['n_atoms'] == natoms) &
+                        df.loc[(df['num_atoms'] == natoms) &
                                (df['n_%s' % metal2] == dope),
                                'CE'] = pop.get_min()
                         make_xyz(atom.copy(), pop.pop[0], struct_path)
@@ -787,7 +779,7 @@ def run_ga(metals, shape, plotit=True,
 
     # save data from each GA run
     if save_data:
-        newdf = pd.DataFrame({'n_atoms': tot_natoms,
+        newdf = pd.DataFrame({'num_atoms': tot_natoms,
                               'diameter': tot_size,
                               'composition_%s' % metal2: comps,
                               'n_%s' % metal1: nmetal1,
@@ -796,8 +788,8 @@ def run_ga(metals, shape, plotit=True,
                               'EE': eedata})
 
         data = df.append(newdf, ignore_index=True)
-        data.drop_duplicates(['n_atoms', 'n_%s' % metal2], inplace=True)
-        data.sort_values(by=['n_atoms', 'n_%s' % metal2], inplace=True)
+        data.drop_duplicates(['num_atoms', 'n_%s' % metal2], inplace=True)
+        data.sort_values(by=['num_atoms', 'n_%s' % metal2], inplace=True)
 
         writer = pd.ExcelWriter(excel, engine='xlsxwriter')
         data.to_excel(writer, index=False)
@@ -861,7 +853,7 @@ if __name__ == '__main__':
     batch_i = 1
     for metals in metal_opts:
         for shape in [shape_opts[0]]:
-            run_ga(metals, shape, save_data=True, plotit=False,
-                   log_results=True,
+            run_ga(metals, shape, save_data=False, plotit=False,
+                   log_results=False,
                    batch_runinfo='%i of %i' % (batch_i, batch_tot))
             batch_i += 1
