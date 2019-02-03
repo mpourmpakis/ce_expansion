@@ -55,7 +55,7 @@ class AtomGraph(object):
 
         # Create pointers
         self._long_num_atoms = ctypes.c_long(self.num_atoms)
-        self._p_cns = self.cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+        self._p_cns = self.cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long)) # Windows compatibility?
         self._long_num_bonds = ctypes.c_long(self._num_bonds)
         self._p_bond_list = self._bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
@@ -89,6 +89,7 @@ class AtomGraph(object):
         Calculates the cohesive energy of the NP using the BC model, as implemented in interface.py
         and lib.c
         """
+        ordering = ordering.astype('int32')
         # Pointerize ordering
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
         return interface.pointerized_calculate_ce(self._p_bond_energies,
