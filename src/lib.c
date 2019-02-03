@@ -1,8 +1,12 @@
 //BC Model Calculator
 // James Dean, 2019
 
+// I'm assuming for now that this is a windows issue; just int64 versus long ints
 #define COMPILE_FOR_WINDOWS 1
-#define PREPROCESSOR_PRINT_DEBUG_INFO 1
+
+// Controls the printing of various statements describing the flow of the DLL, because this is less convenient
+// to run through a more traditional debugger
+#define PREPROCESSOR_PRINT_DEBUG_INFO 0
 
 #include <stdio.h>
 #include <stdint.h>
@@ -54,34 +58,34 @@ double calculate_ce(double bond_energies[num_elements][num_elements][max_coordin
 
     for (i=0; i < num_bonds; i++){
         #if PREPROCESSOR_PRINT_DEBUG_INFO
-		printf("Bond %d, ", i);
-        long int bond_source = id_array[adj_table[i][0]];
-		printf("Source kind = %d, ", bond_source);
-        long int bond_destination = id_array[adj_table[i][1]];
-		printf("Source destination = %d\n", bond_destination);
-        long int coordination = cns[adj_table[i][0]];
-		printf("Coordination = %d, ", coordination);
-        // Add the bond energy to the running total
-		double contribution = bond_energies[bond_source][bond_destination][coordination];
-        cohesion += bond_energies[bond_source][bond_destination][coordination];
-		// Print debug stuff
-		printf("bond energy = %f\n", contribution);
-		printf("Total cohesion is now: %f\n", cohesion);
+            printf("Bond %d, ", i);
+            long int bond_source = id_array[adj_table[i][0]];
+            printf("Source kind = %d, ", bond_source);
+            long int bond_destination = id_array[adj_table[i][1]];
+            printf("Source destination = %d\n", bond_destination);
+            long int coordination = cns[adj_table[i][0]];
+            printf("Coordination = %d, ", coordination);
+            // Add the bond energy to the running total
+            double contribution = bond_energies[bond_source][bond_destination][coordination];
+            cohesion += bond_energies[bond_source][bond_destination][coordination];
+            // Print debug stuff
+            printf("bond energy = %f\n", contribution);
+            printf("Total cohesion is now: %f\n", cohesion);
 
-		#else
-		printf("Bond %d, ", i);
-        long int bond_source = id_array[adj_table[i][0]];
-        long int bond_destination = id_array[adj_table[i][1]];
-        long int coordination = cns[adj_table[i][0]];
+    	#else
+            long int bond_source = id_array[adj_table[i][0]];
+            long int bond_destination = id_array[adj_table[i][1]];
+            long int coordination = cns[adj_table[i][0]];
 
-        // Add the bond energy to the running total
-		double contribution = bond_energies[bond_source][bond_destination][coordination];
-        cohesion += bond_energies[bond_source][bond_destination][coordination];
+            // Add the bond energy to the running total
+            double contribution = bond_energies[bond_source][bond_destination][coordination];
+            cohesion += bond_energies[bond_source][bond_destination][coordination];
         #endif
     }
     cohesion /= num_atoms;
+
     #if PREPROCESSOR_PRINT_DEBUG_INFO
-	printf("Dividing by %d atoms, resulting in %f\n", num_atoms, cohesion);
+	    printf("Dividing by %d atoms, resulting in %f\n", num_atoms, cohesion);
 	#endif
     return cohesion;
 }
