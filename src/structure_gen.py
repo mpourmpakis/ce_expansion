@@ -1,7 +1,88 @@
 #!/usr/bin/env python3
 
+import os
 import ase.cluster
 import ase.lattice
+import pathlib
+import pickle
+import numpy as np
+import adjacency
+
+
+def build_structure(shape, nshell, return_bond_list=True):
+    """
+    Creates Atoms obj of specified shape and size (based on nshell)
+
+    Args:
+    shape (str): name of shape for atoms obj
+                 NOTE: currently supports
+                        - icosahedron
+                        - cuboctahedron
+                        - fcc-cube
+                        - elongated-trigonal-pyramic
+    nshell (int): number of shells used to generate atom size
+                  e.g. icosahedron with 3 shells makes a 55-atom object
+                       ( 1 in core + 12 in shell_1 + 42 in shell_2)
+
+    Kargs:
+    return_bond_list (bool): if True, also returns bond_list of Atoms obj
+                             (default: True)
+
+    Returns:
+            if return_bond_list:
+                (ase.Atoms), (list): atom obj and bond_list
+            else:
+                (ase.Atoms): atom obj of structure
+
+    Raises:
+            NotImplementedError: given shape has not been implemented
+    """
+    # ensure necessary directories exist within local repository
+    pathlib.Path('../data/atom_objects/%s/' % shape).mkdir(parents=True,
+                                                           exist_ok=True)
+    apath = '../data/atom_objects/%s/%i.pickle' % (shape, nshell)
+    if os.path.isfile(apath):
+        with open(apath, 'rb') as fidr:
+            atom = pickle.load(fidr)
+    else:
+
+        # build atom object
+        if shape == 'icosahedron':
+            atom = ase.cluster.Icosahedron('Cu', nshell)
+        elif shape == 'fcc-cube':
+            atom = ase.cluster.FaceCenteredCubic('Cu', [(1, 0, 0),
+                                                        (0, 1, 0),
+                                                        (0, 0, 1)],
+                                                 [nshell] * 3)
+        elif shape == 'cuboctahedron':
+            atom = ase.cluster.Octahedron('Cu', 2 * nshell + 1,
+                                          cutoff=nshell)
+        elif shape == 'elongated-pentagonal-bipyramid':
+            atom = ase.cluster.Decahedron('Cu', nshell, nshell, 0)
+        else:
+            raise NotImplementedError('%s has not been implemented')
+
+        with open(apath, 'wb') as fidw:
+            pickle.dump(atom, fidw)
+
+    # can return atoms obj and bond list or just atoms obj
+    if return_bond_list:
+
+        # make sure bond_list directory exists (if not, make one)
+        bond_list_path = '../data/bond_lists/%s/' % shape
+        pathlib.Path(bond_list_path).mkdir(parents=True, exist_ok=True)
+
+        # if bond_list file (fname) exists, read it in
+        # else make and save bond_list
+        fname = bond_list_path + '%i.npy' % nshell
+        if os.path.isfile(fname):
+            bond_list = np.load(fname)
+        else:
+            bond_list = adjacency.buildBondsList(atom)
+            np.save(fname, bond_list)
+        return atom, bond_list
+    else:
+        return atom
 
 
 def cube(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":

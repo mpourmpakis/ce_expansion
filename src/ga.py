@@ -9,7 +9,7 @@ import pickle
 import functools
 import itertools as it
 import atomgraph
-import adjacency
+import structure_gen
 import ase.cluster
 import ase.io
 import numpy as np
@@ -25,11 +25,19 @@ CENTER = 40
 class Chromo(object):
     def __init__(self, atomg, n_dope=0, arr=None, x_dope=None):
         """
+        Chromosome object for GA simulations
+        Represents a single structure with a given chemical ordering (arr)
 
-        :param atomg:
-        :param n_dope:
-        :param arr:
-        :param x_dope:
+        Args:
+        atomg:
+
+        Kargs:
+        n_dope (int): (default: 0)
+        arr (np.ndarray || list || None): (default: None)
+        x_dope (float || None): (default: None)
+
+        Raises:
+                ValueError: n_dope is greater than total atoms
         """
         self.num_atoms = atomg.num_atoms
         if x_dope is not None:
@@ -53,39 +61,45 @@ class Chromo(object):
         # calculate initial CE
         self.calc_score()
 
-    def mutate(self, nps=1):
+    def mutate(self):
         """
+        Algorithm to randomly swith a '1' & a '0' within ordering arr
+        - mutates the ordering array
+        NOTE: slow algorithm - can probably be improved
 
-        :param nps:
-        :return:
+        Returns: None
         """
         if not self.n_dope or self.n_dope == self.num_atoms:
             print('Warning: attempting to mutate, but system is monometallic')
             return
+        
+        # shift a "1"
+        ones = list(np.where(self.arr == 1)[0])
+        s = random.sample(ones, 1)[0]
+        self.arr[s] = 0
 
-        assert self.arr.sum() == self.n_dope
-        # shift a "1" <nps> times
-        for i in range(nps):
-            ones = list(np.where(self.arr == 1)[0])
-            s = random.sample(ones, 1)[0]
-            self.arr[s] = 0
+        # shift '1' over to the left
+        shift = s - 1
+        while 1:
+            if self.arr[shift] == 0:
+                self.arr[shift] = 1
+                break
+            shift -= 1
 
-            # shift '1' over to the left
-            shift = s - 1
-            while 1:
-                if self.arr[shift] == 0:
-                    self.arr[shift] = 1
-                    break
-                shift -= 1
-
-        assert self.arr.sum() == self.n_dope
+        # update CE 'score' of Chrom
         self.calc_score()
 
     def cross(self, chrom2):
         """
+        Crossover algorithm to mix two parent chromosomes into
+        two new child chromosomes, taking traits from each parent
+        - conserves doping concentration
 
-        :param chrom2:
-        :return:
+        Args:
+        chrom2 (Chrom): second parent Chrom obj
+
+        Returns:
+                (list): two children Chrom objs with new ordering <arr>s
         """
         x = 0
 
@@ -120,8 +134,8 @@ class Chromo(object):
 
     def calc_score(self):
         """
-
-        :return:
+        Returns CE of structure based on Bond-Centric Model
+        - Yan, Z. et al., Nano Lett. 2018, 18 (4), 2696-2704.
         """
         self.score = self.atomg.getTotalCE(self.arr)
 
@@ -172,6 +186,9 @@ class Pop(object):
 
         # track runtime
         self.runtime = 0
+
+        # keep track of whether a sim has been run
+        self.has_run = False
 
     def build_pop(self):
         """
@@ -258,6 +275,7 @@ class Pop(object):
             print(val.center(CENTER), end='\r')
             self.runtime = time.time() - start
         self.info = np.array(self.info)
+        self.has_run = True
 
     def sort_pop(self):
         """
@@ -277,11 +295,50 @@ class Pop(object):
                           s.mean(),
                           s.std()])
 
+    def summ_results(self, disp=False):
+        """
+            Creates string listing GA simulation stats and results info
+            str includes:
+                - minimum, mean, and std dev. of CEs for last population
+                - mute and mate (crossover) rates of GA
+                - total steps taken by GA
+                - structure formula
+
+        Kargs:
+        disp (bool): if True, results string is written to console
+                     (default: False)
+
+        Returns:
+                (str): result string
+
+        Raises:
+                Exception: if sim has not been run
+                           i.e. self.has_run == False
+        """
+        if not self.has_run:
+            raise Exception('No simulation has been run')
+
+        res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(p.info[-1, :])
+        res += 'Mute: %.2f\nKill: %.2f\n' % (p.mute_rate, p.kill_rate)
+        res += ' Pop: %i\n' % p.popsize
+        res += 'nRun: %i\n' % max_runs
+        res += 'Form: %s%i_%s%i\n' % (metal1, len(atom) - p.n_dope,
+                                      metal2, p.n_dope)
+        if self.has_run:
+            res += 'Time: %.3e\n' % (self.runtime) + '\n\n\n'
+        if disp:
+            print(res)
+        return res
+
     def plot_results(self):
         """
-            Method to create a plot of GA simulation
-            - plots average, std deviation, and minimum score
-              of the population at each step
+        Method to create a plot of GA simulation
+        - plots average, std deviation, and minimum score
+          of the population at each step
+
+        Returns:
+                (matplotlib.figure.Figure),
+                (matplotlib.axes._subplots.AxesSubplot): fig and ax objs
         """
         fig, ax = plt.subplots(figsize=(7, 7))
 
@@ -309,56 +366,20 @@ class Pop(object):
         return fig, ax
 
 
-# Console printing functions
-def results_str(p, disp=True):
-    """
-
-    :param p:
-    :param disp:
-    :return:
-    """
-    res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(p.info[-1, :])
-    res += 'Mute: %.2f\nKill: %.2f\n' % (p.mute_rate, p.kill_rate)
-    res += ' Pop: %i\n' % p.popsize
-    res += 'nRun: %i\n' % max_runs
-    res += 'Form: %s%i_%s%i\n' % (metal1, len(atom) - p.n_dope,
-                                  metal2, p.n_dope)
-    res += 'Done: %i\n' % (len(p.info) - 1) + '\n\n\n'
-    if disp:
-        print(res.strip('\n'))
-    return res
-
-
-def log_ga_sim(p):
-    """
-
-    :param p:
-    :return:
-    """
-    results = results_str(p, disp=False)
-
-    with open('results.txt', 'a') as fid:
-        fid.write(results)
-
-    # see if results are new max
-    with open('best.txt', 'r') as rfid:
-        best = float(rfid.readline().strip('\n').split()[-1])
-
-    # if new max, write it to best.txt
-    if best > p.info[-1, 0]:
-        print('NEW MIN!'.center(50, '-'))
-        with open('best.txt', 'w') as bestfid:
-            bestfid.write(results)
-
-
 def make_xyz(atom, chrom, path, verbose=False):
     """
+    Creates an XYZ file given Atoms obj skeleton and
+    GA Chrom obj for metals and ordering
 
-    :param atom:
-    :param chrom:
-    :param path:
-    :param verbose:
-    :return:
+    Args:
+    atom (ase.Atoms): Atoms obj skeleton
+    chrom (Chrom): Chrom obj from GA containing ordering and metals
+    path (str): path to save XYZ file
+
+    Kargs:
+    verbose (bool): if True, print save path on success
+
+    Returns: None
     """
     metal1, metal2 = chrom.atomg.symbols
     atom.info['CE'] = chrom.score
@@ -377,68 +398,44 @@ def make_xyz(atom, chrom, path, verbose=False):
 
 def gen_random(atomg, n_dope, n=500):
     """
+    Generates random structures (constrained by size, shape, and concentration)
+    and returns minimum structure and stats on CEs
 
-    :param atomg:
-    :param n_dope:
-    :param n:
-    :return:
+    Args:
+    atomg (atomgraph.AtomGraph): AtomGraph object
+    n_dope (int): number of doped atoms
+    n (int): sample size
+
+    Returns:
+            (Chrom), (np.ndarray): Chrom object of minimum structure found
+                                   1D array of all CEs calculated in sample
     """
     if n_dope == 0 or n_dope == atomg.num_atoms:
         n = 1
     scores = np.zeros(n)
+
+    # keep track of minimum structure and minimum CE
+    min_struct = None
+    min_ce = 10
     for i in range(n):
-        scores[i] = Chromo(atomg, n_dope=n_dope).score
-        print(i, end='\r')
-    return scores.min(), scores.mean(), scores.std()
-
-
-def build_structure(shape, nshell, return_adj=True):
-    """
-
-    :param shape:
-    :param nshell:
-    :param return_adj:
-    :return:
-    """
-    # ensure necessary directories exist within local repository
-    pathlib.Path('../data/atom_objects/%s/' % shape).mkdir(parents=True,
-                                                           exist_ok=True)
-    apath = '../data/atom_objects/%s/%i.pickle' % (shape, nshell)
-    if os.path.isfile(apath):
-        with open(apath, 'rb') as fidr:
-            atom = pickle.load(fidr)
-    else:
-
-        # build atom object
-        if shape == 'icosahedron':
-            atom = ase.cluster.Icosahedron('Cu', nshell)
-        elif shape == 'fcc-cube':
-            atom = ase.cluster.FaceCenteredCubic('Cu', [(1, 0, 0),
-                                                        (0, 1, 0),
-                                                        (0, 0, 1)],
-                                                 [nshell] * 3)
-        elif shape == 'cuboctahedron':
-            atom = ase.cluster.Octahedron('Cu', 2 * nshell + 1,
-                                          cutoff=nshell)
-        elif shape == 'elongated-pentagonal-bipyramid':
-            atom = ase.cluster.Decahedron('Cu', nshell, nshell, 0)
-        else:
-            raise TypeError('%s has not been implemented')
-
-        with open(apath, 'wb') as fidw:
-            pickle.dump(atom, fidw)
-    if return_adj:
-        return atom, adjacency.buildBondsList(atom)
-    else:
-        return atom
+        c = Chromo(atomg, n_dope=n_dope)
+        scores[i] = c.score
+        if c.score < min_ce:
+            min_struct = Chromo(atomg, n_dope=n_dope, arr=c.arr.copy())
+            min_ce = min_struct.score
+    return min_struct, scores
 
 
 def ncr(n, r):
     """
+    N choose r function (combinatorics)
 
-    :param n:
-    :param r:
-    :return:
+    Args:
+    n (int): from 'n' choices
+    r (int): choose r without replacement
+
+    Returns:
+        (int): total combinations
     """
     r = min(r, n - r)
     numer = functools.reduce(op.mul, range(n, n - r, -1), 1)
@@ -449,17 +446,34 @@ def ncr(n, r):
 def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
             verbose=False):
     """
+    Algorithm to fill the lowest (or highest) coordination sites with dopants
 
-    :param atomg:
-    :param n_dope:
-    :param max_search:
-    :param low_first:
-    :param return_n:
-    :param verbose:
-    :return:
+    Args:
+    atomg (atomgraph.AtomGraph): AtomGraph object
+    n_dope (int): number of dopants
+
+    Kargs:
+    max_search (int): if there are a number of possible structures with
+                      partially-filled sites, the function will search
+                      max_search options and return lowest CE structure
+                      (default: 50)
+    low_first (bool): if True, fills low CNs, else fills high CNs
+                      (default: True)
+    return_n (bool): if > 0, function will return a list of possible
+                     structures
+                     (default: None)
+    verbose (bool): if True, function will print info to console
+                    (default: False)
+    Returns:
+            if return_n > 0:
+                (list) -- list of chemical ordering np.ndarrays
+            else:
+                (np.ndarray), (float) -- chemical ordering np.ndarray with its
+                                         calculated CE
+
+    Raises:
+           ValueError: not enough options to produce <return_n> sample size
     """
-    formula = 'Cu(%i)Au(%i)' % (atomg.num_atoms - n_dope, n_dope)
-
     # handle monometallic cases efficiently
     if not n_dope or n_dope == atomg.num_atoms:
         struct_min = np.zeros(atomg.num_atoms) if \
@@ -484,12 +498,10 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
                 low = 0
                 low_struct = None
 
-                # check to see how many combinations exist
-                options = ncr(len(spots), n_dope)
-                # print('%.2e' % options)
-
                 # return sample of 'return_n' options
                 if return_n:
+                    # check to see how many combinations exist
+                    options = ncr(len(spots), n_dope)
                     if return_n > options:
                         raise ValueError('not enough options to '
                                          'produce desired sample size')
@@ -573,25 +585,54 @@ def make_3d_plot(path, metals=None):
     return fig
 
 
-def run_ga(metals, shape, plotit=True,
+def run_ga(metals, shape, datapath=None, plotit=False,
            save_data=True, log_results=True,
            batch_runinfo=None, max_shells=None):
     """
+    Batch submission function to run GAs of a given metal combination and
+    shape, sweeping over different sizes (measured in number of shells)
+    - capable of saving minimum structures as XYZs, logging GA stats, saving
+      all run info as excel, and creating a 3D surface plot of results
 
-    :param metals:
-    :param shape:
-    :param plotit:
-    :param save_data:
-    :param log_results:
-    :param batch_runinfo:
-    :param max_shells:
-    :return:
+    Args:
+    metals (list) || (tuple): list of two metals used in the bimetallic NP
+                              NOTE: currently supports Cu, Ag, and Au
+    shape (str): shape of NP that is being studied
+                 NOTE: currently supports
+                        - icosahedron
+                        - cuboctahedron
+                        - fcc-cube
+                        - elongated-trigonal-pyramic
+
+    Kargs:
+    datapath (str || None): path to save sims.log info and structures
+                            (default: None)
+    plotit (bool): if true, a 3D surface plot is made of GA sims
+                   dope concentration vs. size vs. excess energy
+                   (default: False)
+    save_data (bool): - if true, GA sim data is saved to
+                        '../data/bimetallic_results/<metal & shape based name>'
+                      - new minimum structures are also saved as XYZs
+                      (default: True)
+    log_results (bool): if true, GA sim stats are logged to
+                        sims.log
+                        (default: True)
+    batch_runinfo (str || None): if str, add to log under
+                                 'Completed Run: <batch_runinfo>'
+                                 (default: None)
+    max_shells (int || None): if int, limits size of NPs studied in GA runs
+                              (default: None)
+
+    Returns: None
     """
-    # clear previous plots and define desktop and Box paths
+    # clear previous plots and define desktop and data paths
     plt.close('all')
     desk = os.path.join(os.path.expanduser('~'), 'desktop')
-    box = os.path.join(os.path.expanduser('~'), 'Box Sync',
-                       'Michael_Cowan_PhD_research', 'data', 'np_ce')
+
+    # if datapatha not given, create one on desktop
+    if not datapath:
+        datapath = os.path.join(desk, 'ga_data')
+        pathlib.Path(datapath).mkdir(parents=True, exist_ok=True)
 
     # ensure metals is a list of two elements
     assert len(metals) == 2
@@ -600,15 +641,14 @@ def run_ga(metals, shape, plotit=True,
     # always sort metals by alphabetical order for consistency
     metal1, metal2 = sorted(metals)
 
-    # 24 shells = about 10 nm
-    # 13 shells = about 5 nm
-    # range of number of shells to test
-    shape2shell = {'icosahedron': [13, 14],  # [2, 14],
+    # number of shells range to sim ga for each shape
+    shape2shell = {'icosahedron': [2, 14],
                    'fcc-cube': [1, 15],
                    'cuboctahedron': [1, 15],
                    'elongated-pentagonal-bipyramid': [2, 12]
                    }
     nshell_range = shape2shell[shape]
+
     if max_shells:
         nshell_range[1] = max_shells
     nstructs = len(range(*nshell_range))
@@ -622,8 +662,7 @@ def run_ga(metals, shape, plotit=True,
     print('              Shape: %s' % shape)
     print('    Save GA Results: %s' % bool(save_data))
     print('     Create 3D Plot: %s' % bool(plotit))
-    if max_shells:
-        print('         Max Shells: %i' % max_shells)
+    print('        Shell Range: %s' % str(nshell_range))
     print('----------------------------------------')
 
     # attempt to read in previous results
@@ -680,10 +719,10 @@ def run_ga(metals, shape, plotit=True,
 
     for struct_i, nshells in enumerate(range(*nshell_range)):
         # build atom, adjacency list, and atomgraph
-        atom, adj = build_structure(shape, nshells)
+        atom, bond_list = structure_gen.build_structure(shape, nshells,
+                                                        return_bond_list=True)
 
-        new_atom_bonds = adjacency.buildBondsList(atom)
-        ag = atomgraph.AtomGraph(new_atom_bonds, metal1, metal2)
+        ag = atomgraph.AtomGraph(bond_list, metal1, metal2)
 
         natoms = len(atom)
         if natoms not in monos:
@@ -691,7 +730,7 @@ def run_ga(metals, shape, plotit=True,
 
         # build structure path
         path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
-        struct_path = os.path.join(box, path, 'structures')
+        struct_path = os.path.join(datapath, path, 'structures')
         pathlib.Path(struct_path).mkdir(parents=True,
                                         exist_ok=True)
 
@@ -767,12 +806,11 @@ def run_ga(metals, shape, plotit=True,
 
         print(' ' * 100, end='\r')
         print('-' * CENTER)
-        print('----------------------------------------')
         outp = 'Completed Size %i of %i' % (struct_i + 1, nstructs)
         if new_min_structs:
             outp += ' (%i new mins)' % new_min_structs
         print(outp.center(CENTER))
-        print('----------------------------------------')
+        print('-' * CENTER)
 
         # calculate excess energy (ees)
         ees = ces - (x * monos[natoms][metal2]) - \
@@ -810,7 +848,7 @@ def run_ga(metals, shape, plotit=True,
     # save new monometallic NP data if any new calcs have been added
     if new_mono_calcs:
         print('New monometallic calcs have been saved'.center(CENTER))
-        print('----------------------------------------')
+        print('-' * CENTER)
         with open(mono_pickle, 'wb') as fidw:
             pickle.dump(monos, fidw)
 
@@ -861,18 +899,26 @@ def run_ga(metals, shape, plotit=True,
     # percentage of new structures (relative to total structures analyzed)
     logtxt += '   %% New Structs: %.2f%%\n' % (100 * tot_new_structs / tot_st)
 
-    # if run is part of a batch submission, indicate how far along the batch job is
+    # if run is part of a batch submission,
+    # indicate how far along the batch job is
     if batch_runinfo:
         logtxt += '   Completed Run: %s\n' % batch_runinfo
     logtxt += '----------------------------------------\n'
 
-    # write to sims.log in my Box Drive path
-    logpath = os.path.join(box, 'sims.log')
+    # write to sims.log to datapath
+    logpath = os.path.join(datapath, 'sims.log')
     with open(logpath, 'a') as flog:
         flog.write(logtxt)
 
 
 if __name__ == '__main__':
+
+    metal1 = 'Cu'
+    metal2 = 'Ag'
+    atom, bond_list = structure_gen.build_structure('icosahedron', 3)
+    ag = atomgraph.AtomGraph(bond_list, metal1, metal2)
+
+    """
     metal_opts = [('Ag', 'Cu'),
                   ('Ag', 'Au'),
                   ('Au', 'Cu')
@@ -888,3 +934,4 @@ if __name__ == '__main__':
                    log_results=True,
                    batch_runinfo='%i of %i' % (batch_i, batch_tot))
             batch_i += 1
+    """
