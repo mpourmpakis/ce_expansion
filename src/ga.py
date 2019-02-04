@@ -1,22 +1,20 @@
 import operator as op
 import pandas as pd
 import os
-import sys
 import time
 import random
 from datetime import datetime as dt
 import pathlib
 import pickle
-from functools import reduce
+import functools
 import itertools as it
-from atomgraph import AtomGraph
-from adjacency import buildAdjacencyList
+import atomgraph
+import adjacency
 import ase.cluster
 import ase.io
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
 
 # random.seed(9876)
 
@@ -26,15 +24,22 @@ CENTER = 40
 
 class Chromo(object):
     def __init__(self, atomg, n_dope=0, arr=None, x_dope=None):
-        self.n_atoms = atomg.n_atoms
+        """
+
+        :param atomg:
+        :param n_dope:
+        :param arr:
+        :param x_dope:
+        """
+        self.num_atoms = atomg.num_atoms
         if x_dope is not None:
-            self.n_dope = int(atomg.n_atoms * x_dope)
+            self.n_dope = int(atomg.num_atoms * x_dope)
         else:
             self.n_dope = n_dope
         self.atomg = atomg
-        self.arr = np.zeros(atomg.n_atoms).astype(int)
+        self.arr = np.zeros(atomg.num_atoms).astype(int)
 
-        if n_dope > self.n_atoms:
+        if n_dope > self.num_atoms:
             raise ValueError("Can't dope more atoms than there are atoms...")
 
         # if an array is given, use it - else random generate array
@@ -48,11 +53,13 @@ class Chromo(object):
         # calculate initial CE
         self.calc_score()
 
-    def get_atomic_ce(self, i):
-        return self.atomg.getAtomicCE(i, self.arr)
-
     def mutate(self, nps=1):
-        if not self.n_dope or self.n_dope == self.n_atoms:
+        """
+
+        :param nps:
+        :return:
+        """
+        if not self.n_dope or self.n_dope == self.num_atoms:
             print('Warning: attempting to mutate, but system is monometallic')
             return
 
@@ -75,6 +82,11 @@ class Chromo(object):
         self.calc_score()
 
     def cross(self, chrom2):
+        """
+
+        :param chrom2:
+        :return:
+        """
         x = 0
 
         child1 = self.arr.copy()
@@ -107,20 +119,35 @@ class Chromo(object):
                 Chromo(self.atomg, n_dope=self.n_dope, arr=child2)]
 
     def calc_score(self):
+        """
+
+        :return:
+        """
         self.score = self.atomg.getTotalCE(self.arr)
 
 
 class Pop(object):
     def __init__(self, atomg, n_dope=1, popsize=100, kill_rate=0.2,
                  mate_rate=0.8, mute_rate=0.2, mute_num=1, x_dope=None):
+        """
+
+        :param atomg:
+        :param n_dope:
+        :param popsize:
+        :param kill_rate:
+        :param mate_rate:
+        :param mute_rate:
+        :param mute_num:
+        :param x_dope:
+        """
         self.atomg = atomg
         self.popsize = popsize
         if x_dope:
-            self.n_dope = int(atomg.n_atoms * x_dope)
+            self.n_dope = int(atomg.num_atoms * x_dope)
         else:
             self.n_dope = n_dope
 
-        self.x_dope = self.n_dope / atomg.n_atoms
+        self.x_dope = self.n_dope / atomg.num_atoms
 
         self.nkill = int(popsize * kill_rate)
         self.nmut = int((popsize - self.nkill) * mute_rate)
@@ -132,7 +159,11 @@ class Pop(object):
         self.initialize_new_run()
 
     def initialize_new_run(self):
-        self.x_dope = self.n_dope / self.atomg.n_atoms
+        """
+
+        :return:
+        """
+        self.x_dope = self.n_dope / self.atomg.num_atoms
         self.build_pop()
         self.sort_pop()
 
@@ -143,6 +174,10 @@ class Pop(object):
         self.runtime = 0
 
     def build_pop(self):
+        """
+
+        :return:
+        """
         # create popsize - 2 random structures
         self.pop = [Chromo(self.atomg, n_dope=self.n_dope)
                     for i in range(self.popsize - 2)]
@@ -156,9 +191,18 @@ class Pop(object):
                                         low_first=False, return_n=1)[0])]
 
     def get_min(self):
+        """
+
+        :return:
+        """
         return self.info[:, 0].min()
 
     def step(self, rand=False):
+        """
+
+        :param rand:
+        :return:
+        """
         if rand:
             self.build_pop(n_fill_cn=0)
         else:
@@ -189,8 +233,15 @@ class Pop(object):
         self.stats()
 
     def run(self, nsteps=50, std_cut=0, rand=False):
+        """
+
+        :param nsteps:
+        :param std_cut:
+        :param rand:
+        :return:
+        """
         # no GA required for monometallic systems
-        if self.n_dope not in [0, self.atomg.n_atoms]:
+        if self.n_dope not in [0, self.atomg.num_atoms]:
             start = time.time()
             for i in range(int(nsteps)):
                 val = 'dopeX = %.2f\tMin: %.5f eV\t%i' % (self.x_dope,
@@ -209,10 +260,18 @@ class Pop(object):
         self.info = np.array(self.info)
 
     def sort_pop(self):
+        """
+
+        :return:
+        """
         self.pop = sorted(self.pop,
                           key=lambda j: j.score)
 
     def stats(self):
+        """
+
+        :return:
+        """
         s = np.array([i.score for i in self.pop])
         self.info.append([s[0],
                           s.mean(),
@@ -250,7 +309,14 @@ class Pop(object):
         return fig, ax
 
 
+# Console printing functions
 def results_str(p, disp=True):
+    """
+
+    :param p:
+    :param disp:
+    :return:
+    """
     res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(p.info[-1, :])
     res += 'Mute: %.2f\nKill: %.2f\n' % (p.mute_rate, p.kill_rate)
     res += ' Pop: %i\n' % p.popsize
@@ -264,6 +330,11 @@ def results_str(p, disp=True):
 
 
 def log_ga_sim(p):
+    """
+
+    :param p:
+    :return:
+    """
     results = results_str(p, disp=False)
 
     with open('results.txt', 'a') as fid:
@@ -281,6 +352,14 @@ def log_ga_sim(p):
 
 
 def make_xyz(atom, chrom, path, verbose=False):
+    """
+
+    :param atom:
+    :param chrom:
+    :param path:
+    :param verbose:
+    :return:
+    """
     metal1, metal2 = chrom.atomg.symbols
     atom.info['CE'] = chrom.score
     for i, dope in enumerate(chrom.arr):
@@ -297,7 +376,14 @@ def make_xyz(atom, chrom, path, verbose=False):
 
 
 def gen_random(atomg, n_dope, n=500):
-    if n_dope == 0 or n_dope == atomg.n_atoms:
+    """
+
+    :param atomg:
+    :param n_dope:
+    :param n:
+    :return:
+    """
+    if n_dope == 0 or n_dope == atomg.num_atoms:
         n = 1
     scores = np.zeros(n)
     for i in range(n):
@@ -307,6 +393,13 @@ def gen_random(atomg, n_dope, n=500):
 
 
 def build_structure(shape, nshell, return_adj=True):
+    """
+
+    :param shape:
+    :param nshell:
+    :param return_adj:
+    :return:
+    """
     # ensure necessary directories exist within local repository
     pathlib.Path('../data/atom_objects/%s/' % shape).mkdir(parents=True,
                                                            exist_ok=True)
@@ -335,75 +428,51 @@ def build_structure(shape, nshell, return_adj=True):
         with open(apath, 'wb') as fidw:
             pickle.dump(atom, fidw)
     if return_adj:
-        return atom, buildAdjacencyList(atom, '%s_%i' % (shape, nshell))
+        return atom, adjacency.buildBondsList(atom)
     else:
         return atom
 
 
 def ncr(n, r):
-    """N choose r function (combinatorics)
-
-    Arguments:
-        n {int} -- [from n choices]
-        r {int} -- [choose r without replacement]
-
-    Returns:
-        [int] -- [total combinations]
     """
 
-    r = min(r, n-r)
-    numer = reduce(op.mul, range(n, n - r, - 1), 1)
-    denom = reduce(op.mul, range(1, r + 1), 1)
+    :param n:
+    :param r:
+    :return:
+    """
+    r = min(r, n - r)
+    numer = functools.reduce(op.mul, range(n, n - r, -1), 1)
+    denom = functools.reduce(op.mul, range(1, r + 1), 1)
     return numer // denom
 
 
 def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
             verbose=False):
-    """Algorithm to fill the lowest (or highest) coordination sites with dopants
-    
-    
-    Arguments:
-        atomg {AtomGraph} -- AtomGraph object
-        n_dope {int} -- number of dopants
-    
-    Keyword Arguments:
-        max_search {int} -- if there are a number of possible structures with
-                              partially-filled sites, the function will search
-                              max_search options and return lowest CE structure
-                              (default: {50})
-        low_first {bool} -- if True, fills low CNs, else fills high CNs
-                              (default: {True})
-        return_n {int}   -- if > 0, function will return a list of possible
-                              structures (default: {None})
-        verbose {bool}   -- if True, function will print info to console
-                              (default: {False})
-    
-    Raises:
-        ValueError -- [description]
-    
-    Returns:
-        if return_n > 0:
-            {list} -- list of chemical ordering np.ndarrays if return_n > 0
-        else:
-            {np.ndarray}, {float} -- chemical ordering np.ndarray with its
-                                       calculated CE
     """
 
-    formula = 'Cu(%i)Au(%i)' % (atomg.n_atoms - n_dope, n_dope)
+    :param atomg:
+    :param n_dope:
+    :param max_search:
+    :param low_first:
+    :param return_n:
+    :param verbose:
+    :return:
+    """
+    formula = 'Cu(%i)Au(%i)' % (atomg.num_atoms - n_dope, n_dope)
 
     # handle monometallic cases efficiently
-    if not n_dope or n_dope == atomg.n_atoms:
-        struct_min = np.zeros(atomg.n_atoms) if \
-            not n_dope else np.ones(atomg.n_atoms)
+    if not n_dope or n_dope == atomg.num_atoms:
+        struct_min = np.zeros(atomg.num_atoms) if \
+            not n_dope else np.ones(atomg.num_atoms)
         struct_min = struct_min.astype(int)
         ce = atomg.getTotalCE(struct_min)
         checkall = True
     else:
-        cn_list = np.array(atomg.getAllCNs())
+        cn_list = atomg.cns
         cnset = sorted(set(cn_list))
         if not low_first:
             cnset = cnset[::-1]
-        struct_min = np.zeros(atomg.n_atoms).astype(int)
+        struct_min = np.zeros(atomg.num_atoms).astype(int)
         ce = None
         for cn in cnset:
             spots = np.where(cn_list == cn)[0]
@@ -470,6 +539,12 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
 
 
 def make_3d_plot(path, metals=None):
+    """
+
+    :param path:
+    :param metals:
+    :return:
+    """
     shape, metals = os.path.basename(path).split('_')[:2]
     metal1, metal2 = metals[:2], metals[2:]
     if isinstance(path, str):
@@ -501,6 +576,17 @@ def make_3d_plot(path, metals=None):
 def run_ga(metals, shape, plotit=True,
            save_data=True, log_results=True,
            batch_runinfo=None, max_shells=None):
+    """
+
+    :param metals:
+    :param shape:
+    :param plotit:
+    :param save_data:
+    :param log_results:
+    :param batch_runinfo:
+    :param max_shells:
+    :return:
+    """
     # clear previous plots and define desktop and Box paths
     plt.close('all')
     desk = os.path.join(os.path.expanduser('~'), 'desktop')
@@ -517,7 +603,7 @@ def run_ga(metals, shape, plotit=True,
     # 24 shells = about 10 nm
     # 13 shells = about 5 nm
     # range of number of shells to test
-    shape2shell = {'icosahedron': [2, 14],
+    shape2shell = {'icosahedron': [13, 14],  # [2, 14],
                    'fcc-cube': [1, 15],
                    'cuboctahedron': [1, 15],
                    'elongated-pentagonal-bipyramid': [2, 12]
@@ -541,7 +627,7 @@ def run_ga(metals, shape, plotit=True,
     print('----------------------------------------')
 
     # attempt to read in previous results
-    excel_columns = ['n_atoms', 'diameter', 'composition_%s' % metal2,
+    excel_columns = ['num_atoms', 'diameter', 'composition_%s' % metal2,
                      'n_%s' % metal1, 'n_%s' % metal2, 'CE', 'EE']
 
     shapepath = '../data/bimetallic_results/%s/' % shape
@@ -595,7 +681,9 @@ def run_ga(metals, shape, plotit=True,
     for struct_i, nshells in enumerate(range(*nshell_range)):
         # build atom, adjacency list, and atomgraph
         atom, adj = build_structure(shape, nshells)
-        ag = AtomGraph(adj, metal1, metal2)
+
+        new_atom_bonds = adjacency.buildBondsList(atom)
+        ag = atomgraph.AtomGraph(new_atom_bonds, metal1, metal2)
 
         natoms = len(atom)
         if natoms not in monos:
@@ -654,17 +742,17 @@ def run_ga(metals, shape, plotit=True,
             # check to see if older ga run founded lower CE structure
             if save_data:
                 # if older data exists, see if new struct has lower CE
-                if not df.loc[(df['n_atoms'] == natoms) &
+                if not df.loc[(df['num_atoms'] == natoms) &
                               (df['n_%s' % metal2] == dope),
                               'CE'].empty:
 
-                    oldrunmin = df.loc[(df['n_atoms'] == natoms) &
+                    oldrunmin = df.loc[(df['num_atoms'] == natoms) &
                                        (df['n_%s' % metal2] == dope),
                                        'CE'].values[0]
 
                     # update df if new struct has lower CE
                     if (pop.get_min() - oldrunmin) < -1E-5:
-                        df.loc[(df['n_atoms'] == natoms) &
+                        df.loc[(df['num_atoms'] == natoms) &
                                (df['n_%s' % metal2] == dope),
                                'CE'] = pop.get_min()
                         make_xyz(atom.copy(), pop.pop[0], struct_path)
@@ -688,7 +776,7 @@ def run_ga(metals, shape, plotit=True,
 
         # calculate excess energy (ees)
         ees = ces - (x * monos[natoms][metal2]) - \
-            ((1 - x) * monos[natoms][metal1])
+              ((1 - x) * monos[natoms][metal1])
 
         tot_natoms += [natoms] * len(x)
         comps += list(x)
@@ -702,7 +790,7 @@ def run_ga(metals, shape, plotit=True,
 
     # save data from each GA run
     if save_data:
-        newdf = pd.DataFrame({'n_atoms': tot_natoms,
+        newdf = pd.DataFrame({'num_atoms': tot_natoms,
                               'diameter': tot_size,
                               'composition_%s' % metal2: comps,
                               'n_%s' % metal1: nmetal1,
@@ -711,8 +799,8 @@ def run_ga(metals, shape, plotit=True,
                               'EE': eedata})
 
         data = df.append(newdf, ignore_index=True)
-        data.drop_duplicates(['n_atoms', 'n_%s' % metal2], inplace=True)
-        data.sort_values(by=['n_atoms', 'n_%s' % metal2], inplace=True)
+        data.drop_duplicates(['num_atoms', 'n_%s' % metal2], inplace=True)
+        data.sort_values(by=['num_atoms', 'n_%s' % metal2], inplace=True)
 
         writer = pd.ExcelWriter(excel, engine='xlsxwriter')
         data.to_excel(writer, index=False)

@@ -1,15 +1,38 @@
 #!/usr/bin/env python3
 
+# Library for buiding bonding lists/tables/matrices
+# James Dean, 2019
+
 import pickle
 import os
 import ase.neighborlist
 import numpy as np
 import pathlib
 
+# Set up globals for defaults
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
+
 with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
     DEFAULT_BOND_COEFFS = pickle.load(precalcs)
+
+
+# Functions below
+def buildBondsList(atoms_object: "ase.Atoms",
+                   radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
+    """
+    2D bonds list from an ASE atoms object.
+
+    Args:
+    atoms_object (ase.Atoms): An ASE atoms object representing the system of interest
+    radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a
+      bond. If no dict is supplied, Cu-Cu bonds of a max-len 2.8 are assumes.
+
+    Returns:
+    np.ndarray : A numpy array representing the bonds list.
+    """
+    sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
+    return np.column_stack((sources, destinations))
 
 
 def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
@@ -86,7 +109,14 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
             np.save('../data/adjacency_lists/%s.npy' % atom_name, result)
         return [[i for i in a] for a in result]
 
+
 if __name__ == '__main__':
     import ase.cluster
-    atom = ase.cluster.Icosahedron('Cu', 10)
-    a = buildAdjacencyList(atom)
+
+    nanoparticle = ase.cluster.Icosahedron('Cu', 2)
+    adjacency_list = buildAdjacencyList(nanoparticle)
+    adjacency_matrix = buildAdjacencyMatrix(nanoparticle)
+    bonds_list = buildBondsList(nanoparticle)
+
+    print(adjacency_list, adjacency_matrix, bonds_list)
+

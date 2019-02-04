@@ -1,6 +1,7 @@
 *.xml
 **/__pycache__
 *.pyc
+.idea
 /src/best.txt
 /src/restuls.txt
 /data/adjacency_lists
