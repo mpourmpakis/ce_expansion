@@ -61,7 +61,7 @@ class Chromo(object):
         # calculate initial CE
         self.calc_score()
 
-    def mutate(self):
+    def mutate(self, nps=1):
         """
         Algorithm to randomly swith a '1' & a '0' within ordering arr
         - mutates the ordering array
@@ -72,19 +72,20 @@ class Chromo(object):
         if not self.n_dope or self.n_dope == self.num_atoms:
             print('Warning: attempting to mutate, but system is monometallic')
             return
-        
-        # shift a "1"
-        ones = list(np.where(self.arr == 1)[0])
-        s = random.sample(ones, 1)[0]
-        self.arr[s] = 0
 
-        # shift '1' over to the left
-        shift = s - 1
-        while 1:
-            if self.arr[shift] == 0:
-                self.arr[shift] = 1
-                break
-            shift -= 1
+        # shift a "1"
+        for i in range(nps):
+            ones = list(np.where(self.arr == 1)[0])
+            s = random.sample(ones, 1)[0]
+            self.arr[s] = 0
+
+            # shift '1' over to the left
+            shift = s - 1
+            while 1:
+                if self.arr[shift] == 0:
+                    self.arr[shift] = 1
+                    break
+                shift -= 1
 
         # update CE 'score' of Chrom
         self.calc_score()
@@ -195,7 +196,7 @@ class Pop(object):
 
         :return:
         """
-        # create popsize - 2 random structures
+        # create <popsize> - 2 random structures
         self.pop = [Chromo(self.atomg, n_dope=self.n_dope)
                     for i in range(self.popsize - 2)]
 
@@ -203,6 +204,7 @@ class Pop(object):
         self.pop += [Chromo(self.atomg, n_dope=self.n_dope,
                             arr=fill_cn(self.atomg, self.n_dope,
                                         low_first=True, return_n=1)[0])]
+
         self.pop += [Chromo(self.atomg, n_dope=self.n_dope,
                             arr=fill_cn(self.atomg, self.n_dope,
                                         low_first=False, return_n=1)[0])]
@@ -257,21 +259,21 @@ class Pop(object):
         :param rand:
         :return:
         """
+
+        # format of string to be written to console during sim
+        update_str = 'dopeX = %.2f\tMin: %.5f eV/atom\t%05i'
+
         # no GA required for monometallic systems
         if self.n_dope not in [0, self.atomg.num_atoms]:
             start = time.time()
             for i in range(int(nsteps)):
-                val = 'dopeX = %.2f\tMin: %.5f eV\t%i' % (self.x_dope,
-                                                          self.info[-1][0],
-                                                          i)
+                val = update_str % (self.x_dope, self.info[-1][0], i)
                 print(val.center(CENTER), end='\r')
                 self.step(rand)
                 # if STD less than std_cut end the GA
                 if self.info[-1][-1] < std_cut:
                     break
-            val = 'dopeX = %.2f\tMin: %.5f eV\t%i' % (self.x_dope,
-                                                      self.info[-1][0],
-                                                      i + 1)
+            val = update_str % (self.x_dope, self.info[-1][0], i + 1)
             print(val.center(CENTER), end='\r')
             self.runtime = time.time() - start
         self.info = np.array(self.info)
@@ -318,10 +320,10 @@ class Pop(object):
         if not self.has_run:
             raise Exception('No simulation has been run')
 
-        res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(p.info[-1, :])
-        res += 'Mute: %.2f\nKill: %.2f\n' % (p.mute_rate, p.kill_rate)
-        res += ' Pop: %i\n' % p.popsize
-        res += 'nRun: %i\n' % max_runs
+        res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(self.info[-1, :])
+        res += 'Mute: %.2f\nKill: %.2f\n' % (self.mute_rate, self.kill_rate)
+        res += ' Pop: %i\n' % self.popsize
+        res += 'nRun: %i\n' % (len(self.info) - 1)
         res += 'Form: %s%i_%s%i\n' % (metal1, len(atom) - p.n_dope,
                                       metal2, p.n_dope)
         if self.has_run:
@@ -340,7 +342,7 @@ class Pop(object):
                 (matplotlib.figure.Figure),
                 (matplotlib.axes._subplots.AxesSubplot): fig and ax objs
         """
-        fig, ax = plt.subplots(figsize=(7, 7))
+        fig, ax = plt.subplots(figsize=(9, 9))
 
         # number of steps GA took
         steps = range(len(self.info))
@@ -351,17 +353,18 @@ class Pop(object):
         mean = self.info[:, 1]
         std = self.info[:, 2]
 
+        # plot minimum CE as a dotted line
+        ax.plot(low, ':', color='k', label='MIN')
         # light blue fill of one std deviation
         ax.fill_between(range(len(self.info)), mean + std, mean - std,
                         color='lightblue', label='STD')
 
         # plot mean as a solid line and minimum as a dotted line
         ax.plot(mean, color='k', label='MEAN')
-        ax.plot(low, ':', color='k', label='MIN')
         ax.legend()
-        ax.set_ylabel('Score')
-        ax.set_xlabel('Step')
-        ax.set_title('Min Val: %.5f' % (self.get_min()))
+        ax.set_ylabel('Cohesive Energy (eV / atom)')
+        ax.set_xlabel('Generation')
+        # ax.set_title('Min CE: %.5f' % (self.get_min()))
         fig.tight_layout()
         return fig, ax
 
@@ -381,6 +384,7 @@ def make_xyz(atom, chrom, path, verbose=False):
 
     Returns: None
     """
+    atom = atom.copy()
     metal1, metal2 = chrom.atomg.symbols
     atom.info['CE'] = chrom.score
     for i, dope in enumerate(chrom.arr):
@@ -679,8 +683,8 @@ def run_ga(metals, shape, datapath=None, plotit=False,
         df = pd.DataFrame([], columns=excel_columns)
 
     # GA properties
-    max_runs = 50
-    popsize = 100
+    max_runs = 1000
+    popsize = 50
     kill_rate = 0.2
     mate_rate = 0.8
     mute_rate = 0.2
@@ -912,11 +916,29 @@ def run_ga(metals, shape, datapath=None, plotit=False,
 
 
 if __name__ == '__main__':
+    plt.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
+    plt.rcParams['figure.figsize'] = (9, 9)
+    plt.rcParams['savefig.dpi'] = 600
+    plt.rcParams['axes.labelweight'] = 'bold'
+    plt.rcParams['axes.labelsize'] = 20
+    plt.rcParams['axes.titlesize'] = 20
+    plt.rcParams['axes.titleweight'] = 'bold'
+    plt.rcParams['xtick.labelsize'] = 20
+    plt.rcParams['ytick.labelsize'] = 20
+    plt.rcParams['lines.linewidth'] = 2
 
-    metal1 = 'Cu'
-    metal2 = 'Ag'
-    atom, bond_list = structure_gen.build_structure('icosahedron', 3)
+    metal1 = 'Ag'
+    metal2 = 'Au'
+
+    atom, bond_list = structure_gen.build_structure('icosahedron', 10)
     ag = atomgraph.AtomGraph(bond_list, metal1, metal2)
+
+    p = Pop(ag, x_dope=0.2, popsize=50)
+    p.run(5000)
+    make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
+    f, a = p.plot_results()
+    f.savefig('c:/users/yla/desktop/ga_run_blah_MININNININN.png')
+    f.show()
 
     """
     metal_opts = [('Ag', 'Cu'),
