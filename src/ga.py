@@ -928,7 +928,7 @@ if __name__ == '__main__':
     plt.rcParams['lines.linewidth'] = 2
 
     metal1 = 'Ag'
-    metal2 = 'Au'
+    metal2 = 'Cu'
 
     atom, bond_list = structure_gen.build_structure('icosahedron', 10)
     ag = atomgraph.AtomGraph(bond_list, metal1, metal2)

@@ -24,8 +24,8 @@ for metals in metal_opts:
     for shape in shape_opts:
         ga.run_ga(metals, shape,
                   datapath=datapath,
-                  save_data=True,
+                  save_data=True,  # True,
                   plotit=False,
-                  log_results=True,
+                  log_results=True,  # True,
                   batch_runinfo='%i of %i' % (batch_i, batch_tot))
         batch_i += 1
