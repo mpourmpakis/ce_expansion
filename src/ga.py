@@ -182,8 +182,9 @@ class Pop(object):
         self.build_pop()
         self.sort_pop()
 
-        self.info = []
-        self.stats()
+        self.stats = []
+        self.min_struct_ls = []
+        self.update_stats()
 
         # track runtime
         self.runtime = 0
@@ -214,7 +215,7 @@ class Pop(object):
 
         :return:
         """
-        return self.info[:, 0].min()
+        return self.stats[:, 0].min()
 
     def step(self, rand=False):
         """
@@ -249,7 +250,7 @@ class Pop(object):
                                           self.popsize)].mutate(self.mute_num)
 
         self.sort_pop()
-        self.stats()
+        self.update_stats()
 
     def run(self, nsteps=50, std_cut=0, rand=False):
         """
@@ -267,16 +268,16 @@ class Pop(object):
         if self.n_dope not in [0, self.atomg.num_atoms]:
             start = time.time()
             for i in range(int(nsteps)):
-                val = update_str % (self.x_dope, self.info[-1][0], i)
+                val = update_str % (self.x_dope, self.stats[-1][0], i)
                 print(val.center(CENTER), end='\r')
                 self.step(rand)
                 # if STD less than std_cut end the GA
-                if self.info[-1][-1] < std_cut:
+                if self.stats[-1][2] < std_cut:
                     break
-            val = update_str % (self.x_dope, self.info[-1][0], i + 1)
+            val = update_str % (self.x_dope, self.stats[-1][0], i + 1)
             print(val.center(CENTER), end='\r')
             self.runtime = time.time() - start
-        self.info = np.array(self.info)
+        self.stats = np.array(self.stats)
         self.has_run = True
 
     def sort_pop(self):
@@ -287,15 +288,19 @@ class Pop(object):
         self.pop = sorted(self.pop,
                           key=lambda j: j.score)
 
-    def stats(self):
+    def update_stats(self):
         """
+        - Adds min, mean, and std dev of current generation to self.stats
+        - Adds min structure Chromo objf of current generation
 
-        :return:
+        Returns: None
         """
         s = np.array([i.score for i in self.pop])
-        self.info.append([s[0],
+        self.stats.append([s[0],
                           s.mean(),
                           s.std()])
+        self.min_struct_ls.append(Chromo(self.atomg, self.n_dope,
+                                         arr=self.pop[0].arr.copy()))
 
     def summ_results(self, disp=False):
         """
@@ -320,10 +325,10 @@ class Pop(object):
         if not self.has_run:
             raise Exception('No simulation has been run')
 
-        res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(self.info[-1, :])
+        res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(self.stats[-1, :])
         res += 'Mute: %.2f\nKill: %.2f\n' % (self.mute_rate, self.kill_rate)
         res += ' Pop: %i\n' % self.popsize
-        res += 'nRun: %i\n' % (len(self.info) - 1)
+        res += 'nRun: %i\n' % (len(self.stats) - 1)
         res += 'Form: %s%i_%s%i\n' % (metal1, len(atom) - p.n_dope,
                                       metal2, p.n_dope)
         if self.has_run:
@@ -345,18 +350,18 @@ class Pop(object):
         fig, ax = plt.subplots(figsize=(9, 9))
 
         # number of steps GA took
-        steps = range(len(self.info))
+        steps = range(len(self.stats))
 
         # minimum, average, and std deviation scores of population at each step
         # NOTE: GA's goal is to minimize score
-        low = self.info[:, 0]
-        mean = self.info[:, 1]
-        std = self.info[:, 2]
+        low = self.stats[:, 0]
+        mean = self.stats[:, 1]
+        std = self.stats[:, 2]
 
         # plot minimum CE as a dotted line
         ax.plot(low, ':', color='k', label='MIN')
         # light blue fill of one std deviation
-        ax.fill_between(range(len(self.info)), mean + std, mean - std,
+        ax.fill_between(range(len(self.stats)), mean + std, mean - std,
                         color='lightblue', label='STD')
 
         # plot mean as a solid line and minimum as a dotted line
@@ -390,10 +395,14 @@ def make_xyz(atom, chrom, path, verbose=False):
     for i, dope in enumerate(chrom.arr):
         atom[i].symbol = metal2 if dope else metal1
 
-    n_dope = sum(chrom.arr)
-    fname = '%s%i_%s%i.xyz' % (metal1, len(atom) - n_dope,
-                               metal2, n_dope)
-    path = os.path.join(path, fname)
+    # create file name if not included in path
+    if not path.endswith('.xyz'):
+        n_dope = sum(chrom.arr)
+        fname = '%s%i_%s%i.xyz' % (metal1, len(atom) - n_dope,
+                                   metal2, n_dope)
+        path = os.path.join(path, fname)
+
+    # save xyz file to path
     ase.io.write(path, atom)
     if verbose:
         print('Saved as %s' % path)
@@ -935,9 +944,9 @@ if __name__ == '__main__':
 
     p = Pop(ag, x_dope=0.2, popsize=50)
     p.run(5000)
-    make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
+    # make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
     f, a = p.plot_results()
-    f.savefig('c:/users/yla/desktop/ga_run_blah_MININNININN.png')
+    f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.png')
     f.show()
 
     """
