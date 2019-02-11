@@ -10,11 +10,11 @@ import functools
 import itertools as it
 import atomgraph
 import structure_gen
-import ase.cluster
 import ase.io
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from mpl_toolkits.mplot3d import Axes3D
 
 # random.seed(9876)
 
@@ -39,13 +39,14 @@ class Chromo(object):
         Raises:
                 ValueError: n_dope is greater than total atoms
         """
+        self.atomg = atomg
         self.num_atoms = atomg.num_atoms
         if x_dope is not None:
-            self.n_dope = int(atomg.num_atoms * x_dope)
+            self.n_dope = int(self.num_atoms * x_dope)
         else:
             self.n_dope = n_dope
-        self.atomg = atomg
-        self.arr = np.zeros(atomg.num_atoms).astype(int)
+        # self.atomg = atomg
+        self.arr = np.zeros(self.num_atoms).astype(int)
 
         if n_dope > self.num_atoms:
             raise ValueError("Can't dope more atoms than there are atoms...")
@@ -68,7 +69,15 @@ class Chromo(object):
         NOTE: slow algorithm - can probably be improved
 
         Returns: None
+
+        Raises:
+                ValueError: if not AtomGraph, Chromo can not and
+                            should not be mutated
         """
+        if not self.atomg:
+            raise ValueError("Mutating Chromo should only be done through"
+                             "Pop simulations")
+
         if not self.n_dope or self.n_dope == self.num_atoms:
             print('Warning: attempting to mutate, but system is monometallic')
             return
@@ -138,12 +147,14 @@ class Chromo(object):
         Returns CE of structure based on Bond-Centric Model
         - Yan, Z. et al., Nano Lett. 2018, 18 (4), 2696-2704.
         """
-        self.score = self.atomg.getTotalCE(self.arr)
+        self.ce = self.atomg.getTotalCE(self.arr)
 
 
 class Pop(object):
-    def __init__(self, atomg, n_dope=1, popsize=100, kill_rate=0.2,
-                 mate_rate=0.8, mute_rate=0.2, mute_num=1, x_dope=None):
+    def __init__(self, atom, bond_list, metals, n_dope=1,
+                 popsize=100, kill_rate=0.2, mate_rate=0.8,
+                 mute_rate=0.2, mute_num=1, x_dope=None,
+                 current_min_xyz=None):
         """
 
         :param atomg:
@@ -154,15 +165,26 @@ class Pop(object):
         :param mute_rate:
         :param mute_num:
         :param x_dope:
+        current_min_xyz (str): (default: None)
         """
-        self.atomg = atomg
+        self.atom = atom
+        # organize AtomGraph info
+        self.metals = sorted(metals)
+        metal1, metal2 = sorted(metals)
+        self.atomg_props = dict(bond_list=bond_list,
+                                metal1=metal1,
+                                metal2=metal2)
+
+        self.atomg = self.__make_atomg__()
+        self.num_atoms = len(atom)
+
         self.popsize = popsize
         if x_dope:
-            self.n_dope = int(atomg.num_atoms * x_dope)
+            self.n_dope = int(self.num_atoms * x_dope)
         else:
             self.n_dope = n_dope
 
-        self.x_dope = self.n_dope / atomg.num_atoms
+        self.x_dope = self.n_dope / self.num_atoms
 
         self.nkill = int(popsize * kill_rate)
         self.nmut = int((popsize - self.nkill) * mute_rate)
@@ -171,14 +193,35 @@ class Pop(object):
         self.mute_rate = mute_rate
         self.kill_rate = kill_rate
 
+        # keep track of how many times the sim has been continued
+        self.continued = 0
+
+        # current minimum structure xyz path
+        self.current_min_xyz = current_min_xyz
         self.initialize_new_run()
+
+    def __make_atomg__(self):
+        """
+        Initializes AtomGraph obj (used to calc CE)
+
+        Returns:
+                AtomGraph obj
+        """
+        return atomgraph.AtomGraph(self.atomg_props['bond_list'],
+                                   self.atomg_props['metal1'],
+                                   self.atomg_props['metal2'])
 
     def initialize_new_run(self):
         """
 
         :return:
         """
-        self.x_dope = self.n_dope / self.atomg.num_atoms
+        self.x_dope = self.n_dope / self.num_atoms
+        self.formula = '%s%i_%s%i' % (self.metals[0],
+                                      self.num_atoms - self.n_dope,
+                                      self.metals[1],
+                                      self.n_dope)
+
         self.build_pop()
         self.sort_pop()
 
@@ -192,23 +235,41 @@ class Pop(object):
         # keep track of whether a sim has been run
         self.has_run = False
 
-    def build_pop(self):
+    def build_pop(self, random=False):
         """
 
         :return:
         """
-        # create <popsize> - 2 random structures
+        self.pop = []
+
+        # if not random pop add max and min CN-fileed structures
+        # also check to see if current min xyz path was given
+        if not random:
+            # min CN
+            self.pop += [Chromo(self.atomg, n_dope=self.n_dope,
+                                arr=fill_cn(self.atomg, self.n_dope,
+                                            low_first=True, return_n=1)[0])]
+            # max CN
+            self.pop += [Chromo(self.atomg, n_dope=self.n_dope,
+                                arr=fill_cn(self.atomg, self.n_dope,
+                                            low_first=False, return_n=1)[0])]
+
+            if self.current_min_xyz:
+                # current min CE struct
+                xyzpath = os.path.join(self.current_min_xyz,
+                                       str(self.num_atoms),
+                                       'structures',
+                                       self.formula + '.xyz')
+                c = xyz_to_chrom(self.atomg, xyzpath)
+                print(xyzpath)
+                if c:
+                    assert c.num_atoms == self.num_atoms
+                    assert c.n_dope == self.n_dope
+                    self.pop += [c]
+
+        # create random structures for remaining popsize
         self.pop = [Chromo(self.atomg, n_dope=self.n_dope)
-                    for i in range(self.popsize - 2)]
-
-        # add max and min CN filled structs
-        self.pop += [Chromo(self.atomg, n_dope=self.n_dope,
-                            arr=fill_cn(self.atomg, self.n_dope,
-                                        low_first=True, return_n=1)[0])]
-
-        self.pop += [Chromo(self.atomg, n_dope=self.n_dope,
-                            arr=fill_cn(self.atomg, self.n_dope,
-                                        low_first=False, return_n=1)[0])]
+                    for i in range(self.popsize - len(self.pop))]
 
     def get_min(self):
         """
@@ -252,14 +313,23 @@ class Pop(object):
         self.sort_pop()
         self.update_stats()
 
-    def run(self, nsteps=50, std_cut=0, rand=False):
+    def run(self, nsteps=100, std_cut=0.0, rand=False):
         """
+        Runs a GA simulation
 
-        :param nsteps:
-        :param std_cut:
-        :param rand:
-        :return:
+        Kargs:
+        nsteps (int): (default: 100)
+        std_cut (float): (default: 0.0)
+        rand (bool): (default: False)
+
+        Returns: None
+
+        Raises:
+                ValueError: can only call run for first GA sim
         """
+        if self.has_run:
+            raise ValueError("Simulation has already run."
+                             "Please use continue method.")
 
         # format of string to be written to console during sim
         update_str = 'dopeX = %.2f\tMin: %.5f eV/atom\t%05i'
@@ -276,9 +346,25 @@ class Pop(object):
                     break
             val = update_str % (self.x_dope, self.stats[-1][0], i + 1)
             print(val.center(CENTER), end='\r')
-            self.runtime = time.time() - start
+            self.runtime += time.time() - start
         self.stats = np.array(self.stats)
         self.has_run = True
+
+    def continue_run(self, nsteps=100, std_cut=0.0, rand=False):
+        """
+        Used to continue GA sim from where it left off
+
+        Kargs:
+            NOTE: see self.run for args
+        """
+        # remake AtomGraph objects
+        if not self.atomg:
+            self.reload_atomg()
+
+        self.has_run = False
+        self.stats = list(self.stats)
+        self.run(nsteps, std_cut, rand)
+        self.continued += 1
 
     def sort_pop(self):
         """
@@ -286,7 +372,7 @@ class Pop(object):
         :return:
         """
         self.pop = sorted(self.pop,
-                          key=lambda j: j.score)
+                          key=lambda j: j.ce)
 
     def update_stats(self):
         """
@@ -295,12 +381,50 @@ class Pop(object):
 
         Returns: None
         """
-        s = np.array([i.score for i in self.pop])
+        s = np.array([i.ce for i in self.pop])
         self.stats.append([s[0],
                           s.mean(),
                           s.std()])
         self.min_struct_ls.append(Chromo(self.atomg, self.n_dope,
                                          arr=self.pop[0].arr.copy()))
+
+    def reload_atomg(self):
+        """
+            Used to reinitialize AtomGraph objects
+            in self, and two lists of Chromos
+        """
+
+        self.atomg = self.__make_atomg__()
+        for c in self.pop:
+            c.atomg = self.__make_atomg__()
+        for c2 in self.min_struct_ls:
+            c2.atomg = self.__make_atomg__()
+
+    def save(self, path):
+        """
+        Saves the Pop instance as a pickle
+
+        Args:
+        path (str): path to save pickle file
+                    - can include filename
+        """
+        # Pop cannot be pickled with an AtomGraph instance
+        self.atomg = None
+
+        # remove AtomGraph from Chromos
+        for c in self.pop:
+            c.atomg = None
+        for c2 in self.min_struct_ls:
+            c2.atomg = None
+
+        # if path doesn't include a filename, make one
+        if not path.endswith('.pickle'):
+            fname = '%s%s_GA_sim.pickle'
+            path = os.path.join(path, fname)
+
+        # pickle self
+        with open(path, 'wb') as fidw:
+            pickle.dump(self, fidw, protocol=pickle.HIGHEST_PROTOCOL)
 
     def summ_results(self, disp=False):
         """
@@ -391,7 +515,7 @@ def make_xyz(atom, chrom, path, verbose=False):
     """
     atom = atom.copy()
     metal1, metal2 = chrom.atomg.symbols
-    atom.info['CE'] = chrom.score
+    atom.info['CE'] = chrom.ce
     for i, dope in enumerate(chrom.arr):
         atom[i].symbol = metal2 if dope else metal1
 
@@ -407,6 +531,35 @@ def make_xyz(atom, chrom, path, verbose=False):
     if verbose:
         print('Saved as %s' % path)
     return atom
+
+
+def xyz_to_chrom(atomg, path):
+    """
+    Method used to create Chromo of *.xyz
+    using AtomGraph and *.xyz path
+
+    Args:
+    atomg (atomgraph.AtomGraph): AtomGraph obj
+    path (str): path to *.xyz file
+
+    Returns:
+        (Chromo): Chromo representing *.xyz structure
+        (None): if path is not a file
+    """
+    if not os.path.isfile(path):
+        return
+
+    atom_obj = ase.io.read(path)
+    metal1, metal2 = sorted(set(atom_obj.get_chemical_symbols()))
+
+    # 1-0 ordering of structure
+    arr = [1 if i.symbol == metal2 else 0 for i in atom_obj]
+
+    c = Chromo(atomg, n_dope=sum(arr), arr=arr)
+    print(c.ce)
+    print(atom_obj.info['CE'])
+    assert c.ce == atom_obj.info['CE']
+    return c
 
 
 def gen_random(atomg, n_dope, n=500):
@@ -432,10 +585,10 @@ def gen_random(atomg, n_dope, n=500):
     min_ce = 10
     for i in range(n):
         c = Chromo(atomg, n_dope=n_dope)
-        scores[i] = c.score
-        if c.score < min_ce:
+        scores[i] = c.ce
+        if c.ce < min_ce:
             min_struct = Chromo(atomg, n_dope=n_dope, arr=c.arr.copy())
-            min_ce = min_struct.score
+            min_ce = min_struct.ce
     return min_struct, scores
 
 
@@ -652,7 +805,8 @@ def run_ga(metals, shape, datapath=None, plotit=False,
     assert sum(map(lambda i: isinstance(i, str) and len(i) == 2, metals)) == 2
 
     # always sort metals by alphabetical order for consistency
-    metal1, metal2 = sorted(metals)
+    metals = sorted(metals)
+    metal1, metal2 = metals
 
     # number of shells range to sim ga for each shape
     shape2shell = {'icosahedron': [2, 14],
@@ -766,8 +920,8 @@ def run_ga(metals, shape, datapath=None, plotit=False,
         ces = np.zeros(len(x))
 
         # INITIALIZE POP object
-        pop = Pop(ag, n_dope=n[0], popsize=popsize,
-                  kill_rate=kill_rate, mate_rate=mate_rate,
+        pop = Pop(atom.copy(), bond_list, metals, n_dope=n[0],
+                  popsize=popsize, kill_rate=kill_rate, mate_rate=mate_rate,
                   mute_rate=mute_rate, mute_num=mute_num)
 
         starting_outp = '%s%s in %i atom %s' % (metal1, metal2, natoms, shape)
@@ -827,7 +981,7 @@ def run_ga(metals, shape, datapath=None, plotit=False,
 
         # calculate excess energy (ees)
         ees = ces - (x * monos[natoms][metal2]) - \
-              ((1 - x) * monos[natoms][metal1])
+            ((1 - x) * monos[natoms][metal1])
 
         tot_natoms += [natoms] * len(x)
         comps += list(x)
@@ -936,33 +1090,24 @@ if __name__ == '__main__':
     plt.rcParams['ytick.labelsize'] = 20
     plt.rcParams['lines.linewidth'] = 2
 
-    metal1 = 'Ag'
-    metal2 = 'Cu'
+    metals = ('Ag', 'Cu')
 
     atom, bond_list = structure_gen.build_structure('icosahedron', 10)
-    ag = atomgraph.AtomGraph(bond_list, metal1, metal2)
 
-    p = Pop(ag, x_dope=0.2, popsize=50)
-    p.run(5000)
+    xyzpath = os.path.join(os.path.expanduser('~'), 'Box Sync',
+                           'Michael_Cowan_PhD_research', 'data', 'np_ce',
+                           'AgCu', 'icosahedron')
+
+    p = Pop(atom, bond_list, metals, x_dope=0.2, popsize=50,
+            current_min_xyz=xyzpath)
+    p.run(1000)
     # make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
     f, a = p.plot_results()
     f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.png')
-    f.show()
 
-    """
-    metal_opts = [('Ag', 'Cu'),
-                  ('Ag', 'Au'),
-                  ('Au', 'Cu')
-                  ]
+    p.save('apple.pickle')
+    with open('apple.pickle', 'rb') as fidr:
+        p2 = pickle.load(fidr)
 
-    shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
-                  'elongated-pentagonal-bipyramid']
-    batch_tot = len(metal_opts) * len(shape_opts)
-    batch_i = 1
-    for metals in metal_opts:
-        for shape in shape_opts:
-            run_ga(metals, shape, save_data=True, plotit=False,
-                   log_results=True,
-                   batch_runinfo='%i of %i' % (batch_i, batch_tot))
-            batch_i += 1
-    """
+    f2, a2 = p2.plot_results()
+    plt.show()
