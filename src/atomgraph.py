@@ -40,7 +40,7 @@ class AtomGraph(object):
         cns (np.array): An array containing the coordination number of each atom.
         """
 
-        self._bond_list = bond_list
+        self._bond_list = bond_list.astype(ctypes.c_long)
         self._num_bonds = len(bond_list)
 
         # Public attributes
@@ -92,7 +92,7 @@ class AtomGraph(object):
         Calculates the cohesive energy of the NP using the BC model, as implemented in interface.py
         and lib.c
         """
-        ordering = ordering.astype('int32')
+        ordering = ordering.astype(ctypes.c_long)
         # Pointerize ordering
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
         print(self.cns)
