@@ -1,15 +1,11 @@
 //BC Model Calculator
 // James Dean, 2019
 
-// I'm assuming for now that this is a windows issue; just int64 versus long ints
-#define COMPILE_FOR_WINDOWS 1
-
 // Controls the printing of various statements describing the flow of the DLL, because this is less convenient
 // to run through a more traditional debugger
 #define PREPROCESSOR_PRINT_DEBUG_INFO 0
 
 #include <stdio.h>
-#include <stdint.h>
 const long int num_elements = 2;
 const long int max_coordination = 13;
 
@@ -20,11 +16,7 @@ int char_to_int(char character){
 
 double calculate_ce(double bond_energies[num_elements][num_elements][max_coordination], //Table of bond energies
                     long int num_atoms, // Number of atoms in the nanoparticle
-                    #if COMPILE_FOR_WINDOWS
-                        int64_t cns[num_atoms],
-                    #else
-                        long int cns[num_atoms],
-                    #endif
+                    long int cns[num_atoms],
                     long int num_bonds, // Number of bonds in the system
                     long int adj_table [num_bonds][2], // Adjacency table
                     long int id_array[num_atoms]){ // Representing the identity of each element
