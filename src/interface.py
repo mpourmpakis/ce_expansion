@@ -8,7 +8,7 @@ DEFAULT_MAX_COORDINATION = 12
 
 # Load the correct library for the given platform
 if sys.platform in ['win32', 'cygwin']:
-    _libCalc = ctypes.CDLL('../bin/_lib_debug.dll')
+    _libCalc = ctypes.CDLL('../bin/_lib.dll')
 else:
     _libCalc = ctypes.CDLL('../bin/_lib.so')
 
