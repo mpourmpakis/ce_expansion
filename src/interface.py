@@ -8,12 +8,21 @@ DEFAULT_MAX_COORDINATION = 12
 
 # Load the correct library for the given platform
 if sys.platform in ['win32', 'cygwin']:
-    _libCalc = ctypes.CDLL('../bin/_lib.dll')
+    _libCalc = ctypes.CDLL('../bin/_lib_debug.dll')
 else:
     _libCalc = ctypes.CDLL('../bin/_lib.so')
 
-# Actual functions
+# Function return type
 _libCalc.calculate_ce.restype = ctypes.c_double
+
+# Argument types
+_libCalc.calculate_ce.argtypes = [ctypes.POINTER(ctypes.c_double),  # bond_energies
+                                  ctypes.c_long,  # num_atoms
+                                  ctypes.POINTER(ctypes.c_long),  # cns
+                                  ctypes.c_long,  # num_bonds
+                                  ctypes.POINTER(ctypes.c_long),  # adj_table
+                                  ctypes.POINTER(ctypes.c_long)  # id_array
+                                  ]
 
 
 def pointerized_calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_string):
