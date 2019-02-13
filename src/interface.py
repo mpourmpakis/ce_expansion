@@ -8,7 +8,7 @@ DEFAULT_MAX_COORDINATION = 12
 
 # Load the correct library for the given platform
 if sys.platform in ['win32', 'cygwin']:
-    _libCalc = ctypes.CDLL('../bin/_lib.dll')
+    _libCalc = ctypes.CDLL('../bin/_lib_debug.dll')
 else:
     _libCalc = ctypes.CDLL('../bin/_lib.so')
 
@@ -84,6 +84,7 @@ if __name__ == "__main__":
                          (11, 1), (11, 0), (12, 6), (12, 5), (12, 3), (12, 1), (12, 0), (12, 11)])
     num_bonds = bondList.shape[0]
     id_string = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1])
+    print(id_string.dtype)
     test_3Darray = np.array([
         [
             [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
