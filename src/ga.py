@@ -1098,12 +1098,12 @@ if __name__ == '__main__':
                            'Michael_Cowan_PhD_research', 'data', 'np_ce',
                            'AgCu', 'icosahedron')
 
-    p = Pop(atom, bond_list, metals, x_dope=0.2, popsize=50,
-            current_min_xyz=xyzpath)
+    p = Pop(atom, bond_list, metals, x_dope=0.2, popsize=50)  # ,
+            # current_min_xyz=xyzpath)
     p.run(1000)
     # make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
     f, a = p.plot_results()
-    f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.png')
+    f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.svg')
 
     p.save('apple.pickle')
     with open('apple.pickle', 'rb') as fidr:
