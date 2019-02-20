@@ -11,8 +11,8 @@ DEFAULT_NUM_ELEMENTS = 2 # Polymetallicity of the system; 2=bimetallic. Only wor
 DEFAULT_MAX_COORDINATION = 12 # Maximum possible coordination number
 
 # Figure out where we are on the system, and make the bin directory
-path = os.getcwd()
-bin_directory = os.sep.join(path.split(os.sep)[:-1] + ["bin"])
+path = os.path.realpath(__file__)
+bin_directory = os.sep.join(path.split(os.sep)[:-2] + ["bin"])
 
 # Set the correct library for the given platform
 if DEBUG_MODE:
