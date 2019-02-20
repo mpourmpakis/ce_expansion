@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import pickle
 import ctypes
+import pickle
+
 import interface
 import numpy as np
 
@@ -39,17 +40,19 @@ class AtomGraph(object):
         cns (np.array): An array containing the coordination number of each atom.
         """
 
-        self._bond_list = bond_list
+        self._bond_list = bond_list.astype(ctypes.c_long)
         self._num_bonds = len(bond_list)
 
         # Public attributes
         self.symbols = (None, None)
         self.coeffs = coeffs
         self.num_atoms = len(set(bond_list[:, 0]))
+
         self.cns = np.bincount(bond_list[:, 0])
+        self.cns = self.cns.astype(ctypes.c_long)
 
         # Set up the matrix of bond energies
-        self._bond_energies = np.zeros((2, 2, 13), dtype=np.float64)
+        self._bond_energies = np.zeros((2, 2, 13), dtype=ctypes.c_double)
         self._p_bond_energies = None
         self.set_composition(kind0, kind1)
 
@@ -89,9 +92,11 @@ class AtomGraph(object):
         Calculates the cohesive energy of the NP using the BC model, as implemented in interface.py
         and lib.c
         """
-        ordering = ordering.astype('int32')
+        ordering = ordering.astype(ctypes.c_long)
         # Pointerize ordering
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+        print(self.cns)
+        print(self.cns.dtype)
         return interface.pointerized_calculate_ce(self._p_bond_energies,
                                                   self._long_num_atoms,
                                                   self._p_cns,
@@ -105,12 +110,12 @@ if __name__ == '__main__':
     import adjacency
 
     # Create a nanoparticle and its graph object
-    nanoparticle = ase.cluster.Icosahedron('Cu', 3)
+    nanoparticle = ase.cluster.Icosahedron('Cu', 2)
     bond_list = adjacency.buildBondsList(nanoparticle)
-    graph = AtomGraph(nanoparticle, 'Cu', 'Au')
+    graph = AtomGraph(bond_list, 'Cu', 'Au')
 
     # Generate the chemical ordering
-    np.random.set_seed(12345)
+    np.random.seed(12345)
     chemical_ordering = np.random.choice([0,1], size=graph.num_atoms)
 
     # Calculate cohesive energy
