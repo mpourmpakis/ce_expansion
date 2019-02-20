@@ -13,7 +13,10 @@ import pathlib
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
 
-with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
+# Find the data path
+path = os.getcwd()
+data_path = os.sep.join(path.split(os.sep)[:-1] + ["data"])
+with open(os.sep.join(data_path.split(os.sep) + ["precalc_coeffs.pickle"]), "rb") as precalcs:
     DEFAULT_BOND_COEFFS = pickle.load(precalcs)
 
 

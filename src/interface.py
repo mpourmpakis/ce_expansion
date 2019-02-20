@@ -1,16 +1,33 @@
 #!/usr/bin/env python
 
 import ctypes
-import sys
+import sys, os
 
-DEFAULT_NUM_ELEMENTS = 2
-DEFAULT_MAX_COORDINATION = 12
+# Selects whether to use the debug libs or not
+DEBUG_MODE = False
 
-# Load the correct library for the given platform
-if sys.platform in ['win32', 'cygwin']:
-    _libCalc = ctypes.CDLL('../bin/_lib_debug.dll')
+# Other options
+DEFAULT_NUM_ELEMENTS = 2 # Polymetallicity of the system; 2=bimetallic. Only works for bimetallics at the moment.
+DEFAULT_MAX_COORDINATION = 12 # Maximum possible coordination number
+
+# Figure out where we are on the system, and make the bin directory
+path = os.getcwd()
+bin_directory = os.sep.join(path.split(os.sep)[:-1] + ["bin"])
+
+# Set the correct library for the given platform
+if DEBUG_MODE:
+  if sys.platform in ['win32', 'cygwin']:
+      dll = ('_lib_debug.dll')
+  else:
+      dll = ('_lib_debug.so')
 else:
-    _libCalc = ctypes.CDLL('../bin/_lib.so')
+  if sys.platform in ['win32', 'cygwin']:
+      dll = ('_lib.dll')
+  else:
+      dll = ('_lib.so')
+
+# Load the library
+_libCalc = ctypes.CDLL(os.sep.join(bin_directory.split(os.sep) + [dll]))
 
 # Function return type
 _libCalc.calculate_ce.restype = ctypes.c_double

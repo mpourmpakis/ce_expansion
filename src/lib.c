@@ -3,8 +3,6 @@
 
 // Controls the printing of various statements describing the flow of the DLL, because this is less convenient
 // to run through a more traditional debugger
-#define PREPROCESSOR_PRINT_DEBUG_INFO 0
-
 #include <stdio.h>
 const long int num_elements = 2;
 const long int max_coordination = 13;
@@ -24,7 +22,7 @@ double calculate_ce(double bond_energies[num_elements][num_elements][max_coordin
     double cohesion = 0;
     long int i=0;
 
-	#if PREPROCESSOR_PRINT_DEBUG_INFO
+	#ifdef PRINT_DEBUG_INFO
     //Debugging information
 	printf("Printing bond energies\n");
     for (i=0; i < 2*2*13; i++){
@@ -49,7 +47,7 @@ double calculate_ce(double bond_energies[num_elements][num_elements][max_coordin
     #endif
 
     for (i=0; i < num_bonds; i++){
-        #if PREPROCESSOR_PRINT_DEBUG_INFO
+        #ifdef PRINT_DEBUG_INFO
             printf("Bond %d, ", i);
             long int bond_source = id_array[adj_table[i][0]];
             printf("Source kind = %d, ", bond_source);
@@ -76,7 +74,7 @@ double calculate_ce(double bond_energies[num_elements][num_elements][max_coordin
     }
     cohesion /= num_atoms;
 
-    #if PREPROCESSOR_PRINT_DEBUG_INFO
+    #ifdef PRINT_DEBUG_INFO
 	    printf("Dividing by %d atoms, resulting in %f\n", num_atoms, cohesion);
 	#endif
     return cohesion;

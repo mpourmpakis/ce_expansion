@@ -2,13 +2,18 @@
 
 import ctypes
 import pickle
+import os
 
 import interface
 import numpy as np
 
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
-with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
+
+# Find the data path and load the precalculated coefficients
+path = os.getcwd()
+data_path = os.sep.join(path.split(os.sep)[:-1] + ["data"])
+with open(os.sep.join(data_path.split(os.sep) + ["precalc_coeffs.pickle"]), "rb") as precalcs:
     DEFAULT_BOND_COEFFS = pickle.load(precalcs)
 
 
@@ -95,8 +100,6 @@ class AtomGraph(object):
         ordering = ordering.astype(ctypes.c_long)
         # Pointerize ordering
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
-        print(self.cns)
-        print(self.cns.dtype)
         return interface.pointerized_calculate_ce(self._p_bond_energies,
                                                   self._long_num_atoms,
                                                   self._p_cns,
