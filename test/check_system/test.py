@@ -47,4 +47,5 @@ with open("results.csv", "w") as outp:
     energy = graph.getTotalCE(ordering)
     print(energy)
     outp.write(str(energy) + "\n")
+    ase.io.write(icos.get_chemical_formula() + ".xyz", icos)
     
