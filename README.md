@@ -2,7 +2,16 @@
 
 ## James Dean, Michael Cowan, Jonathan Estes, Mahmoud Ramadan
 
-Explore bimetallic nanoparticles with our program.
+Explore bimetallic nanoparticles with our program, which implements the bond-centric model of Yan<sup>1</sup> in conjunction with a genetic algorithm.
+
+### Installation
+
+To install this program, make sure you've fulfilled the following requirements:
+
+* Python 3.7 or greater is installed  
+* Numpy and ASE are both present with your Python installation (or environment)
+
+Simply download this repository, and run `src/ga.py` to begin searching potential NPs.
 
 ### Overview
 
@@ -21,15 +30,6 @@ In our genetic algorithm, the "DNA" of the NP is represented as a string of 1's 
 Essentially what we're doing here, is we're taking each atom in the NP, and arbitrarily assigning it an index. It doesn't matter how that index is assigned, as long as every index is sequential, and is consistently assigned. See the section titled "The AtomGraph" for more detailed information on exactly how it's assigned. This method is particularly convenient, because it can easily be extended to ternary or even polymetallic systems.
 
 Hence, for a particular nanoparticle size and shape, we now have a vector that represents the identity of each atom. This strand of "DNA" can then be mutated and bred within a genetic algorithm to try and find a minimum-energy chemical ordering for the NP's morphology. This converges quite rapidly with our code, and as a result we can very quickly find the lowest-energy chemical ordering for an arbitrary NP composition.
-
-### Installation
-
-To install this program, make sure you've fulfilled the following requirements:
-
-* Python 3.7 or greater is installed  
-* Numpy and ASE are both present with your Python installation (or environment)
-
-Simply download this repository, and run `src/ga.py` to begin searching potential NPs.
 
 ### The Atomgraph
 
