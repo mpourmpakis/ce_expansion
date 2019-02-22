@@ -896,8 +896,8 @@ def run_ga(metals, shape, datapath=None, plotit=False,
             monos[natoms] = {}
 
         # build structure path
-        path = '%s%s/%s/%i/' % (metal1, metal2, shape, natoms)
-        struct_path = os.path.join(datapath, path, 'structures')
+        path = 'structures\\%s%s\\%s\\%i\\' % (metal1, metal2, shape, natoms)
+        struct_path = os.path.join(datapath, path)
         pathlib.Path(struct_path).mkdir(parents=True,
                                         exist_ok=True)
 
