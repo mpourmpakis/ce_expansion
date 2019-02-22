@@ -27,5 +27,6 @@ for metals in metal_opts:
                   save_data=True,  # True,
                   plotit=False,
                   log_results=True,  # True,
+                  add_current_min=True,
                   batch_runinfo='%i of %i' % (batch_i, batch_tot))
         batch_i += 1

@@ -5,6 +5,7 @@ import time
 import random
 from datetime import datetime as dt
 import pathlib
+import re
 import pickle
 import functools
 import itertools as it
@@ -12,6 +13,7 @@ import atomgraph
 import structure_gen
 import ase.io
 import numpy as np
+import plot_defaults
 import matplotlib.pyplot as plt
 import matplotlib
 from mpl_toolkits.mplot3d import Axes3D
@@ -52,9 +54,9 @@ class Chromo(object):
             raise ValueError("Can't dope more atoms than there are atoms...")
 
         # if an array is given, use it - else random generate array
-        if isinstance(arr, np.ndarray):
-            self.arr = arr
-            self.n_dope = arr.sum()
+        if isinstance(arr, np.ndarray) or isinstance(arr, list):
+            self.arr = np.array(arr)
+            self.n_dope = self.arr.sum()
         else:
             self.arr[:n_dope] = 1
             np.random.shuffle(self.arr)
@@ -132,12 +134,6 @@ class Chromo(object):
             if s1 == s2 == 0:
                 break
 
-        if not (child1.sum() == child2.sum() == self.n_dope):
-            print()
-            print(child1.sum())
-            print(child2.sum())
-            print(self.n_dope)
-            input()
         assert child1.sum() == child2.sum() == self.n_dope
         return [Chromo(self.atomg, n_dope=self.n_dope, arr=child1),
                 Chromo(self.atomg, n_dope=self.n_dope, arr=child2)]
@@ -154,7 +150,7 @@ class Pop(object):
     def __init__(self, atom, bond_list, metals, n_dope=1,
                  popsize=100, kill_rate=0.2, mate_rate=0.8,
                  mute_rate=0.2, mute_num=1, x_dope=None,
-                 current_min_xyz=None):
+                 min_xyz_path=None):
         """
 
         :param atomg:
@@ -165,7 +161,7 @@ class Pop(object):
         :param mute_rate:
         :param mute_num:
         :param x_dope:
-        current_min_xyz (str): (default: None)
+        min_xyz_path (str): (default: None)
         """
         self.atom = atom
         # organize AtomGraph info
@@ -197,7 +193,8 @@ class Pop(object):
         self.continued = 0
 
         # current minimum structure xyz path
-        self.current_min_xyz = current_min_xyz
+        self.min_xyz_path = min_xyz_path
+
         self.initialize_new_run()
 
     def __make_atomg__(self):
@@ -254,14 +251,11 @@ class Pop(object):
                                 arr=fill_cn(self.atomg, self.n_dope,
                                             low_first=False, return_n=1)[0])]
 
-            if self.current_min_xyz:
-                # current min CE struct
-                xyzpath = os.path.join(self.current_min_xyz,
-                                       str(self.num_atoms),
-                                       'structures',
+            # add current min CE structure if path exists not monometallic
+            if self.min_xyz_path and self.n_dope not in [0, self.num_atoms]:
+                xyzpath = os.path.join(self.min_xyz_path,
                                        self.formula + '.xyz')
                 c = xyz_to_chrom(self.atomg, xyzpath)
-                print(xyzpath)
                 if c:
                     assert c.num_atoms == self.num_atoms
                     assert c.n_dope == self.n_dope
@@ -493,6 +487,13 @@ class Pop(object):
         ax.legend()
         ax.set_ylabel('Cohesive Energy (eV / atom)')
         ax.set_xlabel('Generation')
+
+        # format latex formula for plot title
+        tex_form = re.sub('([A-Z][a-z])([0-9]+)_([A-Z][a-z])([0-9]+)',
+                          '\\1_{\\2}\\3_{\\4}$',
+                          self.formula)
+        ax.set_title('$\\rm %s: %.3f eV' % (tex_form, low[-1]),
+                     fontdict=dict(weight='normal'))
         # ax.set_title('Min CE: %.5f' % (self.get_min()))
         fig.tight_layout()
         return fig, ax
@@ -516,6 +517,7 @@ def make_xyz(atom, chrom, path, verbose=False):
     atom = atom.copy()
     metal1, metal2 = chrom.atomg.symbols
     atom.info['CE'] = chrom.ce
+    atom.set_tags(None)
     for i, dope in enumerate(chrom.arr):
         atom[i].symbol = metal2 if dope else metal1
 
@@ -556,9 +558,6 @@ def xyz_to_chrom(atomg, path):
     arr = [1 if i.symbol == metal2 else 0 for i in atom_obj]
 
     c = Chromo(atomg, n_dope=sum(arr), arr=arr)
-    print(c.ce)
-    print(atom_obj.info['CE'])
-    assert c.ce == atom_obj.info['CE']
     return c
 
 
@@ -753,6 +752,7 @@ def make_3d_plot(path, metals=None):
 
 def run_ga(metals, shape, datapath=None, plotit=False,
            save_data=True, log_results=True,
+           add_current_min=False,
            batch_runinfo=None, max_shells=None):
     """
     Batch submission function to run GAs of a given metal combination and
@@ -783,6 +783,9 @@ def run_ga(metals, shape, datapath=None, plotit=False,
     log_results (bool): if true, GA sim stats are logged to
                         sims.log
                         (default: True)
+    add_current_min (bool): if true, GA adds current minimum CE structure to
+                            initial population
+                            (default: False)
     batch_runinfo (str || None): if str, add to log under
                                  'Completed Run: <batch_runinfo>'
                                  (default: None)
@@ -919,10 +922,14 @@ def run_ga(metals, shape, datapath=None, plotit=False,
         rands = np.zeros((len(x), 3))
         ces = np.zeros(len(x))
 
+        # specify minimum structure xyz folder if <add_current_min>
+        min_xyz_path = struct_path if add_current_min else None
+
         # INITIALIZE POP object
         pop = Pop(atom.copy(), bond_list, metals, n_dope=n[0],
                   popsize=popsize, kill_rate=kill_rate, mate_rate=mate_rate,
-                  mute_rate=mute_rate, mute_num=mute_num)
+                  mute_rate=mute_rate, mute_num=mute_num,
+                  min_xyz_path=min_xyz_path)
 
         starting_outp = '%s%s in %i atom %s' % (metal1, metal2, natoms, shape)
         print(starting_outp.center(CENTER))
@@ -1060,6 +1067,8 @@ def run_ga(metals, shape, datapath=None, plotit=False,
     # shapes are built shell-by-shell; number of shells indicates size range
     logtxt += '     Shell Range: %i - %i\n' % tuple(nshell_range)
 
+    logtxt += 'Added Min Struct: %s\n' % bool(add_current_min)
+
     # number of new minimum CE structures found (compared to previous runs)
     logtxt += ' New Min Structs: %i\n' % tot_new_structs
 
@@ -1079,35 +1088,19 @@ def run_ga(metals, shape, datapath=None, plotit=False,
 
 
 if __name__ == '__main__':
-    plt.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
-    plt.rcParams['figure.figsize'] = (9, 9)
-    plt.rcParams['savefig.dpi'] = 600
-    plt.rcParams['axes.labelweight'] = 'bold'
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 20
-    plt.rcParams['axes.titleweight'] = 'bold'
-    plt.rcParams['xtick.labelsize'] = 20
-    plt.rcParams['ytick.labelsize'] = 20
-    plt.rcParams['lines.linewidth'] = 2
-
     metals = ('Ag', 'Cu')
 
-    atom, bond_list = structure_gen.build_structure('icosahedron', 10)
+    atom, bond_list = structure_gen.build_structure('icosahedron', 4)
 
     xyzpath = os.path.join(os.path.expanduser('~'), 'Box Sync',
                            'Michael_Cowan_PhD_research', 'data', 'np_ce',
-                           'AgCu', 'icosahedron')
+                           'structures', 'AgCu', 'icosahedron',
+                           str(len(atom)))
 
-    p = Pop(atom, bond_list, metals, x_dope=0.2, popsize=50)  # ,
-            # current_min_xyz=xyzpath)
+    p = Pop(atom, bond_list, metals, x_dope=0.2, popsize=50,
+            min_xyz_path=xyzpath)
     p.run(1000)
     # make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
     f, a = p.plot_results()
     f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.svg')
-
-    p.save('apple.pickle')
-    with open('apple.pickle', 'rb') as fidr:
-        p2 = pickle.load(fidr)
-
-    f2, a2 = p2.plot_results()
     plt.show()
