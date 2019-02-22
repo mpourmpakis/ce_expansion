@@ -1,14 +1,41 @@
 #!/usr/bin/env python3
 
-import pickle
+# Library for buiding bonding lists/tables/matrices
+# James Dean, 2019
 
+import pickle
+import os
 import ase.neighborlist
 import numpy as np
+import pathlib
 
+# Set up globals for defaults
 DEFAULT_ELEMENTS = ("Cu", "Cu")
 DEFAULT_RADIUS = 2.8
-with open("../data/precalc_coeffs.pickle", "rb") as precalcs:
+
+# Find the data path
+path = os.path.realpath(__file__)
+data_path = os.sep.join(path.split(os.sep)[:-2] + ["data"])
+with open(os.sep.join(data_path.split(os.sep) + ["precalc_coeffs.pickle"]), "rb") as precalcs:
     DEFAULT_BOND_COEFFS = pickle.load(precalcs)
+
+
+# Functions below
+def buildBondsList(atoms_object: "ase.Atoms",
+                   radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
+    """
+    2D bonds list from an ASE atoms object.
+
+    Args:
+    atoms_object (ase.Atoms): An ASE atoms object representing the system of interest
+    radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a
+      bond. If no dict is supplied, Cu-Cu bonds of a max-len 2.8 are assumes.
+
+    Returns:
+    np.ndarray : A numpy array representing the bonds list.
+    """
+    sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
+    return np.column_stack((sources, destinations))
 
 
 def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
@@ -35,7 +62,8 @@ def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
 
 
 def buildAdjacencyList(atoms_object: "ase.Atoms",
-                       radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
+                       atom_name: "str" = None,
+                       radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "list":
     """
       Adjacency list representation for an ase atoms object.
 
@@ -48,6 +76,13 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
       np.ndarray : A numpy array representing the adjacency list of the ase object
 
     """
+    # Check to see if adjacency list has already been generated
+    # NOTE: based on data file paths, not ideal but functional for the moment
+    pathlib.Path('../data/adjacency_lists/').mkdir(parents=True, exist_ok=True)
+    fpath = '../data/adjacency_lists/%s.npy' % atom_name
+    if os.path.isfile(fpath) and 0:
+        adj = np.load(fpath)
+        return [[i for i in a] for a in adj]
 
     # Construct the list of bonds
     sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
@@ -72,4 +107,19 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
         raise ValueError(
             "The following atoms have bonds yet do not appear to be bound to any item: " + str(adjacency_list[-1]))
     else:
-        return np.delete(adjacency_list, -1)
+        result = np.delete(adjacency_list, -1)
+        if atom_name:
+            np.save('../data/adjacency_lists/%s.npy' % atom_name, result)
+        return [[i for i in a] for a in result]
+
+
+if __name__ == '__main__':
+    import ase.cluster
+
+    nanoparticle = ase.cluster.Icosahedron('Cu', 2)
+    adjacency_list = buildAdjacencyList(nanoparticle)
+    adjacency_matrix = buildAdjacencyMatrix(nanoparticle)
+    bonds_list = buildBondsList(nanoparticle)
+
+    print(adjacency_list, adjacency_matrix, bonds_list)
+
