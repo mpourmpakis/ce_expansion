@@ -22,6 +22,15 @@ Essentially what we're doing here, is we're taking each atom in the NP, and arbi
 
 Hence, for a particular nanoparticle size and shape, we now have a vector that represents the identity of each atom. This strand of "DNA" can then be mutated and bred within a genetic algorithm to try and find a minimum-energy chemical ordering for the NP's morphology. This converges quite rapidly with our code, and as a result we can very quickly find the lowest-energy chemical ordering for an arbitrary NP composition.
 
+### Installation
+
+To install this program, make sure you've fulfilled the following requirements:
+
+* Python 3.7 or greater is installed  
+* Numpy and ASE are both present with your Python installation (or environment)
+
+Simply download this repository, and run `src/ga.py` to begin searching potential NPs.
+
 ### The Atomgraph
 
 A nanoparticle can be thought of as a graph, with each atom as a vertex and each bond as an edge. In the file `src/adjacency.py`, we include tools to generate an adjacency list, an adjacency matrix, and an edge list (a bond list) for an arbitrary nanoparticle. Because of its ease of use and popularity, we've written these functions to take ASE<sup>2</sup> atoms objects as their arguments.
