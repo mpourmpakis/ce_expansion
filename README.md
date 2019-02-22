@@ -37,7 +37,7 @@ A nanoparticle can be thought of as a graph, with each atom as a vertex and each
 
 In the file `src/atomgraph.py` is the AtomGraph class. It takes in a bond list, and information on what a 1 or 0 means (e.g. what element is a 1, what element is a 0, etc), and then exists as a calculator. If the method CalculateTotalCE is called with a chemical ordering, it will then calculate the total CE using the Yan<sup>1</sup> model. In order to speed up the calculation, we wrote a C library (`src/lib.c`) to implement this model, along with a python interface (`src/interface.py`) which gets called by the AtomGraph. We have libraries compiled already for Linux (.so) and Windows (.dll) in the `bin` directory. We've also included a `makefile` for Linux users.
 
-## The Genetic Algorithm
+### The Genetic Algorithm
 Todo: Write this section
 
 ### References
