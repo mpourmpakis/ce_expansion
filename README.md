@@ -1,4 +1,5 @@
-# CE Expansion code
+![CE Expansion Logo](/images/logo.png)
+
 
 ## James Dean, Michael Cowan, Jonathan Estes, Mahmoud Ramadan
 
