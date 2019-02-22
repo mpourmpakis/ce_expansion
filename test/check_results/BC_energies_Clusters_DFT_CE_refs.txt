@@ -1,0 +1,8 @@
+The CE = -2.36659820697 eV for the auag172_1.xyz system
+The CE = -2.42715067975 eV for the auag172_2.xyz system
+The CE = -2.16804696574 eV for the auag39_1.xyz system
+The CE = -2.23983758388 eV for the auag39_2.xyz system
+The CE = -2.52935688382 eV for the cuag147_1.xyz system
+The CE = -2.76253935564 eV for the cuag147_2.xyz system
+The CE = -2.40343985477 eV for the cuag55_1.xyz system
+The CE = -2.53382895228 eV for the cuag55_2.xyz system

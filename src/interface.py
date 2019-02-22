@@ -1,19 +1,45 @@
 #!/usr/bin/env python
 
 import ctypes
-import sys
+import sys, os
 
-DEFAULT_NUM_ELEMENTS = 2
-DEFAULT_MAX_COORDINATION = 12
+# Selects whether to use the debug libs or not
+DEBUG_MODE = False
 
-# Load the correct library for the given platform
-if sys.platform in ['win32', 'cygwin']:
-    _libCalc = ctypes.CDLL('../bin/_lib.dll')
+# Other options
+DEFAULT_NUM_ELEMENTS = 2 # Polymetallicity of the system; 2=bimetallic. Only works for bimetallics at the moment.
+DEFAULT_MAX_COORDINATION = 12 # Maximum possible coordination number
+
+# Figure out where we are on the system, and make the bin directory
+path = os.path.realpath(__file__)
+bin_directory = os.sep.join(path.split(os.sep)[:-2] + ["bin"])
+
+# Set the correct library for the given platform
+if DEBUG_MODE:
+  if sys.platform in ['win32', 'cygwin']:
+      dll = ('_lib_debug.dll')
+  else:
+      dll = ('_lib_debug.so')
 else:
-    _libCalc = ctypes.CDLL('../bin/_lib.so')
+  if sys.platform in ['win32', 'cygwin']:
+      dll = ('_lib.dll')
+  else:
+      dll = ('_lib.so')
 
-# Actual functions
+# Load the library
+_libCalc = ctypes.CDLL(os.sep.join(bin_directory.split(os.sep) + [dll]))
+
+# Function return type
 _libCalc.calculate_ce.restype = ctypes.c_double
+
+# Argument types
+_libCalc.calculate_ce.argtypes = [ctypes.POINTER(ctypes.c_double),  # bond_energies
+                                  ctypes.c_long,  # num_atoms
+                                  ctypes.POINTER(ctypes.c_long),  # cns
+                                  ctypes.c_long,  # num_bonds
+                                  ctypes.POINTER(ctypes.c_long),  # adj_table
+                                  ctypes.POINTER(ctypes.c_long)  # id_array
+                                  ]
 
 
 def pointerized_calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_string):
@@ -75,6 +101,7 @@ if __name__ == "__main__":
                          (11, 1), (11, 0), (12, 6), (12, 5), (12, 3), (12, 1), (12, 0), (12, 11)])
     num_bonds = bondList.shape[0]
     id_string = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1])
+    print(id_string.dtype)
     test_3Darray = np.array([
         [
             [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
