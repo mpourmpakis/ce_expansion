@@ -22,19 +22,23 @@ shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
 # log batch GA results
 log = True
 
+# HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
+niterations = 4
+
 # start batch GA run
 batch_tot = len(metal_opts) * len(shape_opts)
-batch_i = 1
-for metals in metal_opts:
-    for shape in shape_opts:
-        ga.run_ga(metals, shape,
-                  datapath=datapath,
-                  save_data=True,  # True,
-                  plotit=False,
-                  log_results=log,
-                  add_current_min=True,
-                  batch_runinfo='%i of %i' % (batch_i, batch_tot))
-        batch_i += 1
+for n in range(niterations):
+    batch_i = 1
+    for metals in metal_opts:
+        for shape in shape_opts:
+            ga.run_ga(metals, shape,
+                      datapath=datapath,
+                      save_data=True,  # True,
+                      plotit=False,
+                      log_results=log,
+                      add_current_min=True,
+                      batch_runinfo='%i of %i' % (batch_i, batch_tot))
+            batch_i += 1
 
 # if results were logged, update new structures plot in <datapath>
 if log:
