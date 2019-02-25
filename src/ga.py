@@ -262,8 +262,8 @@ class Pop(object):
                     self.pop += [c]
 
         # create random structures for remaining popsize
-        self.pop = [Chromo(self.atomg, n_dope=self.n_dope)
-                    for i in range(self.popsize - len(self.pop))]
+        self.pop += [Chromo(self.atomg, n_dope=self.n_dope)
+                     for i in range(self.popsize - len(self.pop))]
 
     def get_min(self):
         """
