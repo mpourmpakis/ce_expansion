@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 """
        Main script to run a batch submission job for GA sims
        - runs multiple ga sims sweeping size, shape, and composition
+       - creates/updates "new structures found" summary plot based on sims.log
 """
 
 datapath = os.path.join(os.path.expanduser('~'), 'Box Sync',
@@ -23,7 +24,7 @@ shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
 log = True
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
-niterations = 4
+niterations = 5
 
 # start batch GA run
 batch_tot = len(metal_opts) * len(shape_opts)
