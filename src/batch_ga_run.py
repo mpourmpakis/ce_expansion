@@ -80,7 +80,7 @@ if log:
     a1.set_title('New Minimum Structures Found')
     a1.set_ylabel('Total Count')
     a2.set_ylabel('Percentage')
-    a2.set_xlabel('Day')
+    a2.set_xlabel('Batch Run #')
     f.tight_layout()
     f.savefig(os.path.join(datapath, 'new_struct_summary.png'))
     # f.savefig(os.path.join(datapath, 'new_struct_summary.svg'))
