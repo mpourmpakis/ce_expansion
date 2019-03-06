@@ -715,23 +715,30 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
     return struct_min, ce
 
 
-def make_3d_plot(path, metals=None):
+def make_3d_plot(path):
     """
+    Creates 3D surface plot of EE vs Comp. vs Size for
+    a specific shape and metal combination
+    - e.g. AgCu Icosahedron surface plot
+    - data is pulled from GA batch runs (saved as excel files)
 
-    :param path:
-    :param metals:
-    :return:
+    Args:
+    path (str): path to excel file containing GA data
+
+    Returns:
+        (plt.Figure): matplotlib figure containing 3D surface plot
     """
+    # pull shape and metals from excel file name
     shape, metals = os.path.basename(path).split('_')[:2]
     metal1, metal2 = metals[:2], metals[2:]
-    if isinstance(path, str):
-        df = pd.read_excel(path)
-    else:
-        df = path
+    df = pd.read_excel(path)
+
+    # three parameters to plot
     size = df.diameter.values
     comps = df['composition_%s' % metal2].values
     ees = df.EE.values
 
+    # plots surface as heat map with warmer colors for larger EEs
     colormap = plt.get_cmap('coolwarm')
     normalize = matplotlib.colors.Normalize(vmin=ees.min(), vmax=ees.max())
 
@@ -741,6 +748,7 @@ def make_3d_plot(path, metals=None):
         ax.plot_trisurf(comps, size, ees,
                         cmap=colormap, norm=normalize)
     except RuntimeError:
+        # if not enough data to create surface, make a scatter plot instead
         ax.scatter3D(comps, size, ees,
                      cmap=colormap, norm=normalize)
     ax.set_xlabel('$X_{%s}$' % metal2)
@@ -804,8 +812,10 @@ def run_ga(metals, shape, datapath=None, plotit=False,
         pathlib.Path(datapath).mkdir(parents=True, exist_ok=True)
 
     # ensure metals is a list of two elements
-    assert len(metals) == 2
-    assert sum(map(lambda i: isinstance(i, str) and len(i) == 2, metals)) == 2
+    assert (len(metals) == 2 and
+            sum(map(lambda i: isinstance(i, str) and
+                    len(i) == 2, metals)) == 2), \
+        'Two metals must be passed in as iterable'
 
     # always sort metals by alphabetical order for consistency
     metals = sorted(metals)
