@@ -8,7 +8,8 @@ import os
 import ase.io
 
 """
-    Script to build SQLite DB from GA Sim data (excel files and structure xyzs)
+    Script to build/update SQLite DB from GA Sim data
+    (excel files and structure xyzs)
 """
 
 session = Session()
@@ -37,16 +38,22 @@ for root, ds, fs in os.walk(path):
             df['ordering'] = None
             df = df[db_columns]
             for i, r in df.iterrows():
+                new_min = False
                 # check to see if result already exists in DB
-                found_in_db = session.query(BiMet) \
-                    .filter(db.and_(BiMet.metal1 == metal1,
-                                    BiMet.metal2 == metal2,
-                                    BiMet.shape == shape,
-                                    BiMet.num_atoms == r.num_atoms,
-                                    BiMet.n_metal1 == r.n_metal1,
-                                    BiMet.CE == r.CE)).first()
+                match = db.and_(BiMet.metal1 == metal1,
+                                BiMet.metal2 == metal2,
+                                BiMet.shape == shape,
+                                BiMet.num_atoms == r.num_atoms,
+                                BiMet.n_metal1 == r.n_metal1)
+
+                found_in_db = session.query(BiMet).filter(match).first()
                 if found_in_db:
-                    continue
+                    # if new min structure is found, need to update CE, EE,
+                    # and ordering
+                    if found_in_db.CE < r.CE:
+                        new_min = True
+                    else:
+                        continue
 
                 # read in xyz object
                 atom = ase.io.read(os.path.join(xyz_basepath, metals, shape,
@@ -56,6 +63,14 @@ for root, ds, fs in os.walk(path):
                                    )
                 r.ordering = ''.join(['1' if at.symbol == metal2 else '0'
                                       for at in atom])
+
+                # update CE, EE, and ordering
+                if new_min:
+                    found_in_db.CE = r.CE
+                    found_in_db.EE = r.EE
+                    found_in_db.ordering = r.ordering
+                    session.commit()
+                    continue
 
                 np = session.query(Nanoparticles) \
                     .filter(db.and_(Nanoparticles.shape == shape,
