@@ -763,13 +763,13 @@ def run_ga(metals, shape, datapath=None, plotit=False,
            add_current_min=False,
            batch_runinfo=None, max_shells=None):
     """
-    Batch submission function to run GAs of a given metal combination and
+    Submission function to run GAs of a given metal combination and
     shape, sweeping over different sizes (measured in number of shells)
     - capable of saving minimum structures as XYZs, logging GA stats, saving
       all run info as excel, and creating a 3D surface plot of results
 
     Args:
-    metals (list) || (tuple): list of two metals used in the bimetallic NP
+    metals (iterator): list of two metals used in the bimetallic NP
                               NOTE: currently supports Cu, Ag, and Au
     shape (str): shape of NP that is being studied
                  NOTE: currently supports
