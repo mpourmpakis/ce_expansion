@@ -884,7 +884,7 @@ def run_ga(metals, shape, datapath=None, plotit=False,
         df = pd.DataFrame([], columns=excel_columns)
 
     # GA properties
-    max_runs = 1000
+    max_runs = 5000
     popsize = 50
     kill_rate = 0.2
     mate_rate = 0.8
@@ -1125,7 +1125,7 @@ def run_ga(metals, shape, datapath=None, plotit=False,
 if __name__ == '__main__':
     metals = ('Ag', 'Cu')
 
-    atom, bond_list = structure_gen.build_structure('icosahedron', 4)
+    atom, bond_list = structure_gen.build_structure('icosahedron', 6)
 
     xyzpath = os.path.join(os.path.expanduser('~'), 'Box Sync',
                            'Michael_Cowan_PhD_research', 'data', 'np_ce',
@@ -1134,8 +1134,8 @@ if __name__ == '__main__':
 
     p = Pop(atom, bond_list, metals, x_dope=0.2, popsize=50,
             min_xyz_path=xyzpath)
-    p.run(1000)
+    p.run(5000)
     # make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
     f, a = p.plot_results()
-    f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.svg')
+    # f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.svg')
     plt.show()
