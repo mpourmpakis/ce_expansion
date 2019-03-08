@@ -66,9 +66,13 @@ class Chromo(object):
 
     def mutate(self, nps=1):
         """
-        Algorithm to randomly swith a '1' & a '0' within ordering arr
+        Algorithm to randomly switch a '1' & a '0' within ordering arr
         - mutates the ordering array
         NOTE: slow algorithm - can probably be improved
+
+        Args:
+            nps (int): number of swaps to make
+                       (default: 1)
 
         Returns: None
 
@@ -84,19 +88,38 @@ class Chromo(object):
             print('Warning: attempting to mutate, but system is monometallic')
             return
 
-        # shift a "1"
-        for i in range(nps):
-            ones = list(np.where(self.arr == 1)[0])
-            s = random.sample(ones, 1)[0]
-            self.arr[s] = 0
+        # keep track of indices used so there are no repeats
+        used = []
 
-            # shift '1' over to the left
-            shift = s - 1
-            while 1:
-                if self.arr[shift] == 0:
-                    self.arr[shift] = 1
-                    break
-                shift -= 1
+        # complete <nps> swaps
+        for i in range(nps):
+
+            # keep track of 0 and 1 changes
+            # (don't have to make the swap at the same time)
+            changed = [False, False]
+
+            # loop until a 0 and 1 have been changed
+            while sum(changed) != 2:
+
+                # 1) pick a random index
+                i = random.randint(0, self.num_atoms - 1)
+
+                # don't use the same index during mutation!
+                if i not in used:
+
+                    # 2a) if the index leads to a '0' and no '0'
+                    # has been changed, switch it to a '1'
+                    if self.arr[i] == 0 and not changed[0]:
+                        self.arr[i] = 1
+                        changed[0] = True
+                        used.append(i)
+
+                    # 2b) if the index leads to a '1' and no '1'
+                    # has been changed, switch it to a '0'
+                    elif self.arr[i] == 1 and not changed[1]:
+                        self.arr[i] = 0
+                        changed[1] = True
+                        used.append(i)
 
         # update CE 'score' of Chrom
         self.calc_score()
@@ -281,6 +304,7 @@ class Pop(object):
         if rand:
             self.build_pop(n_fill_cn=0)
         else:
+            # kill off <kill_rate>% of pop
             self.pop = self.pop[:self.nkill]
 
             mated = 0
@@ -295,6 +319,7 @@ class Pop(object):
                     mated += 2
                     tomate += 1
                 else:
+                    # add random chromosomes to fill remaining pop
                     self.pop.append(Chromo(self.pop[0].atomg,
                                            n_dope=self.n_dope))
 
