@@ -4,7 +4,21 @@ import sqlalchemy as db
 
 class Atoms(Base):
     """
-    atoms table that maps to nanoparticles through structure_id
+    Atom coordinates that link to a Nanoparticles skeleton
+    - no atom type needed since these only correspond to a skeleton
+    - BimetallicResults holds atom type info
+
+    Columns:
+    index (int): atom index to ensure atom types from
+                 BimetallicResults.ordering can be correctly mapped
+    x, y, z (float): coordinates of atom
+    nanoparticle (many-to-one): Nanoparticles entry that atom belongs to
+                                - atom must belong to one NP
+
+    Autofilled Columns:
+    id (int): primary key (unique)
+    structure_id (int): Foreign key from Nanoparticles to link atom
+                        to a single NP
     """
     __tablename__ = 'atoms'
 
@@ -15,7 +29,8 @@ class Atoms(Base):
     z = db.Column(db.Float, nullable=False)
     structure_id = db.Column(db.String(36),
                              db.ForeignKey('nanoparticles.id'))
-    nanoparticle = db.orm.relationship('Nanoparticles', backref='atoms')
+    nanoparticle = db.orm.relationship('Nanoparticles', uselist=False,
+                                       backref='atoms')
 
     def __init__(self, index, x, y, z, nanoparticle):
         self.index = index
