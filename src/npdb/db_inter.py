@@ -1,9 +1,9 @@
 import sqlalchemy as db
 import db_utils
 from base import Session
-from bimetallic_results import BimetallicResults as BiMet
-from atoms import Atoms
-from nanoparticles import Nanoparticles
+from datatables import BimetallicResults as BiMet
+from datatables import Atoms
+from datatables import Nanoparticles
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -30,6 +30,7 @@ from mpl_toolkits.mplot3d import Axes3D
              - does edit current DB entries
              - if no current entry matches criteria, a new
                entry will be made if allow_entry=True
+    remove_: removes an entry/entries from DB
 """
 
 # global session
@@ -109,7 +110,7 @@ def get_all_tables(lim=10):
 
 
 def get_bimet_result(metals=None, shape=None, num_atoms=None,
-                     n_metal1=None, lim=None):
+                     n_metal1=None, lim=None, return_query=False):
     """
     Returns BimetallicResults entry that matches criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -122,6 +123,8 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None,
     n_metal1 (int): number of metal1 atoms in NP
     lim (int): max number of entries returned
                (default: None = no limit)
+    return_query (bool): if True, return query and
+                         not results
 
     Returns:
         (BimetallicResults)(s) if match is found else (None)
@@ -136,12 +139,15 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None,
         if crit is not None:
             match_ls.append(getattr(BiMet, attr) == crit)
     match = db.and_(*match_ls)
-    res = session.query(BiMet).filter(match).limit(lim).all()
+    qry = session.query(BiMet).filter(match)
+    if return_query:
+        return qry
+    res = qry.limit(lim).all()
     return res if len(res) != 1 else res[0]
 
 
 def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
-                     lim=None):
+                     lim=None, return_query=False):
     """
     Returns Nanoparticles entries that match criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -154,6 +160,8 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
                       from structure_gen module
     lim (int): max number of entries returned
                (default: None = no limit)
+    return_query (bool): if True, returns just the query
+                         and not the results
 
     Returns:
         (Nanoparticles)(s) if match else (None)
@@ -164,14 +172,17 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
         if crit is not None:
             match_ls.append(getattr(Nanoparticles, attr) == crit)
     match = db.and_(*match_ls)
-    res = session.query(Nanoparticles).filter(match).limit(lim).all()
+    qry = session.query(Nanoparticles).filter(match)
+    if return_query:
+        return qry
+    res = qry.limit(lim).all()
     return res if len(res) != 1 else res[0]
 
 
 # INSERT FUNCTIONS
 
 
-def insert_np(atom, shape, num_shells=None):
+def insert_nanoparticle(atom, shape, num_shells=None):
     """
     Inserts NP and their appropriate atoms into DB
 
@@ -243,6 +254,39 @@ def update_bimet_result(metals, shape, num_atoms,
     session.add(res)
     return db_utils.commit_changes(session)
 
+
+# REMOVE FUNCTIONS
+def remove_entry(entry_inst):
+    """
+    Deletes entry (and its children if applicable)
+    from DB
+
+    Args:
+    entry_inst (DataTable instance): DB entry to be deleted
+    """
+    session.delete(entry_inst)
+    return db_utils.commit_changes(session)
+
+
+def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
+    """
+    Removes a single NP and its corresponding atoms
+    - only commits if a single np is queried to be removed
+
+    Kargs:
+    shape (str): shape of NP
+    num_atoms (int): number of atoms in NP
+    num_shells (int): number of shells used to build NP
+                      from structure_gen module
+
+    Returns:
+        True if successful
+    """
+    res = get_nanoparticle(shape, num_atoms, num_shells)
+    if isinstance(res, list):
+        raise Exception('Can only remove one Nanoparticle')
+    else:
+        return remove_entry(res)
 
 if __name__ == '__main__':
     nps, bi = get_all_tables()

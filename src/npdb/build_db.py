@@ -1,9 +1,5 @@
-import sqlalchemy as db
-from base import Base, engine, np_ce_path
-import interface
-from bimetallic_results import BimetallicResults as BiMet
-from atoms import Atoms
-from nanoparticles import Nanoparticles
+import base
+import db_inter
 import pandas as pd
 import os
 import ase.io
@@ -30,7 +26,7 @@ shell = {'cuboctahedron': {i: v for i, v in zip(cubo, range(1, 15))},
          }
 
 # if datatables don't exist yet, build them
-Base.metadata.create_all(engine)
+base.Base.metadata.create_all(base.engine)
 
 # rename excel columns to appropriate DB columns
 rename_columns = ['num_atoms', 'diameter', 'composition',
@@ -39,7 +35,7 @@ db_columns = ['metal1', 'metal2', 'shape', 'num_atoms', 'diameter',
               'n_metal1', 'n_metal2', 'CE', 'EE', 'ordering']
 
 # path to structure XYZ files (based on old GA structure saving method)
-xyz_basepath = os.path.join(np_ce_path, 'structures')
+xyz_basepath = os.path.join(base.np_ce_path, 'structures')
 
 # path to bimetallic excel result files (based on old GA data saving method)
 path = str(os.sep.join(os.path.realpath(__file__)
@@ -60,9 +56,9 @@ for root, ds, fs in os.walk(path):
             df = df[db_columns]
             for i, r in df.iterrows():
                 # check to see if result already exists in DB
-                res_found = interface.get_bimet_result(metals, shape,
-                                                       r.num_atoms,
-                                                       r.n_metal1)
+                res_found = db_inter.get_bimet_result(metals, shape,
+                                                      r.num_atoms,
+                                                      r.n_metal1)
 
                 # continue to next run if entry already exists and CE is lower
                 if res_found and res_found.CE <= r.CE:
@@ -78,16 +74,17 @@ for root, ds, fs in os.walk(path):
                                       for at in atom])
 
                 # check to see if NP skeleton already exists in DB
-                np = interface.get_nanoparticle(shape=shape,
-                                                num_atoms=r.num_atoms)
+                np = db_inter.get_nanoparticle(shape=shape,
+                                               num_atoms=r.num_atoms)
 
                 # if NP not in DB, add it (automatically adds atoms as well)
                 if not np:
-                    interface.insert_np(atom, shape, shell[shape][len(atom)])
-                    np = interface.get_nanoparticle(shape=shape,
-                                                    num_atoms=r.num_atoms)
+                    db_inter.insert_nanoparticle(atom, shape,
+                                                 shell[shape][len(atom)])
+                    np = db_inter.get_nanoparticle(shape=shape,
+                                                   num_atoms=r.num_atoms)
 
                 # insert/update BimetallicResults entry
-                interface.update_bimet_result(metals, shape, r.num_atoms,
-                                              r.diameter, r.n_metal1,
-                                              r.CE, r.EE, r.ordering, np=np)
+                db_inter.update_bimet_result(metals, shape, r.num_atoms,
+                                             r.diameter, r.n_metal1,
+                                             r.CE, r.EE, r.ordering, np=np)

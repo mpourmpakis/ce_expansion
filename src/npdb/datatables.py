@@ -107,3 +107,83 @@ class BimetallicResults(Base):
         atom = self.get_atoms_obj()
         atom.write(path)
         return True
+
+
+class Nanoparticles(Base):
+    """
+    Nanoparticles (NP) Skeleton Datatable
+    - contains header info for NP skeletons used in GA sims
+
+    Columns:
+    shape (string): shape of NP
+    num_atoms (int): number of atoms in NP
+    num_shells (int): number of shells used to build NP
+                      from structure_gen module
+                      - not required in initial entry
+
+    Autofilled Columns:
+    id: primary key (unique)
+    bimetallic_results (one-to-many): links to entries in BimetallicResults
+                                      that used this NP skeleton
+                                      - new BimetallicResults entries require
+                                        a NP to be entered
+                                      - one NP can have many BimetallicResults
+    """
+    __tablename__ = 'nanoparticles'
+
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    shape = db.Column(db.String, nullable=False)
+    num_atoms = db.Column(db.Integer, nullable=False)
+    num_shells = db.Column(db.Integer)
+    atoms = db.orm.relationship('Atoms', cascade='all, delete',
+                                backref='nanoparticle')
+    bimetallic_results = db.orm.relationship('BimetallicResults',
+                                             backref='nanoparticle')
+
+    def __init__(self, shape, num_atoms, num_shells=None):
+        self.shape = shape
+        self.num_atoms = num_atoms
+        self.num_shells = num_shells
+
+    def get_atoms_obj_skel(self):
+        """
+        Returns NP in the form of a Cu NP ase.Atoms object
+        """
+        return ase.Atoms([ase.Atom('Cu', (i.x, i.y, i.z)) for i in self.atoms])
+
+
+class Atoms(Base):
+    """
+    Atom coordinates that link to a Nanoparticles skeleton
+    - no atom type needed since these only correspond to a skeleton
+    - BimetallicResults holds atom type info
+
+    Columns:
+    index (int): atom index to ensure atom types from
+                 BimetallicResults.ordering can be correctly mapped
+    x, y, z (float): coordinates of atom
+    nanoparticle (many-to-one): Nanoparticles entry that atom belongs to
+                                - atom must belong to one NP
+
+    Autofilled Columns:
+    id (int): primary key (unique)
+    structure_id (int): Foreign key from Nanoparticles to link atom
+                        to a single NP
+    """
+    __tablename__ = 'atoms'
+
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    index = db.Column('index', db.Integer, nullable=False)
+    x = db.Column(db.Float, nullable=False)
+    y = db.Column(db.Float, nullable=False)
+    z = db.Column(db.Float, nullable=False)
+    structure_id = db.Column(db.String(36),
+                             db.ForeignKey('nanoparticles.id',
+                                           ondelete='CASCADE'))
+
+    def __init__(self, index, x, y, z, nanoparticle):
+        self.index = index
+        self.x = x
+        self.y = y
+        self.z = z
+        self.nanoparticle = nanoparticle
