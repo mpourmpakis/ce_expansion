@@ -1,9 +1,16 @@
 import sqlalchemy as db
-import db_utils
-from base import Session
-from datatables import BimetallicResults as BiMet
-from datatables import Atoms
-from datatables import Nanoparticles
+try:
+    import db_utils
+    from base import Session
+    from datatables import BimetallicResults as BiMet
+    from datatables import Atoms
+    from datatables import Nanoparticles
+except:
+    from npdb import db_utils
+    from npdb.base import Session
+    from npdb.datatables import BimetallicResults as BiMet
+    from npdb.datatables import Atoms
+    from npdb.datatables import Nanoparticles
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -26,11 +33,14 @@ from mpl_toolkits.mplot3d import Axes3D
     insert_: adds new data to DB
              - does NOT edit current DB entries
              - adds new rows to DB
+
     update_: updates data in existing entries
              - does edit current DB entries
              - if no current entry matches criteria, a new
                entry will be made if allow_entry=True
+
     remove_: removes an entry/entries from DB
+             - does edit current DB entries
 """
 
 # global session
@@ -203,7 +213,8 @@ def insert_nanoparticle(atom, shape, num_shells=None):
     session.add(np)
     for i, a in enumerate(atom):
         session.add(Atoms(i, a.x, a.y, a.z, np))
-    return db_utils.commit_changes(session)
+    res = db_utils.commit_changes(session, raise_exception=True)
+    return np
 
 
 # UPDATE FUNCTIONS
@@ -259,7 +270,7 @@ def update_bimet_result(metals, shape, num_atoms,
 def remove_entry(entry_inst):
     """
     Deletes entry (and its children if applicable)
-    from DB
+    from DB (generic function)
 
     Args:
     entry_inst (DataTable instance): DB entry to be deleted
@@ -284,7 +295,9 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
     """
     res = get_nanoparticle(shape, num_atoms, num_shells)
     if isinstance(res, list):
-        raise Exception('Can only remove one Nanoparticle')
+        raise db_utils.NPDatabaseError('Can only remove one Nanoparticle')
+    elif not res:
+        raise db_utils.NPDatabaseError('Unable to find matching Nanoparticle')
     else:
         return remove_entry(res)
 

@@ -1,17 +1,22 @@
 import traceback
 
 """
-Helper functions used in interface.py to
+Helper functions/classes used in db_inter.py
 """
 
 
-def commit_changes(session):
+def commit_changes(session, raise_exception=False):
     """
     Attempts to commit changes to DB
     - if it fails, error is logged and DB is rolled back
 
     Args:
     session (sqlalchemy.Session): session connected to DB
+
+    Kargs:
+    raise_exception (bool): if False, returns False instead of
+                            raising exception
+                            (default: False)
 
     Returns:
         (bool): True if successful commit else False
@@ -47,3 +52,7 @@ def sort_metals(metals):
     else:
         metal1, metal2 = sorted(metals)
     return metal1.title(), metal2.title()
+
+
+class NPDatabaseError(Exception):
+    """Custom exception for DB IO errors"""

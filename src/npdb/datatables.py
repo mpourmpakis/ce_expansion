@@ -1,4 +1,7 @@
-from base import Base
+try:
+    from base import Base
+except:
+    from npdb.base import Base
 import sqlalchemy as db
 import ase
 
