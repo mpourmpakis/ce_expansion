@@ -24,7 +24,7 @@ shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
 log = True
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
-niterations = 5
+niterations = 2
 
 # start batch GA run
 batch_tot = len(metal_opts) * len(shape_opts)
