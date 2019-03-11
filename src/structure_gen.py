@@ -7,6 +7,77 @@ import pathlib
 import pickle
 import numpy as np
 import adjacency
+from npdb import db_inter
+
+
+def build_structure_sql(shape, num_shells, return_bond_list=True):
+    """
+    Creates Atoms obj of specified shape and size (based on nshell)
+
+    Args:
+    shape (str): name of shape for atoms obj
+                 NOTE: currently supports
+                        - icosahedron
+                        - cuboctahedron
+                        - fcc-cube
+                        - elongated-trigonal-pyramic
+    nshell (int): number of shells used to generate atom size
+                  e.g. icosahedron with 3 shells makes a 55-atom object
+                       ( 1 in core + 12 in shell_1 + 42 in shell_2)
+
+    Kargs:
+    return_bond_list (bool): if True, also returns bond_list of Atoms obj
+                             (default: True)
+
+    Returns:
+            if return_bond_list:
+                (ase.Atoms), (list): atom obj and bond_list
+            else:
+                (ase.Atoms): atom obj of structure
+
+    Raises:
+            NotImplementedError: given shape has not been implemented
+    """
+    np = db_inter.get_nanoparticle(shape, num_shells=num_shells, lim=1)
+    if np:
+        return np
+    else:
+        # build atom object
+        if shape == 'icosahedron':
+            atom = ase.cluster.Icosahedron('Cu', num_shells)
+        elif shape == 'fcc-cube':
+            atom = ase.cluster.FaceCenteredCubic('Cu', [(1, 0, 0),
+                                                        (0, 1, 0),
+                                                        (0, 0, 1)],
+                                                 [num_shells] * 3)
+        elif shape == 'cuboctahedron':
+            atom = ase.cluster.Octahedron('Cu', 2 * num_shells + 1,
+                                          cutoff=num_shells)
+        elif shape == 'elongated-pentagonal-bipyramid':
+            atom = ase.cluster.Decahedron('Cu', num_shells, num_shells, 0)
+        else:
+            raise NotImplementedError('%s has not been implemented')
+
+        np = db_inter.insert_nanoparticle(atom, shape, num_shells)
+
+    # can return atoms obj and bond list or just atoms obj
+    if return_bond_list:
+
+        # make sure bond_list directory exists (if not, make one)
+        bond_list_path = '../data/bond_lists/%s/' % shape
+        pathlib.Path(bond_list_path).mkdir(parents=True, exist_ok=True)
+
+        # if bond_list file (fname) exists, read it in
+        # else make and save bond_list
+        fname = bond_list_path + '%i.npy' % nshell
+        if os.path.isfile(fname):
+            bond_list = np.load(fname)
+        else:
+            bond_list = adjacency.buildBondsList(atom)
+            np.save(fname, bond_list)
+        return atom, bond_list
+    else:
+        return atom
 
 
 def build_structure(shape, nshell, return_bond_list=True):
@@ -160,3 +231,7 @@ def cuboctahedron(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
     :return: An ASE atoms object containing the cuboctahedron skeleton.
     """
     return ase.cluster.Octahedron(kind, 2 * num_layers + 1, cutoff=num_layers)
+
+
+if __name__ == '__main__':
+    np = build_structure_sql('icosahedron', 25)
