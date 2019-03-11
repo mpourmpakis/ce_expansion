@@ -10,7 +10,7 @@ import adjacency
 from npdb import db_inter
 
 
-def build_structure_sql(shape, num_shells, return_bond_list=True):
+def build_structure_sql(shape, num_shells, return_bonds_list=True):
     """
     Creates Atoms obj of specified shape and size (based on nshell)
 
@@ -21,13 +21,13 @@ def build_structure_sql(shape, num_shells, return_bond_list=True):
                         - cuboctahedron
                         - fcc-cube
                         - elongated-trigonal-pyramic
-    nshell (int): number of shells used to generate atom size
-                  e.g. icosahedron with 3 shells makes a 55-atom object
-                       ( 1 in core + 12 in shell_1 + 42 in shell_2)
+    num_shells (int): number of shells used to generate atom size
+                      e.g. icosahedron with 3 shells makes a 55-atom object
+                      ( 1 in core + 12 in shell_1 + 42 in shell_2)
 
     Kargs:
-    return_bond_list (bool): if True, also returns bond_list of Atoms obj
-                             (default: True)
+    return_bonds_list (bool): if True, also returns bond_list of Atoms obj
+                              (default: True)
 
     Returns:
             if return_bond_list:
@@ -38,9 +38,12 @@ def build_structure_sql(shape, num_shells, return_bond_list=True):
     Raises:
             NotImplementedError: given shape has not been implemented
     """
-    np = db_inter.get_nanoparticle(shape, num_shells=num_shells, lim=1)
-    if np:
-        return np
+    nanop = db_inter.get_nanoparticle(shape, num_shells=num_shells, lim=1)
+    atom = None
+    if nanop:
+        atom = nanop.get_atoms_obj_skel()
+        # if nanop, use its method to create atom obj
+        pass  # atom = nanop.get_atoms_obj_skel()
     else:
         # build atom object
         if shape == 'icosahedron':
@@ -58,26 +61,27 @@ def build_structure_sql(shape, num_shells, return_bond_list=True):
         else:
             raise NotImplementedError('%s has not been implemented')
 
-        np = db_inter.insert_nanoparticle(atom, shape, num_shells)
+        nanop = db_inter.insert_nanoparticle(atom, shape, num_shells)
+        # nanop.get_atoms_obj_skel()
 
     # can return atoms obj and bond list or just atoms obj
-    if return_bond_list:
+    if return_bonds_list:
 
         # make sure bond_list directory exists (if not, make one)
-        bond_list_path = '../data/bond_lists/%s/' % shape
-        pathlib.Path(bond_list_path).mkdir(parents=True, exist_ok=True)
+        bonds_list_path = '../data/bond_lists/%s/' % shape
+        if not os.path.isdir(bonds_list_path):
+            pathlib.Path(bonds_list_path).mkdir(parents=True)
 
         # if bond_list file (fname) exists, read it in
         # else make and save bond_list
-        fname = bond_list_path + '%i.npy' % nshell
+        fname = bonds_list_path + '%i.npy' % num_shells
         if os.path.isfile(fname):
-            bond_list = np.load(fname)
+            bonds_list = np.load(fname)
         else:
-            bond_list = adjacency.buildBondsList(atom)
-            np.save(fname, bond_list)
-        return atom, bond_list
-    else:
-        return atom
+            bonds_list = adjacency.buildBondsList(atom)
+            np.save(fname, bonds_list)
+        nanop.bonds_list = bonds_list
+    return nanop
 
 
 def build_structure(shape, nshell, return_bond_list=True):
@@ -234,4 +238,4 @@ def cuboctahedron(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
 
 
 if __name__ == '__main__':
-    np = build_structure_sql('icosahedron', 25)
+    nanop = build_structure_sql('icosahedron', 50, False)

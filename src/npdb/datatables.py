@@ -131,6 +131,11 @@ class Nanoparticles(Base):
                                       - new BimetallicResults entries require
                                         a NP to be entered
                                       - one NP can have many BimetallicResults
+
+    Other Attributes:
+    bonds_list (np.array): used to carry bonds_list for GA sims
+    atoms_obj (ase.Atoms): stores an ase.Atoms skeleton after being built with
+                           get_atoms_obj_skel
     """
     __tablename__ = 'nanoparticles'
 
@@ -143,6 +148,11 @@ class Nanoparticles(Base):
     bimetallic_results = db.orm.relationship('BimetallicResults',
                                              backref='nanoparticle')
 
+    # used to attach bond_list to data entry
+    # does not store bond_list in DB
+    bonds_list = None
+    atoms_obj = None
+
     def __init__(self, shape, num_atoms, num_shells=None):
         self.shape = shape
         self.num_atoms = num_atoms
@@ -150,9 +160,14 @@ class Nanoparticles(Base):
 
     def get_atoms_obj_skel(self):
         """
-        Returns NP in the form of a Cu NP ase.Atoms object
+        Builds NP in the form of a Cu NP ase.Atoms object
+        - stores under self.atoms_obj property
+        - returns atoms_obj
         """
-        return ase.Atoms([ase.Atom('Cu', (i.x, i.y, i.z)) for i in self.atoms])
+        if not self.atoms_obj:
+            self.atoms_obj = ase.Atoms([ase.Atom('Cu', (i.x, i.y, i.z))
+                                       for i in self.atoms])
+        return self.atoms_obj
 
 
 class Atoms(Base):
