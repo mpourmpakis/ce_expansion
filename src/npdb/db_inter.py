@@ -1,4 +1,5 @@
 import sqlalchemy as db
+import numpy as np
 try:
     import db_utils
     from base import Session
@@ -49,10 +50,12 @@ session = Session()
 # BUILD FUNCTIONS
 
 
-def build_srf_plot(metals, shape):
+def build_srf_plot(metals, shape, delg=False, T=298):
     """
     Creates a 3D surface plot from NP SQL database
     - plots Size vs. Shape vs. Excess Energy (EE)
+    - can also use configurational entropy of mixing
+      to plot Size vs. Shape vs. G = EE - T * delS(mix)
 
     Args:
     metals (string || iterable): string(s) containing two metal elements
@@ -78,6 +81,15 @@ def build_srf_plot(metals, shape):
     comps = df.comps.values
     ees = df.EE.values
 
+    if delg:
+        # k_b T [eV] = (25.7 mEV at 298 K)
+        kt = 25.7E-3 * (T / 298.)
+        del_s = comps * np.ma.log(comps).filled(0) + \
+            (1 - comps) * np.ma.log(1 - comps).filled(0)
+        del_s *= -kt
+
+        ees -= del_s
+
     # plots surface as heat map with warmer colors for larger EEs
     colormap = plt.get_cmap('coolwarm')
     normalize = matplotlib.colors.Normalize(vmin=ees.min(), vmax=ees.max())
@@ -93,8 +105,12 @@ def build_srf_plot(metals, shape):
                      cmap=colormap, norm=normalize)
     ax.set_xlabel('$X_{%s}$' % metal2)
     ax.set_ylabel('Size (nm)')
-    ax.set_zlabel('EE (eV)')
-    ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
+    if delg:
+        ax.set_zlabel('G (eV)')
+        ax.set_title('%iK\n%s %s %s' % (T, metal1, metal2, shape.title()))
+    else:
+        ax.set_zlabel('EE (eV)')
+        ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
     return fig
 
 
@@ -303,3 +319,4 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
 
 if __name__ == '__main__':
     nps, bi = get_all_tables()
+    g = build_srf_plot('agcu', 'icosahedron', True, T=298)
