@@ -1,6 +1,7 @@
 *.xml
 **/__pycache__
-*.pyc
+__pycache__/
+*.py[cod]
 .idea
 /src/best.txt
 /src/restuls.txt
