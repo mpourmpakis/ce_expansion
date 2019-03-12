@@ -205,3 +205,23 @@ class Atoms(Base):
         self.y = y
         self.z = z
         self.nanoparticle = nanoparticle
+
+
+class ModelCoefficients(Base):
+    """
+        Bond-Centric Model Coefficients (gamma) precalculated
+        based on atom types and coordination number
+    """
+    __tablename__ = 'model_coefficients'
+
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    element1 = db.Column(db.String(2), nullable=False)
+    element2 = db.Column(db.String(2), nullable=False)
+    cn = db.Column(db.Integer, nullable=False)
+    bond_energy = db.Column(db.Float)
+
+    def __init__(self, element1, element2, cn, bond_energy):
+        self.element1 = element1
+        self.element2 = element2
+        self.cn = cn
+        self.bond_energy = bond_energy

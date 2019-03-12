@@ -1,17 +1,14 @@
 import sqlalchemy as db
 import numpy as np
+import pickle
 try:
     import db_utils
-    from base import Session
-    from datatables import BimetallicResults as BiMet
-    from datatables import Atoms
-    from datatables import Nanoparticles
+    import base
+    import datatables as tbl
 except:
     from npdb import db_utils
-    from npdb.base import Session
-    from npdb.datatables import BimetallicResults as BiMet
-    from npdb.datatables import Atoms
-    from npdb.datatables import Nanoparticles
+    import npdb.base as base
+    import npdb.datatables as tbl
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -45,9 +42,52 @@ from mpl_toolkits.mplot3d import Axes3D
 """
 
 # global session
-session = Session()
+session = base.Session()
+
+# create all datatables if not present in DB
+base.Base.metadata.create_all(base.engine)
 
 # BUILD FUNCTIONS
+
+
+def build_coefficient_dict(metals):
+    """
+    Creates a 3D surface plot from NP SQL database
+    - plots Size vs. Shape vs. Excess Energy (EE)
+    - can also use configurational entropy of mixing
+      to plot Size vs. Shape vs. G = EE - T * delS(mix)
+
+    Args:
+    metals (string || iterable): string(s) containing two metal elements
+
+    Returns:
+        (dict): coefficient dictionary for GA sim
+    """
+    metal1, metal2 = db_utils.sort_metals(metals)
+
+    # homolytic half bond energies
+    res_aa = get_model_coefficient(metal1, metal1)
+    res_bb = get_model_coefficient(metal2, metal2)
+
+    # heterolytic half bond energies
+    res_ab = get_model_coefficient(metal1, metal2)
+    res_ba = get_model_coefficient(metal2, metal1)
+
+    # raise error if coefficients are not found
+    errors = []
+    for res, ms in zip([res_aa, res_bb, res_ab, res_bb],
+                       ((metal1, metal1), (metal2, metal2),
+                        (metal1, metal2), (metal2, metal1))):
+        if not res:
+            errors.append("no info for %s - %s coefficients" % ms)
+    if errors:
+        raise db_utils.NPDatabaseError('\n'.join(errors))
+
+    # return back coefficients as dictionary of dictionaries
+    return {metal1: {metal1: list(map(lambda i: i.bond_energy, res_aa)),
+                     metal2: list(map(lambda i: i.bond_energy, res_ab))},
+            metal2: {metal2: list(map(lambda j: j.bond_energy, res_bb)),
+                     metal1: list(map(lambda j: j.bond_energy, res_ba))}}
 
 
 def build_srf_plot(metals, shape, delg=False, T=298):
@@ -66,13 +106,15 @@ def build_srf_plot(metals, shape, delg=False, T=298):
     """
     metal1, metal2 = db_utils.sort_metals(metals)
 
-    runs = session.query(BiMet.diameter,
-                         (BiMet.n_metal2 / db.cast(BiMet.num_atoms, db.Float))
+    runs = session.query(tbl.BimetallicResults.diameter,
+                         (tbl.BimetallicResults.n_metal2 /
+                          db.cast(tbl.BimetallicResults.num_atoms,
+                                  db.Float))
                          .label('comps'),
-                         BiMet.EE) \
-        .filter(db.and_(BiMet.metal1 == metal1,
-                        BiMet.metal2 == metal2,
-                        BiMet.shape == shape)) \
+                         tbl.BimetallicResults.EE) \
+        .filter(db.and_(tbl.BimetallicResults.metal1 == metal1,
+                        tbl.BimetallicResults.metal2 == metal2,
+                        tbl.BimetallicResults.shape == shape)) \
         .statement
     df = pd.read_sql(runs, session.bind)
 
@@ -120,7 +162,7 @@ def build_srf_plot(metals, shape, delg=False, T=298):
 def get_all_tables(lim=10):
     """
     Returns tuple containing lists of entries from all
-    datatables (at the moment just Nanoparticles
+    datatables (at the moment just tbl.Nanoparticles
     and BimetallicResults)
 
     Kargs:
@@ -158,14 +200,48 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None,
     match_ls = []
     if metals:
         metal1, metal2 = db_utils.sort_metals(metals)
-        match_ls.append(BiMet.metal1 == metal1)
-        match_ls.append(BiMet.metal2 == metal2)
+        match_ls.append(tbl.BimetallicResults.metal1 == metal1)
+        match_ls.append(tbl.BimetallicResults.metal2 == metal2)
     for attr, crit in zip(['shape', 'num_atoms', 'n_metal1'],
                           [shape, num_atoms, n_metal1]):
         if crit is not None:
-            match_ls.append(getattr(BiMet, attr) == crit)
+            match_ls.append(getattr(tbl.BimetallicResults, attr) == crit)
     match = db.and_(*match_ls)
-    qry = session.query(BiMet).filter(match)
+    qry = session.query(tbl.BimetallicResults).filter(match)
+    if return_query:
+        return qry
+    res = qry.limit(lim).all()
+    return res if len(res) != 1 else res[0]
+
+
+def get_model_coefficient(element1=None, element2=None, cn=None,
+                          lim=None, return_query=False):
+    """
+    Returns tbl.ModelCoefficients entries that match criteria
+    - if no criteria given, all data (up to <lim> amount)
+      returned
+    - query is always ordered by cn
+
+    Kargs:
+    element1 (str): first element
+    element2 (str): second element
+    cn (int): coordination number of element 1
+    lim (int): max number of entries returned
+               (default: None = no limit)
+    return_query (bool): if True, returns just the query
+                         and not the results
+
+    Returns:
+        (tbl.ModelCoefficients)(s) if match else (None)
+    """
+    match_ls = []
+    for attr, crit in zip(['element1', 'element2', 'cn'],
+                          [element1, element2, cn]):
+        if crit is not None:
+            match_ls.append(getattr(tbl.ModelCoefficients, attr) == crit)
+    match = db.and_(*match_ls)
+    qry = session.query(tbl.ModelCoefficients).filter(match) \
+        .order_by(tbl.ModelCoefficients.cn)
     if return_query:
         return qry
     res = qry.limit(lim).all()
@@ -175,7 +251,7 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None,
 def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
                      lim=None, return_query=False):
     """
-    Returns Nanoparticles entries that match criteria
+    Returns tbl.Nanoparticles entries that match criteria
     - if no criteria given, all data (up to <lim> amount)
       returned
 
@@ -190,15 +266,15 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
                          and not the results
 
     Returns:
-        (Nanoparticles)(s) if match else (None)
+        (tbl.Nanoparticles)(s) if match else (None)
     """
     match_ls = []
     for attr, crit in zip(['shape', 'num_atoms', 'num_shells'],
                           [shape, num_atoms, num_shells]):
         if crit is not None:
-            match_ls.append(getattr(Nanoparticles, attr) == crit)
+            match_ls.append(getattr(tbl.Nanoparticles, attr) == crit)
     match = db.and_(*match_ls)
-    qry = session.query(Nanoparticles).filter(match)
+    qry = session.query(tbl.Nanoparticles).filter(match)
     if return_query:
         return qry
     res = qry.limit(lim).all()
@@ -206,6 +282,33 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
 
 
 # INSERT FUNCTIONS
+
+
+def insert_model_coefficients(coeffs_dict=None):
+    """
+    Inserts model coefficients into ModelCoefficients
+    - checks DB to ensure entry does not already exist
+
+    Kargs:
+    coeffs_dict (dict): dictionary of coefficients
+                        if None, read in from data directory
+                        (default: None)
+
+    Returns:
+        (bool): True if successful insertion else False
+    """
+    if not coeffs_dict:
+        with open('../../data/coefs_set.pickle', 'rb') as fid:
+            coeffs_dict = pickle.load(fid)
+
+    # dict(element1=dict(element2=[bond_energies where index = cn]))
+    for e1 in coeffs_dict:
+        for e2 in coeffs_dict[e1]:
+            for cn in range(len(coeffs_dict[e1][e2])):
+                if not get_model_coefficient(e1, e2, cn, lim=1):
+                    session.add(tbl.ModelCoefficients(e1, e2, cn,
+                                                      coeffs_dict[e1][e2][cn]))
+    return db_utils.commit_changes(session)
 
 
 def insert_nanoparticle(atom, shape, num_shells=None):
@@ -225,15 +328,16 @@ def insert_nanoparticle(atom, shape, num_shells=None):
     Returns:
         (bool): True if successful insertion else False
     """
-    np = Nanoparticles(shape.lower(), len(atom), num_shells=num_shells)
+    np = tbl.Nanoparticles(shape.lower(), len(atom), num_shells=num_shells)
     session.add(np)
     for i, a in enumerate(atom):
-        session.add(Atoms(i, a.x, a.y, a.z, np))
+        session.add(tbl.Atoms(i, a.x, a.y, a.z, np))
     res = db_utils.commit_changes(session, raise_exception=True)
     return np
 
 
 # UPDATE FUNCTIONS
+
 
 def update_datarow(datarow):
     """
@@ -270,9 +374,9 @@ def update_bimet_result(metals, shape, num_atoms,
         return
     else:
         metal1, metal2 = db_utils.sort_metals(metals)
-        res = BiMet(metal1, metal2, shape, num_atoms,
-                    diameter, n_metal1, num_atoms-n_metal1,
-                    CE, EE, ordering)
+        res = tbl.BimetallicResults(metal1, metal2, shape, num_atoms,
+                                    diameter, n_metal1, num_atoms-n_metal1,
+                                    CE, EE, ordering)
         if np:
             np.bimetallic_results.append(res)
             session.add(np)
@@ -320,3 +424,5 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
 if __name__ == '__main__':
     nps, bi = get_all_tables()
     g = build_srf_plot('agcu', 'icosahedron', True, T=298)
+
+    z = build_coefficient_dict('agcu')

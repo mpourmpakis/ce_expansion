@@ -9,7 +9,6 @@ Base module:
 - initializes engine to connect to np.db (SQLite DB)
 - session factory used to open connections with np.db
 - Base class to create DB datatable objects
-- Creates all datatables if not present in DB
 """
 
 
