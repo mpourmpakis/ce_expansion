@@ -27,7 +27,7 @@ def commit_changes(session, raise_exception=False):
     except Exception as e:
         # write to error log file in npdb
         with open('io_error.log', 'a') as fid:
-            fid.writeline(traceback.format_exc() + '\n\n')
+            fid.write(traceback.format_exc() + '\n\n')
 
         session.rollback()
         session.flush()
