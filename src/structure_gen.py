@@ -10,7 +10,7 @@ import adjacency
 from npdb import db_inter
 
 
-def build_structure_sql(shape, num_shells, return_bonds_list=True):
+def build_structure_sql(shape, num_shells, build_bonds_list=True):
     """
     Creates Atoms obj of specified shape and size (based on nshell)
 
@@ -26,7 +26,7 @@ def build_structure_sql(shape, num_shells, return_bonds_list=True):
                       ( 1 in core + 12 in shell_1 + 42 in shell_2)
 
     Kargs:
-    return_bonds_list (bool): if True, also returns bond_list of Atoms obj
+    build_bonds_list (bool): if True, also returns bond_list of Atoms obj
                               (default: True)
 
     Returns:
@@ -65,7 +65,7 @@ def build_structure_sql(shape, num_shells, return_bonds_list=True):
         # nanop.get_atoms_obj_skel()
 
     # can return atoms obj and bond list or just atoms obj
-    if return_bonds_list:
+    if build_bonds_list:
 
         # make sure bond_list directory exists (if not, make one)
         bonds_list_path = '../data/bond_lists/%s/' % shape

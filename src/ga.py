@@ -17,6 +17,7 @@ import plot_defaults
 import matplotlib.pyplot as plt
 import matplotlib
 from mpl_toolkits.mplot3d import Axes3D
+from npdb import db_inter
 
 # random.seed(9876)
 
@@ -170,10 +171,9 @@ class Chromo(object):
 
 
 class Pop(object):
-    def __init__(self, atom, bond_list, metals, n_dope=1,
+    def __init__(self, atom, bond_list, metals, shape, n_dope=1,
                  popsize=100, kill_rate=0.2, mate_rate=0.8,
-                 mute_rate=0.2, mute_num=1, x_dope=None,
-                 min_xyz_path=None):
+                 mute_rate=0.2, mute_num=1, x_dope=None):
         """
 
         :param atomg:
@@ -184,12 +184,14 @@ class Pop(object):
         :param mute_rate:
         :param mute_num:
         :param x_dope:
-        min_xyz_path (str): (default: None)
         """
         self.atom = atom
         # organize AtomGraph info
         self.metals = sorted(metals)
         metal1, metal2 = sorted(metals)
+
+        self.shape = shape
+
         self.atomg_props = dict(bond_list=bond_list,
                                 metal1=metal1,
                                 metal2=metal2)
@@ -215,8 +217,8 @@ class Pop(object):
         # keep track of how many times the sim has been continued
         self.continued = 0
 
-        # current minimum structure xyz path
-        self.min_xyz_path = min_xyz_path
+        # previous GA sim results (npdb.datatables.BimetallicResults)
+        self.prev_results = None
 
         self.initialize_new_run()
 
@@ -236,6 +238,14 @@ class Pop(object):
 
         :return:
         """
+        # search for previous bimetallic result
+        self.prev_results = db_inter.get_bimet_result(
+            metals=self.metals,
+            shape=self.shape,
+            num_atoms=self.num_atoms,
+            n_metal1=int(self.num_atoms - self.n_dope),
+            lim=1)
+
         self.x_dope = self.n_dope / self.num_atoms
         self.formula = '%s%i_%s%i' % (self.metals[0],
                                       self.num_atoms - self.n_dope,
@@ -275,14 +285,9 @@ class Pop(object):
                                             low_first=False, return_n=1)[0])]
 
             # add current min CE structure if path exists not monometallic
-            if self.min_xyz_path and self.n_dope not in [0, self.num_atoms]:
-                xyzpath = os.path.join(self.min_xyz_path,
-                                       self.formula + '.xyz')
-                c = xyz_to_chrom(self.atomg, xyzpath)
-                if c:
-                    assert c.num_atoms == self.num_atoms
-                    assert c.n_dope == self.n_dope
-                    self.pop += [c]
+            if self.prev_results and self.n_dope not in [0, self.num_atoms]:
+                self.pop += [Chromo(self.atomg, self.n_dope, arr=np.array(
+                    [int(i) for i in self.prev_results.ordering]))]
 
         # create random structures for remaining popsize
         self.pop += [Chromo(self.atomg, n_dope=self.n_dope)
@@ -406,6 +411,16 @@ class Pop(object):
                           s.std()])
         self.min_struct_ls.append(Chromo(self.atomg, self.n_dope,
                                          arr=self.pop[0].arr.copy()))
+
+    def is_new_min(self):
+        """
+        Returns True if GA sim found new minimum CE
+        (compares to SQL DB)
+        """
+        if not self.prev_results:
+            return True
+        else:
+            return True if self.get_min() < self.prev_results.CE else False
 
     def reload_atomg(self):
         """
@@ -783,9 +798,7 @@ def make_3d_plot(path):
     return fig
 
 
-def run_ga(metals, shape, datapath=None, plotit=False,
-           save_data=True, log_results=True,
-           add_current_min=False,
+def run_ga(metals, shape, save_data=True,
            batch_runinfo=None, max_shells=None):
     """
     Submission function to run GAs of a given metal combination and
@@ -804,8 +817,6 @@ def run_ga(metals, shape, datapath=None, plotit=False,
                         - elongated-trigonal-pyramic
 
     Kargs:
-    datapath (str || None): path to save sims.log info and structures
-                            (default: None)
     plotit (bool): if true, a 3D surface plot is made of GA sims
                    dope concentration vs. size vs. excess energy
                    (default: False)
@@ -816,35 +827,30 @@ def run_ga(metals, shape, datapath=None, plotit=False,
     log_results (bool): if true, GA sim stats are logged to
                         sims.log
                         (default: True)
-    add_current_min (bool): if true, GA adds current minimum CE structure to
-                            initial population
-                            (default: False)
-    batch_runinfo (str || None): if str, add to log under
+    batch_runinfo (str): if str, add to log under
                                  'Completed Run: <batch_runinfo>'
                                  (default: None)
-    max_shells (int || None): if int, limits size of NPs studied in GA runs
+    max_shells (int): if int, limits size of NPs studied in GA runs
                               (default: None)
 
     Returns: None
     """
+
+    # track start of run
+    start_time = dt.now()
+
     # clear previous plots and define desktop and data paths
     plt.close('all')
     desk = os.path.join(os.path.expanduser('~'), 'desktop')
 
-    # if datapatha not given, create one on desktop
-    if not datapath:
-        datapath = os.path.join(desk, 'ga_data')
-        pathlib.Path(datapath).mkdir(parents=True, exist_ok=True)
-
-    # ensure metals is a list of two elements
-    assert (len(metals) == 2 and
-            sum(map(lambda i: isinstance(i, str) and
-                    len(i) == 2, metals)) == 2), \
-        'Two metals must be passed in as iterable'
-
     # always sort metals by alphabetical order for consistency
-    metals = sorted(metals)
-    metal1, metal2 = metals
+    if isinstance(metals, str):
+        metal1, metal2 = sorted([metals[:2], metals[2:]])
+    else:
+        metal1, metal2 = sorted(metals)
+    metal1, metal2 = metal1.title(), metal2.title()
+
+    metals = (metal1, metal2)
 
     # number of shells range to sim ga for each shape
     shape2shell = {'icosahedron': [2, 14],
@@ -866,152 +872,128 @@ def run_ga(metals, shape, datapath=None, plotit=False,
     print('             Metals: %s, %s' % (metal1, metal2))
     print('              Shape: %s' % shape)
     print('    Save GA Results: %s' % bool(save_data))
-    print('     Create 3D Plot: %s' % bool(plotit))
     print('        Shell Range: %s' % str(nshell_range))
     print('----------------------------------------')
 
-    # attempt to read in previous results
-    excel_columns = ['num_atoms', 'diameter', 'composition_%s' % metal2,
-                     'n_%s' % metal1, 'n_%s' % metal2, 'CE', 'EE']
-
-    shapepath = '../data/bimetallic_results/%s/' % shape
-    pathlib.Path(shapepath).mkdir(parents=True, exist_ok=True)
-    excel = '{0}/{1}_{2}{3}_data.xlsx'.format(shapepath, shape,
-                                              metal1, metal2)
-    if os.path.isfile(excel):
-        df = pd.read_excel(excel)
-    else:
-        df = pd.DataFrame([], columns=excel_columns)
-
     # GA properties
-    max_runs = 5000
+    max_runs = 500  # 0
     popsize = 50
     kill_rate = 0.2
     mate_rate = 0.8
     mute_rate = 0.2
     mute_num = 1
 
-    # CEs for monometallic NPs
-    mono_path = '../data/monometallic_CE/'
-    mono_pickle = mono_path + '%s.pickle' % shape
-    pathlib.Path(mono_path).mkdir(parents=True, exist_ok=True)
-    if os.path.isfile(mono_pickle):
-        with open(mono_pickle, 'rb') as fidr:
-            monos = pickle.load(fidr)
-    else:
-        monos = {}
-
-    # track if any new mono calcs are added
-    new_mono_calcs = False
-
     # keep track of total new minimum CE structs (based on saved structs)
     tot_new_structs = 0
 
     # count total structs
-    tot_st = 0
-
-    # data for 3D plot
-    eedata = []
-    cedata = []
-    comps = []
-    tot_natoms = []
-    nmetal1 = []
-    nmetal2 = []
-    tot_size = []
-
-    # log runtime
-    starttime = time.time()
+    tot_structs = 0
 
     for struct_i, nshells in enumerate(range(*nshell_range)):
         # build atom, adjacency list, and atomgraph
-        atom, bond_list = structure_gen.build_structure(shape, nshells,
-                                                        return_bond_list=True)
+        nanop = structure_gen.build_structure_sql(shape, nshells,
+                                                  build_bonds_list=True)
+        num_atoms = len(nanop)
 
-        ag = atomgraph.AtomGraph(bond_list, metal1, metal2)
+        diameter = nanop.get_diameter()
 
-        natoms = len(atom)
-        if natoms not in monos:
-            monos[natoms] = {}
+        ag = atomgraph.AtomGraph(nanop.bonds_list, metal1, metal2)
 
-        # build structure path
-        path = 'structures\\%s%s\\%s\\%i\\' % (metal1, metal2, shape, natoms)
-        struct_path = os.path.join(datapath, path)
-        pathlib.Path(struct_path).mkdir(parents=True,
-                                        exist_ok=True)
+        # check to see if monometallic results exist
+        # if not, calculate them
+        mono1 = db_inter.get_bimet_result(metals=metals,
+                                          shape=shape,
+                                          num_atoms=num_atoms,
+                                          n_metal1=num_atoms,
+                                          lim=1)
+        if not mono1:
+            mono_ord = np.zeros(num_atoms)
+            mono_ce1 = ag.getTotalCE(mono_ord)
+            mono1 = db_inter.update_bimet_result(
+                metals=metals,
+                shape=shape,
+                num_atoms=num_atoms,
+                diameter=diameter,
+                n_metal1=num_atoms,
+                CE=mono_ce1,
+                ordering=''.join(str(int(i)) for i in mono_ord),
+                EE=0,
+                nanop=nanop,
+                allow_insert=True)
+
+        mono2 = db_inter.get_bimet_result(metals=metals,
+                                          shape=shape,
+                                          num_atoms=num_atoms,
+                                          n_metal1=0,
+                                          lim=1)
+        if not mono2:
+            mono_ord = np.ones(num_atoms)
+            mono_ce2 = ag.getTotalCE(mono_ord)
+            mono2 = db_inter.update_bimet_result(
+                metals=metals,
+                shape=shape,
+                num_atoms=num_atoms,
+                diameter=diameter,
+                n_metal1=0,
+                CE=mono_ce2,
+                ordering=''.join(str(int(i)) for i in mono_ord),
+                EE=0,
+                nanop=nanop,
+                allow_insert=True)
 
         # USE THIS TO TEST EVERY CONCENTRATION
-        if natoms < 150:
-            n = np.arange(0, natoms + 1)
-            x = n / float(natoms)
+        if nanop.num_atoms < 150:
+            n = np.arange(0, num_atoms + 1)
+            x = n / float(num_atoms)
         else:
             # x = metal2 concentration [0, 1]
             x = np.linspace(0, 1, 11)
-            n = (x * natoms).astype(int)
+            n = (x * num_atoms).astype(int)
 
             # recalc concentration to match n
-            x = n / float(natoms)
+            x = n / float(num_atoms)
 
         # total structures checked ( - 2 to exclude monometallics)
-        tot_st += float(len(n) - 2)
-
-        rands = np.zeros((len(x), 3))
-        ces = np.zeros(len(x))
-
-        # specify minimum structure xyz folder if <add_current_min>
-        min_xyz_path = struct_path if add_current_min else None
+        tot_structs += float(len(n) - 2)
 
         # INITIALIZE POP object
-        pop = Pop(atom.copy(), bond_list, metals, n_dope=n[0],
-                  popsize=popsize, kill_rate=kill_rate, mate_rate=mate_rate,
-                  mute_rate=mute_rate, mute_num=mute_num,
-                  min_xyz_path=min_xyz_path)
+        pop = Pop(nanop.get_atoms_obj_skel().copy(), nanop.bonds_list, metals,
+                  shape=shape, n_dope=n[0], popsize=popsize,
+                  kill_rate=kill_rate, mate_rate=mate_rate,
+                  mute_rate=mute_rate, mute_num=mute_num)
 
-        starting_outp = '%s%s in %i atom %s' % (metal1, metal2, natoms, shape)
+        starting_outp = '%s%s in %i atom %s' % (metal1, metal2,
+                                                num_atoms, shape)
         print(starting_outp.center(CENTER))
 
-        # keep track of new minimum CE structs (based on saved structs)
+        # sweep over different compositions
         new_min_structs = 0
         for i, dope in enumerate(n):
             if i:
                 pop.n_dope = dope
                 pop.initialize_new_run()
             pop.run(max_runs)
-            ces[i] = pop.get_min()
-            if dope == 0 and metal1 not in monos[natoms]:
-                monos[natoms][metal1] = ces[i]
-                new_mono_calcs = True
-            if dope == natoms and metal2 not in monos[natoms]:
-                monos[natoms][metal2] = ces[i]
-                new_mono_calcs = True
 
-            fname = '%s%i_%s%i.xyz' % (metal1, len(atom) - dope,
-                                       metal2, dope)
+            # if new minimum CE found and <save_data>
+            # store result in DB
+            if pop.is_new_min() and save_data:
+                new_min_structs += 1
+                n_metal1 = int(num_atoms - dope)
+                ordering = ''.join([str(i) for i in pop.pop[0].arr])
+                ce = pop.get_min()
 
-            # check to see if older ga run founded lower CE structure
-            if save_data:
-                # if older data exists, see if new struct has lower CE
-                if not df.loc[(df['num_atoms'] == natoms) &
-                              (df['n_%s' % metal2] == dope),
-                              'CE'].empty:
+                # calculate excess energy
+                ee = ce - (mono1.CE * (1 - pop.x_dope)) - \
+                    (mono2.CE * pop.x_dope)
+                if abs(ee) < 1E-10:
+                    ee = 0
 
-                    oldrunmin = df.loc[(df['num_atoms'] == natoms) &
-                                       (df['n_%s' % metal2] == dope),
-                                       'CE'].values[0]
-
-                    # update df if new struct has lower CE
-                    if (pop.get_min() - oldrunmin) < -1E-5:
-                        df.loc[(df['num_atoms'] == natoms) &
-                               (df['n_%s' % metal2] == dope),
-                               'CE'] = pop.get_min()
-                        make_xyz(atom.copy(), pop.pop[0], struct_path)
-                        new_min_structs += 1
-                        tot_new_structs += 1
-                    else:
-                        ces[i] = oldrunmin
-
-                # if no older data, save new struct
-                else:
-                    make_xyz(atom.copy(), pop.pop[0], struct_path)
+                db_inter.update_bimet_result(metals=metals, shape=shape,
+                                             num_atoms=num_atoms,
+                                             diameter=diameter,
+                                             n_metal1=n_metal1,
+                                             CE=ce, ordering=ordering,
+                                             EE=ee, nanop=nanop)
 
         print(' ' * 100, end='\r')
         print('-' * CENTER)
@@ -1021,121 +1003,35 @@ def run_ga(metals, shape, datapath=None, plotit=False,
         print(outp.center(CENTER))
         print('-' * CENTER)
 
-        # calculate excess energy (ees)
-        ees = ces - (x * monos[natoms][metal2]) - \
-            ((1 - x) * monos[natoms][metal1])
-
-        tot_natoms += [natoms] * len(x)
-        comps += list(x)
-        tot_size += [atom.cell.max() / 10] * len(x)
-        nmetal1 += list(natoms - n)
-        nmetal2 += list(n)
-        cedata += list(ces)
-        eedata += list(ees)
-
-    complete = time.time() - starttime
-
-    # save data from each GA run
+    # insert log results into DB
     if save_data:
-        newdf = pd.DataFrame({'num_atoms': tot_natoms,
-                              'diameter': tot_size,
-                              'composition_%s' % metal2: comps,
-                              'n_%s' % metal1: nmetal1,
-                              'n_%s' % metal2: nmetal2,
-                              'CE': cedata,
-                              'EE': eedata})
-
-        data = df.append(newdf, ignore_index=True)
-        data.drop_duplicates(['num_atoms', 'n_%s' % metal2], inplace=True)
-        data.sort_values(by=['num_atoms', 'n_%s' % metal2], inplace=True)
-
-        writer = pd.ExcelWriter(excel, engine='xlsxwriter')
-        data.to_excel(writer, index=False)
-        writer.save()
-        writer.close()
-
-    # save new monometallic NP data if any new calcs have been added
-    if new_mono_calcs:
-        print('New monometallic calcs have been saved'.center(CENTER))
-        print('-' * CENTER)
-        with open(mono_pickle, 'wb') as fidw:
-            pickle.dump(monos, fidw)
-
-    # create 3D plot of size, comp, EE
-    if plotit:
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        colormap = plt.get_cmap('coolwarm')
-        normalize = matplotlib.colors.Normalize(vmin=min(eedata),
-                                                vmax=max(eedata))
-        ax.plot_trisurf(comps, tot_size, eedata,
-                        cmap=colormap, norm=normalize)
-        ax.set_xlabel('$X_{%s}$' % metal2)
-        ax.set_ylabel('Size (nm)')
-        ax.set_zlabel('EE (eV)')
-        ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
-        fig.show()
-
-    # log sim results
-    today = dt.now().strftime("%m/%d/%Y")
-    timeofnow = dt.now().strftime("%I:%M %p")
-
-    logtxt = '----------------RUN INFO----------------\n'
-
-    # today's date
-    logtxt += '            Date: %s\n' % today
-
-    # time of completion
-    logtxt += '            Time: %s\n' % timeofnow
-
-    # total runtime (days : hours: minutes : seconds)
-    logtxt += '         Runtime: %02i:%02i:%02i:%02i\n'
-    logtxt = logtxt % (complete // 86400, complete % 86400 // 3600,
-                       complete % 3600 // 60, complete % 60)
-
-    # two metals studied (always in alphabetical order)
-    logtxt += '          Metals: %s, %s\n' % (metal1, metal2)
-
-    # shape studied (icosahedron, etc.)
-    logtxt += '           Shape: %s\n' % shape
-
-    # shapes are built shell-by-shell; number of shells indicates size range
-    logtxt += '     Shell Range: %i - %i\n' % tuple(nshell_range)
-
-    logtxt += 'Added Min Struct: %s\n' % bool(add_current_min)
-
-    # number of new minimum CE structures found (compared to previous runs)
-    logtxt += ' New Min Structs: %i\n' % tot_new_structs
-
-    # percentage of new structures (relative to total structures analyzed)
-    logtxt += '   %% New Structs: %.2f%%\n' % (100 * tot_new_structs / tot_st)
-
-    # if run is part of a batch submission,
-    # indicate how far along the batch job is
-    if batch_runinfo:
-        logtxt += '   Completed Run: %s\n' % batch_runinfo
-    logtxt += '----------------------------------------\n'
-
-    # write to sims.log to datapath
-    logpath = os.path.join(datapath, 'sims.log')
-    with open(logpath, 'a') as flog:
-        flog.write(logtxt)
-
+        db_inter.insert_bimetallic_log(
+            start_time=start_time,
+            metal1=metal1,
+            metal2=metal2,
+            shape=shape,
+            ga_generations=max_runs,
+            shell_range='%i - %i' % tuple(nshell_range),
+            new_min_structs=tot_new_structs,
+            tot_structs=tot_structs,
+            batch_run_num=batch_runinfo)
 
 if __name__ == '__main__':
-    metals = ('Ag', 'Cu')
+    metals = ('Ag', 'Pt')
+    shape = 'icosahedron'
 
-    atom, bond_list = structure_gen.build_structure('icosahedron', 6)
+    run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
+           max_shells=3)
 
-    xyzpath = os.path.join(os.path.expanduser('~'), 'Box Sync',
-                           'Michael_Cowan_PhD_research', 'data', 'np_ce',
-                           'structures', 'AgCu', 'icosahedron',
-                           str(len(atom)))
+    """
+    nanop = structure_gen.build_structure_sql(shape, 6,
+                                              return_bonds_list=True)
 
-    p = Pop(atom, bond_list, metals, x_dope=0.2, popsize=50,
-            min_xyz_path=xyzpath)
+    p = Pop(nanop.get_atoms_obj_skel(), nanop.bonds_list,
+            metals, shape, x_dope=0.2, popsize=50)
     p.run(5000)
     # make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
     f, a = p.plot_results()
     # f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.svg')
     plt.show()
+    """

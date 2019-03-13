@@ -31,9 +31,10 @@ def commit_changes(session, raise_exception=False):
 
         session.rollback()
         session.flush()
+
+        if raise_exception:
+            raise e
         return False
-    finally:
-        session.close()
 
 
 def sort_metals(metals):

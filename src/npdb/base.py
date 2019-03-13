@@ -5,18 +5,18 @@ import os
 
 """
 Base module:
-- defines np_ce path
+- defines database path
 - initializes engine to connect to np.db (SQLite DB)
 - session factory used to open connections with np.db
 - Base class to create DB datatable objects
 """
 
-
-np_ce_path = os.path.join(os.path.expanduser('~'), 'Box Sync',
-                          'Michael_Cowan_PhD_research', 'data',
-                          'np_ce')
-
-engine = create_engine('sqlite:///' + os.path.join(np_ce_path, 'np.db'))
+db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       '..',
+                       '..',
+                       'data',
+                       'np.db')
+engine = create_engine('sqlite:///' + db_path)
 Session = sessionmaker(bind=engine)
 
 Base = declarative_base()

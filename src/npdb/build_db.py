@@ -34,8 +34,12 @@ rename_columns = ['num_atoms', 'diameter', 'composition',
 db_columns = ['metal1', 'metal2', 'shape', 'num_atoms', 'diameter',
               'n_metal1', 'n_metal2', 'CE', 'EE', 'ordering']
 
+np_ce_path = os.path.join(os.path.expanduser('~'), 'Box Sync',
+                          'Michael_Cowan_PhD_research', 'data',
+                          'np_ce')
+
 # path to structure XYZ files (based on old GA structure saving method)
-xyz_basepath = os.path.join(base.np_ce_path, 'structures')
+xyz_basepath = os.path.join(np_ce_path, 'structures')
 
 # path to bimetallic excel result files (based on old GA data saving method)
 path = str(os.sep.join(os.path.realpath(__file__)
@@ -87,4 +91,4 @@ for root, ds, fs in os.walk(path):
                 # insert/update BimetallicResults entry
                 db_inter.update_bimet_result(metals, shape, r.num_atoms,
                                              r.diameter, r.n_metal1,
-                                             r.CE, r.EE, r.ordering, np=np)
+                                             r.CE, r.ordering, r.EE, nanop=np)

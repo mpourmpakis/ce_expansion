@@ -3,6 +3,7 @@ try:
 except:
     from npdb.base import Base
 import sqlalchemy as db
+from datetime import datetime
 import ase
 
 
@@ -158,6 +159,9 @@ class Nanoparticles(Base):
         self.num_atoms = num_atoms
         self.num_shells = num_shells
 
+    def __len__(self):
+        return self.num_atoms
+
     def get_atoms_obj_skel(self):
         """
         Builds NP in the form of a Cu NP ase.Atoms object
@@ -168,6 +172,13 @@ class Nanoparticles(Base):
             self.atoms_obj = ase.Atoms([ase.Atom('Cu', (i.x, i.y, i.z))
                                        for i in self.atoms])
         return self.atoms_obj
+
+    def get_diameter(self):
+        """
+        """
+        self.get_atoms_obj_skel()
+        return abs(self.atoms_obj.positions[:, 0].max() -
+                   self.atoms_obj.positions[:, 0].min()) / 10
 
 
 class Atoms(Base):
@@ -225,3 +236,36 @@ class ModelCoefficients(Base):
         self.element2 = element2
         self.cn = cn
         self.bond_energy = bond_energy
+
+
+class BimetallicLog(Base):
+    """
+    Table to log batch GA sims
+    """
+    __tablename__ = 'bimetallic_log'
+
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    date = db.Column(db.DateTime)
+    runtime = db.Column(db.Interval)
+    metal1 = db.Column(db.String(2))
+    metal2 = db.Column(db.String(2))
+    shape = db.Column(db.String)
+    ga_generations = db.Column(db.Integer)
+    shell_range = db.Column(db.String)
+    new_min_structs = db.Column(db.Integer)
+    tot_structs = db.Column(db.Integer)
+    batch_run_num = db.Column(db.String)
+
+    def __init__(self, start_time, metal1, metal2, shape, ga_generations,
+                 shell_range, new_min_structs, tot_structs,
+                 batch_run_num=None):
+        self.date = datetime.now()
+        self.runtime = self.date - start_time
+        self.metal1 = metal1
+        self.metal2 = metal2
+        self.shape = shape
+        self.ga_generations = ga_generations
+        self.shell_range = shell_range
+        self.new_min_structs = new_min_structs
+        self.tot_structs = tot_structs
+        self.batch_run_num = batch_run_num
