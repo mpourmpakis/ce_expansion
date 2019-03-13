@@ -6,51 +6,44 @@ import os
 
 import interface
 import numpy as np
-
-DEFAULT_ELEMENTS = ("Cu", "Cu")
-DEFAULT_RADIUS = 2.8
-
-# Find the data path and load the precalculated coefficients
-path = os.path.realpath(__file__)
-data_path = os.sep.join(path.split(os.sep)[:-2] + ["data"])
-with open(os.sep.join(data_path.split(os.sep) + ["precalc_coeffs.pickle"]), "rb") as precalcs:
-    DEFAULT_BOND_COEFFS = pickle.load(precalcs)
+from npdb import db_inter
 
 
 class AtomGraph(object):
-    def __init__(self, bond_list: "np.array",
-                 kind0: "str",
-                 kind1: "str",
-                 coeffs: "dict" = DEFAULT_BOND_COEFFS):
-        """
-        A graph representing the ASE Atoms object to be investigated. This graph is represented as
-        an Nx2 list of edges in the nanoparticle. Note that the function signature is slightly
-        different than AtomGraph.
+    """
+    A graph representing the ASE Atoms object to be investigated.
+    This graph is represented as an Nx2 list of edges in the nanoparticle.
+    Note that the function signature is slightly different than AtomGraph.
 
-        Args:
-        bond_list (np.array): An Nx2 numpy array containing a list of bonds in the nanoparticle.
-                              Zero indexed. Assumed to come from adjacency.buildBondList.
-        kind0 (str): A string indicating the atomic symbol a "0" represents.
-        kind1 (str): A string indicating the atomic symbol a "1" represents.
-        coeffs (dict): A nested dictionary of bond coefficients, of the format dict[source][destination][CN]. Source and
-            destination are strings indicating the element of interest. Defaults to the global DFTAULT_BOND_COEFFS.
-            Coefficients can be calculated using /tools/gen_coeffs.py.
+    Args:
+    bond_list (np.array): An Nx2 numpy array containing a list of bonds in the
+                          nanoparticle. Zero indexed. Assumed to come from
+                          adjacency.buildBondList.
+    kind0 (str): A string indicating the atomic symbol a "0" represents.
+    kind1 (str): A string indicating the atomic symbol a "1" represents.
 
-        Attributes:
-        symbols (tuple): A tuple containing the compositional information of the NP. Index 0 is the element a "0"
-            represents. Index 1 is the element a "1" represents. This attribute is updated whenever the NP's composition
-            is updated via the "set_composition" method.
-        coeffs (dict): The nested dictionary passed to the constructor as "coeffs"
-        num_atoms (int): The number of atoms in the NP.
-        cns (np.array): An array containing the coordination number of each atom.
-        """
+    Attributes:
+    symbols (tuple): A tuple containing the compositional information of the
+                     NP. Index 0 is the element a "0" represents. Index 1 is
+                     the element a "1" represents. This attribute is updated
+                     whenever the NP's composition is updated via the
+                     "set_composition" method.
+    coeffs (dict): A nested dictionary of bond coefficients, of the format
+                   dict[source][destination][CN]. Source and destination are
+                   strings indicating the element of interest. Defaults to the
+                   global DFTAULT_BOND_COEFFS. Coefficients can be calculated
+                   using /tools/gen_coeffs.py.
+    num_atoms (int): The number of atoms in the NP.
+    cns (np.array): An array containing the coordination number of each atom.
+    """
+    def __init__(self, bond_list: "np.array", kind0: "str", kind1: "str"):
 
         self._bond_list = bond_list.astype(ctypes.c_long)
         self._num_bonds = len(bond_list)
 
         # Public attributes
         self.symbols = (None, None)
-        self.coeffs = coeffs
+        self.coeffs = db_inter.build_coefficient_dict(kind0 + kind1)
         self.num_atoms = len(set(bond_list[:, 0]))
 
         self.cns = np.bincount(bond_list[:, 0])
@@ -104,8 +97,8 @@ class AtomGraph(object):
 
     def getTotalCE(self, ordering: "np.array") -> "float":
         """
-        Calculates the cohesive energy of the NP using the BC model, as implemented in interface.py
-        and lib.c
+        Calculates the cohesive energy of the NP using the BC model,
+        as implemented in interface.py and lib.c
         """
 <<<<<<< HEAD
         total_energy = 0
@@ -137,7 +130,7 @@ if __name__ == '__main__':
 
     # Generate the chemical ordering
     np.random.seed(12345)
-    chemical_ordering = np.random.choice([0,1], size=graph.num_atoms)
+    chemical_ordering = np.random.choice([0, 1], size=graph.num_atoms)
 
     # Calculate cohesive energy
     cohesive_energy = graph.getTotalCE(chemical_ordering)
