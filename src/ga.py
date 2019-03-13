@@ -876,7 +876,7 @@ def run_ga(metals, shape, save_data=True,
     print('----------------------------------------')
 
     # GA properties
-    max_runs = 500  # 0
+    max_runs = 5000
     popsize = 50
     kill_rate = 0.2
     mate_rate = 0.8

@@ -67,18 +67,8 @@ class AtomGraph(object):
         self._long_num_bonds = ctypes.c_long(self._num_bonds)
         self._p_bond_list = self._bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
-<<<<<<< HEAD
-        Returns:
-        float : The half-bond energy of that bond at that atom, in units of eV
-        """
-
-        atom1 = self.symbols[int(self.ordering[atom_key])]
-        atom2 = self.symbols[int(self.ordering[self.adj_list[atom_key][bond_key]])]
-        return self.coeffs[atom1][atom2][self.getCN(atom_key)]
-=======
     def __len__(self):
         return self._num_bonds
->>>>>>> master
 
     def set_composition(self, kind0: "str", kind1: "str") -> "None":
         """
@@ -107,14 +97,6 @@ class AtomGraph(object):
         Calculates the cohesive energy of the NP using the BC model, as implemented in interface.py
         and lib.c
         """
-<<<<<<< HEAD
-        total_energy = 0
-        for atom in range(0, len(self.ordering)):
-            total_energy += self.getAtomicCE(atom)
-        total_CE = total_energy / len(self.ordering)
-        return total_CE
-
-=======
         ordering = ordering.astype(ctypes.c_long)
         # Pointerize ordering
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
@@ -142,4 +124,3 @@ if __name__ == '__main__':
     # Calculate cohesive energy
     cohesive_energy = graph.getTotalCE(chemical_ordering)
     print('Cohesive energy = %.2e' % cohesive_energy)
->>>>>>> master
