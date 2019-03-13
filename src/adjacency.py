@@ -61,7 +61,7 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
     """
       Adjacency list representation for an ase atoms object.
 
-      Args:
+
       atoms_object (ase.Atoms): An ASE atoms object representing the system of interest
       radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a
                                 bond. If no dict is supplied, Cu-Cu bonds of max-len 2.8 are assumed.

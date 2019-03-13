@@ -4,8 +4,7 @@
 =======
 *.xml
 **/__pycache__
-__pycache__/
-*.py[cod]
+*.pyc
 .idea
 /src/best.txt
 /src/restuls.txt
