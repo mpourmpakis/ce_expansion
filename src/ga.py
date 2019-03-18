@@ -172,7 +172,7 @@ class Chromo(object):
 
 class Pop(object):
     def __init__(self, atom, bond_list, metals, shape, n_dope=1,
-                 popsize=100, kill_rate=0.2, mate_rate=0.8,
+                 popsize=50, kill_rate=0.2, mate_rate=0.8,
                  mute_rate=0.2, mute_num=1, x_dope=None):
         """
 
@@ -495,11 +495,16 @@ class Pop(object):
             print(res)
         return res
 
-    def plot_results(self):
+    def plot_results(self, savepath=None):
         """
         Method to create a plot of GA simulation
         - plots average, std deviation, and minimum score
           of the population at each step
+
+        Kargs:
+        savepath (str): path and file name to save the figure
+                        - if None, figure is not saved
+                        (default: None)
 
         Returns:
                 (matplotlib.figure.Figure),
@@ -536,6 +541,11 @@ class Pop(object):
                      fontdict=dict(weight='normal'))
         # ax.set_title('Min CE: %.5f' % (self.get_min()))
         fig.tight_layout()
+
+        # save figure if <savepath> was specified
+        if savepath:
+            fig.savefig(savepath)
+
         return fig, ax
 
 
@@ -755,51 +765,43 @@ def fill_cn(atomg, n_dope, max_search=50, low_first=True, return_n=None,
     return struct_min, ce
 
 
-def make_3d_plot(path):
+def build_pop_obj(metals, shape, num_shells, **kwargs):
     """
-    Creates 3D surface plot of EE vs Comp. vs Size for
-    a specific shape and metal combination
-    - e.g. AgCu Icosahedron surface plot
-    - data is pulled from GA batch runs (saved as excel files)
+    Creates an initialized Pop for the specified shape,
+    metals, and number of shells
+    - e.g. 55-atom (3 shell) AgCu Icosahedron Pop
+    - **kwargs gets passed directly into Pop.__init__
 
     Args:
-    path (str): path to excel file containing GA data
+    metals (str | iterator): list of two metals used in the bimetallic NP
+    shape (str): shape of NP that is being studied
+                 NOTE: currently supports
+                        - icosahedron
+                        - cuboctahedron
+                        - fcc-cube
+                        - elongated-trigonal-pyramic
+    num_shells (int): number of shells used to generate atom size
+                      e.g. icosahedron with 3 shells makes a 55-atom object
+                      ( 1 in core + 12 in shell_1 + 42 in shell_2)
+
+    **Kwargs:
+        valid arguments to initialize Pop object
+        - e.g. popsize=50, x_dope=0.5
 
     Returns:
-        (plt.Figure): matplotlib figure containing 3D surface plot
+        (Pop): initialized Pop object
     """
-    # pull shape and metals from excel file name
-    shape, metals = os.path.basename(path).split('_')[:2]
-    metal1, metal2 = metals[:2], metals[2:]
-    df = pd.read_excel(path)
+    nanop = structure_gen.build_structure_sql(shape, num_shells,
+                                              build_bonds_list=True)
 
-    # three parameters to plot
-    size = df.diameter.values
-    comps = df['composition_%s' % metal2].values
-    ees = df.EE.values
-
-    # plots surface as heat map with warmer colors for larger EEs
-    colormap = plt.get_cmap('coolwarm')
-    normalize = matplotlib.colors.Normalize(vmin=ees.min(), vmax=ees.max())
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    try:
-        ax.plot_trisurf(comps, size, ees,
-                        cmap=colormap, norm=normalize)
-    except RuntimeError:
-        # if not enough data to create surface, make a scatter plot instead
-        ax.scatter3D(comps, size, ees,
-                     cmap=colormap, norm=normalize)
-    ax.set_xlabel('$X_{%s}$' % metal2)
-    ax.set_ylabel('Size (nm)')
-    ax.set_zlabel('EE (eV)')
-    ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
-    return fig
+    p = Pop(nanop.get_atoms_obj_skel(), nanop.bonds_list,
+            metals, shape, **kwargs)
+    return p
 
 
 def run_ga(metals, shape, save_data=True,
-           batch_runinfo=None, max_shells=None):
+           batch_runinfo=None, shells=None,
+           max_generations=None):
     """
     Submission function to run GAs of a given metal combination and
     shape, sweeping over different sizes (measured in number of shells)
@@ -808,7 +810,6 @@ def run_ga(metals, shape, save_data=True,
 
     Args:
     metals (iterator): list of two metals used in the bimetallic NP
-                              NOTE: currently supports Cu, Ag, and Au
     shape (str): shape of NP that is being studied
                  NOTE: currently supports
                         - icosahedron
@@ -828,10 +829,14 @@ def run_ga(metals, shape, save_data=True,
                         sims.log
                         (default: True)
     batch_runinfo (str): if str, add to log under
-                                 'Completed Run: <batch_runinfo>'
-                                 (default: None)
-    max_shells (int): if int, limits size of NPs studied in GA runs
-                              (default: None)
+                         'Completed Run: <batch_runinfo>'
+                         (default: None)
+    shells (int || list): if int, only that shell size is simulated
+                          elif list of ints, nshell_range = shells
+                          (default: None)
+    max_generations (int): if not None, use specified value as max generations
+                           for each GA sim
+                           (default: None)
 
     Returns: None
     """
@@ -860,8 +865,11 @@ def run_ga(metals, shape, save_data=True,
                    }
     nshell_range = shape2shell[shape]
 
-    if max_shells:
-        nshell_range[1] = max_shells
+    if shells:
+        if isinstance(shells, int):
+            nshell_range = [shells, shells + 1]
+        else:
+            nshell_range = shells
     nstructs = len(range(*nshell_range))
     if not nstructs:
         print(nshell_range)
@@ -875,12 +883,28 @@ def run_ga(metals, shape, save_data=True,
     print('        Shell Range: %s' % str(nshell_range))
     print('----------------------------------------')
 
-    # GA properties
-    max_runs = 5000
+    # GA PROPERTIES
+
+    # number of generations for each GA sim
+    if max_generations:
+        max_runs = max_generations
+    else:
+        max_runs = 5000
+
+    # population size
     popsize = 50
+
+    # % of pop to kill each generation
     kill_rate = 0.2
+
+    # % of remaining pop to mate (Chromo.cross)
     mate_rate = 0.8
+
+    # % of pop to mutate (Chromo.mutate)
     mute_rate = 0.2
+
+    # number of "atom switches" to make during mutation
+    # (see <nps> karg in Chromo.mutate)
     mute_num = 1
 
     # keep track of total new minimum CE structs (based on saved structs)
@@ -1005,9 +1029,9 @@ def run_ga(metals, shape, save_data=True,
 
         print(' ' * 100, end='\r')
         print('-' * CENTER)
-        outp = 'Completed Size %i of %i' % (struct_i + 1, nstructs)
-        if new_min_structs:
-            outp += ' (%i new mins)' % new_min_structs
+        outp = 'Completed Size %i of %i (%i new mins)' % (struct_i + 1,
+                                                          nstructs,
+                                                          new_min_structs)
         print(outp.center(CENTER))
         print('-' * CENTER)
 
@@ -1025,21 +1049,10 @@ def run_ga(metals, shape, save_data=True,
             batch_run_num=batch_runinfo)
 
 if __name__ == '__main__':
-    metals = ('Ag', 'Pt')
+    metals = ('Ag', 'Cu')
     shape = 'icosahedron'
 
-    run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
-           max_shells=3)
+    # run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
+    #       shells=6, max_generations=300)
 
-    """
-    nanop = structure_gen.build_structure_sql(shape, 6,
-                                              return_bonds_list=True)
-
-    p = Pop(nanop.get_atoms_obj_skel(), nanop.bonds_list,
-            metals, shape, x_dope=0.2, popsize=50)
-    p.run(5000)
-    # make_xyz(atom, p.pop[0], path='c:/users/yla/desktop/')
-    f, a = p.plot_results()
-    # f.savefig('c:/users/yla/desktop/ga_run_SAVINGCHROMOS.svg')
-    plt.show()
-    """
+    newp = build_pop_obj(metals, shape, 10, x_dope=0.5, popsize=55)
