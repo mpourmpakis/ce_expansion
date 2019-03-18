@@ -5,9 +5,11 @@ import os
 import ase.io
 
 """
+    NOTE: DEPRECATED SCRIPT
+    - GA interfaces with SQLite DB on its own
+
     Script to build/update SQLite DB from GA Sim data
     (excel files and structure xyzs)
-    - TODO: create interface b/n GA sim and DB
 """
 
 # linking shape and num_atoms to num_shell (lazy way)
@@ -42,8 +44,9 @@ np_ce_path = os.path.join(os.path.expanduser('~'), 'Box Sync',
 xyz_basepath = os.path.join(np_ce_path, 'structures')
 
 # path to bimetallic excel result files (based on old GA data saving method)
-path = str(os.sep.join(os.path.realpath(__file__)
-                       .split(os.sep)[:-3] + ["data", 'bimetallic_results']))
+path = os.path.join(np_ce_path, 'bimetallic_results')
+if 'test' not in path:
+    raise ValueError("build_db should only be used on test DBs")
 
 # walk through result excel files to add/update their data to DB
 for root, ds, fs in os.walk(path):
