@@ -58,6 +58,8 @@ class BimetallicResults(Base):
     EE = db.Column(db.Float)
     ordering = db.Column(db.String(50000), nullable=False)
     structure_id = db.Column(db.Integer, db.ForeignKey('nanoparticles.id'))
+    last_updated = db.Column(db.DateTime, default=datetime.now,
+                             onupdate=datetime.now)
 
     def __init__(self, metal1, metal2, shape, num_atoms, diameter,
                  n_metal1, n_metal2, CE, EE, ordering):
