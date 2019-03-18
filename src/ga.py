@@ -966,8 +966,10 @@ def run_ga(metals, shape, save_data=True,
                                                 num_atoms, shape)
         print(starting_outp.center(CENTER))
 
-        # sweep over different compositions
+        # track min structures for each size
         new_min_structs = 0
+
+        # sweep over different compositions
         for i, dope in enumerate(n):
             if i:
                 pop.n_dope = dope
@@ -978,6 +980,7 @@ def run_ga(metals, shape, save_data=True,
             # store result in DB
             if pop.is_new_min() and save_data:
                 new_min_structs += 1
+                tot_new_structs += 1
                 n_metal1 = int(num_atoms - dope)
                 ordering = ''.join([str(i) for i in pop.pop[0].arr])
                 ce = pop.get_min()
@@ -988,12 +991,17 @@ def run_ga(metals, shape, save_data=True,
                 if abs(ee) < 1E-10:
                     ee = 0
 
-                db_inter.update_bimet_result(metals=metals, shape=shape,
-                                             num_atoms=num_atoms,
-                                             diameter=diameter,
-                                             n_metal1=n_metal1,
-                                             CE=ce, ordering=ordering,
-                                             EE=ee, nanop=nanop)
+                # update DB
+                db_inter.update_bimet_result(
+                    metals=metals,
+                    shape=shape,
+                    num_atoms=num_atoms,
+                    diameter=diameter,
+                    n_metal1=n_metal1,
+                    CE=ce,
+                    ordering=ordering,
+                    EE=ee,
+                    nanop=nanop)
 
         print(' ' * 100, end='\r')
         print('-' * CENTER)
