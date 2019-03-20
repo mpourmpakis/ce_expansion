@@ -111,12 +111,14 @@ def build_new_structs_plot(metal_opts, shape_opts):
     Returns:
         (plt.Figure): 2D line plot object
     """
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+              '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
     fig, ax = plt.subplots()
     i = 0
     tot_lines = len(metal_opts) * len(shape_opts)
-    for m in metal_opts:
+    for j, m in enumerate(metal_opts):
         metal1, metal2 = db_utils.sort_metals(m)
-        for shape in shape_opts:
+        for point, shape in zip(['o', 'x', '^', 's'], shape_opts):
             # use abbreviated names for shapes
             lbl_shape = shape \
                 .replace('icosahedron', 'Ico') \
@@ -131,10 +133,11 @@ def build_new_structs_plot(metal_opts, shape_opts):
             df = pd.read_sql(qry, session.bind)
             x = df.date.values
             label = '%s%s: %s' % (metal1, metal2, lbl_shape)
-            color = plt.cm.tab20c((i / float(tot_lines)) * 0.62)
-            ax.plot(x, df.new_min_structs, '.-', label=label, color=color)
+            # color = plt.cm.tab20c((i / float(tot_lines)) * 0.62)
+            ax.plot(x, df.new_min_structs, '%s-' % point, label=label,
+                    color=colors[j])
             i += 1
-    ax.legend(ncol=3)
+    ax.legend(ncol=len(metal_opts))
     ax.set_title('New Minimum Structures Found')
     ax.set_ylabel('Total Count')
     ax.set_xlabel('Batch Run Date')
@@ -543,10 +546,16 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
 
 
 # ensure model coefficients are in DB
-insert_model_coefficients()
+# insert_model_coefficients()
 
 if __name__ == '__main__':
-    nps, bi = get_all_tables()
-    g = build_srf_plot('agcu', 'icosahedron', True, T=298)
+    # get all bimetallic NPs of given metals and shape
+    metals = 'aucu'
+    shape = 'icosahedron'
 
-    z = build_coefficient_dict('agcu')
+    # only bimetallic NPs
+    only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
+                         tbl.BimetallicResults.n_metal2 != 0)
+
+    nps = get_bimet_result(metals=metals, shape=shape, return_query=True) \
+        .filter(only_bimet).all()
