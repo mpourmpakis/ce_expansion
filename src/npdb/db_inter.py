@@ -217,6 +217,43 @@ def build_srf_plot(metals, shape, delg=False, T=298):
 # GET FUNCTIONS
 
 
+def get_entry(datatable, lim=None, return_query=False, **kwargs):
+    """
+    GENERIC FUNCTION
+    Returns entry/entries from table if criteria is matched
+    - if no criteria given, all data (up to <lim> amount)
+      returned
+
+    Args:
+    datatable (Datatable class): datatable to query
+
+    Kargs:
+    lim (int): max number of entries returned
+               (default: None = no limit)
+    return_query (bool): if True, return query and
+                         not results
+    **kwargs: arguments whose name(s) matches a column in the datatable
+
+    Returns:
+        (Datatable instance(s)) if match is found else (None)
+    """
+    match_ls = []
+    for attr in kwargs:
+        if kwargs[attr] is not None:
+            if attr == 'metals':
+                metal1, metal2 = db_utils.sort_metals(kwargs[attr])
+                match_ls.append(datatable.metal1 == metal1)
+                match_ls.append(datatable.metal2 == metal2)
+            else:
+                match_ls.append(getattr(datatable, attr) == kwargs[attr])
+    match = db.and_(*match_ls)
+    qry = session.query(datatable).filter(match)
+    if return_query:
+        return qry
+    res = qry.limit(lim).all()
+    return res if len(res) != 1 else res[0]
+
+
 def get_bimet_log(metals=None, shape=None, date=None, lim=None,
                   return_query=False):
     """
@@ -236,9 +273,7 @@ def get_bimet_log(metals=None, shape=None, date=None, lim=None,
     Returns:
         (BimetallicResults)(s) if match is found else (None)
     """
-    return db_utils.get_table(session, tbl.BimetallicLog,
-                              metals=metals, shape=shape, date=date,
-                              lim=lim, return_query=return_query)
+    return get_entry(tbl.BimetallicLog, **locals())
 
 
 def get_bimet_result(metals=None, shape=None, num_atoms=None,
@@ -261,10 +296,7 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None,
     Returns:
         (BimetallicResults)(s) if match is found else (None)
     """
-    return db_utils.get_table(session, tbl.BimetallicResults,
-                              metals=metals, shape=shape,
-                              num_atoms=num_atoms, n_metal1=n_metal1,
-                              lim=lim, return_query=return_query)
+    return get_entry(tbl.BimetallicResults, **locals())
 
 
 def get_model_coefficient(element1=None, element2=None, cn=None,
@@ -287,9 +319,7 @@ def get_model_coefficient(element1=None, element2=None, cn=None,
     Returns:
         (tbl.ModelCoefficients)(s) if match else (None)
     """
-    return db_utils.get_table(session, tbl.ModelCoefficients,
-                              element1=element1, element2=element2,
-                              cn=cn, lim=lim, return_query=return_query)
+    return get_entry(tbl.ModelCoefficients, **locals())
 
 
 def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
@@ -312,10 +342,7 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
     Returns:
         (tbl.Nanoparticles)(s) if match else (None)
     """
-    return db_utils.get_table(session, tbl.Nanoparticles,
-                              shape=shape, num_atoms=num_atoms,
-                              num_shells=num_shells, lim=lim,
-                              return_query=return_query)
+    return get_entry(tbl.Nanoparticles, **locals())
 
 # INSERT FUNCTIONS
 
@@ -388,17 +415,18 @@ def insert_bimetallic_log(start_time, metal1, metal2, shape,
 # UPDATE FUNCTIONS
 
 
-def update_datarow(datarow):
+def update_entry(entry_inst):
     """
-    Generic method to update datarow object
+    GENERIC METHOD
+    Updates datarow object
 
     Args:
-    datarow (DataTable): DataTable object where changes have been made
+    entry_inst (DataTable): DataTable object where changes have been made
 
     Returns:
         (bool): True if successful
     """
-    session.add(datarow)
+    session.add(entry_inst)
     return db_utils.commit_changes(session)
 
 
@@ -453,11 +481,11 @@ def update_bimet_result(metals, shape, num_atoms,
 # REMOVE FUNCTIONS
 def remove_entry(entry_inst):
     """
-    Deletes entry (and its children if applicable)
-    from DB (generic function)
+    GENERIC FUNCTION
+    Deletes entry (and its children if applicable) from DB
 
     Args:
-    entry_inst (DataTable instance): DB entry to be deleted
+    entry_inst (DataTable instance): datarow to be deleted
     """
     session.delete(entry_inst)
     return db_utils.commit_changes(session)
