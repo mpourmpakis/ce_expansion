@@ -217,25 +217,7 @@ def build_srf_plot(metals, shape, delg=False, T=298):
 # GET FUNCTIONS
 
 
-def get_all_tables(lim=10):
-    """
-    Returns tuple containing lists of entries from all
-    datatables (at the moment just tbl.Nanoparticles
-    and BimetallicResults)
-
-    Kargs:
-    lim (int): limit the number of entries returned from each
-               datatable
-
-    Returns:
-        (tuple): lists of datatable objects
-    """
-    nps = get_nanoparticle(lim=lim)
-    bi = get_bimet_result(lim=lim)
-    return nps, bi
-
-
-def get_bimet_log(metals, shape=None, date=None, lim=None,
+def get_bimet_log(metals=None, shape=None, date=None, lim=None,
                   return_query=False):
     """
     Returns BimetallicLog entry that matches criteria
@@ -254,22 +236,9 @@ def get_bimet_log(metals, shape=None, date=None, lim=None,
     Returns:
         (BimetallicResults)(s) if match is found else (None)
     """
-    match_ls = []
-    if metals:
-        metal1, metal2 = db_utils.sort_metals(metals)
-        match_ls.append(tbl.BimetallicLog.metal1 == metal1)
-        match_ls.append(tbl.BimetallicLog.metal2 == metal2)
-    for attr, crit in zip(['shape', 'date'],
-                          [shape, date]):
-        if crit is not None:
-            match_ls.append(getattr(tbl.BimetallicLog, attr) == crit)
-    match = db.and_(*match_ls)
-    qry = session.query(tbl.BimetallicLog).filter(match) \
-        .order_by(tbl.BimetallicLog.date)
-    if return_query:
-        return qry
-    res = qry.limit(lim).all()
-    return res if len(res) != 1 else res[0]
+    return db_utils.get_table(session, tbl.BimetallicLog,
+                              metals=metals, shape=shape, date=date,
+                              lim=lim, return_query=return_query)
 
 
 def get_bimet_result(metals=None, shape=None, num_atoms=None,
@@ -292,21 +261,10 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None,
     Returns:
         (BimetallicResults)(s) if match is found else (None)
     """
-    match_ls = []
-    if metals:
-        metal1, metal2 = db_utils.sort_metals(metals)
-        match_ls.append(tbl.BimetallicResults.metal1 == metal1)
-        match_ls.append(tbl.BimetallicResults.metal2 == metal2)
-    for attr, crit in zip(['shape', 'num_atoms', 'n_metal1'],
-                          [shape, num_atoms, n_metal1]):
-        if crit is not None:
-            match_ls.append(getattr(tbl.BimetallicResults, attr) == crit)
-    match = db.and_(*match_ls)
-    qry = session.query(tbl.BimetallicResults).filter(match)
-    if return_query:
-        return qry
-    res = qry.limit(lim).all()
-    return res if len(res) != 1 else res[0]
+    return db_utils.get_table(session, tbl.BimetallicResults,
+                              metals=metals, shape=shape,
+                              num_atoms=num_atoms, n_metal1=n_metal1,
+                              lim=lim, return_query=return_query)
 
 
 def get_model_coefficient(element1=None, element2=None, cn=None,
@@ -329,18 +287,9 @@ def get_model_coefficient(element1=None, element2=None, cn=None,
     Returns:
         (tbl.ModelCoefficients)(s) if match else (None)
     """
-    match_ls = []
-    for attr, crit in zip(['element1', 'element2', 'cn'],
-                          [element1, element2, cn]):
-        if crit is not None:
-            match_ls.append(getattr(tbl.ModelCoefficients, attr) == crit)
-    match = db.and_(*match_ls)
-    qry = session.query(tbl.ModelCoefficients).filter(match) \
-        .order_by(tbl.ModelCoefficients.cn)
-    if return_query:
-        return qry
-    res = qry.limit(lim).all()
-    return res if len(res) != 1 else res[0]
+    return db_utils.get_table(session, tbl.ModelCoefficients,
+                              element1=element1, element2=element2,
+                              cn=cn, lim=lim, return_query=return_query)
 
 
 def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
@@ -363,18 +312,10 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
     Returns:
         (tbl.Nanoparticles)(s) if match else (None)
     """
-    match_ls = []
-    for attr, crit in zip(['shape', 'num_atoms', 'num_shells'],
-                          [shape, num_atoms, num_shells]):
-        if crit is not None:
-            match_ls.append(getattr(tbl.Nanoparticles, attr) == crit)
-    match = db.and_(*match_ls)
-    qry = session.query(tbl.Nanoparticles).filter(match)
-    if return_query:
-        return qry
-    res = qry.limit(lim).all()
-    return res if len(res) != 1 else res[0]
-
+    return db_utils.get_table(session, tbl.Nanoparticles,
+                              shape=shape, num_atoms=num_atoms,
+                              num_shells=num_shells, lim=lim,
+                              return_query=return_query)
 
 # INSERT FUNCTIONS
 

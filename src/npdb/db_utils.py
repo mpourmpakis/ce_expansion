@@ -1,3 +1,4 @@
+import sqlalchemy as db
 import traceback
 
 """
@@ -35,6 +36,45 @@ def commit_changes(session, raise_exception=False):
         if raise_exception:
             raise e
         return False
+
+
+def get_table(session, datatable, lim=None, return_query=False, **kwargs):
+    """
+    Returns entry/entries from table if criteria is matched
+    - generic function that is called from specific functions
+      in db_inter
+    - if no criteria given, all data (up to <lim> amount)
+      returned
+
+    Args:
+    session (sqlalchemy.Session): session connected to DB
+    datatable (Datatable object): datatable to query
+
+    Kargs:
+    lim (int): max number of entries returned
+               (default: None = no limit)
+    return_query (bool): if True, return query and
+                         not results
+    **kwargs: arguments whose name(s) matches a column in the datatable
+
+    Returns:
+        (Datatable)(s) if match is found else (None)
+    """
+    match_ls = []
+    for attr in kwargs:
+        if kwargs[attr] is not None:
+            if attr == 'metals':
+                metal1, metal2 = sort_metals(kwargs[attr])
+                match_ls.append(datatable.metal1 == metal1)
+                match_ls.append(datatable.metal2 == metal2)
+            else:
+                match_ls.append(getattr(datatable, attr) == kwargs[attr])
+    match = db.and_(*match_ls)
+    qry = session.query(datatable).filter(match)
+    if return_query:
+        return qry
+    res = qry.limit(lim).all()
+    return res if len(res) != 1 else res[0]
 
 
 def sort_metals(metals):
