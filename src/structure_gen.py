@@ -238,4 +238,4 @@ def cuboctahedron(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
 
 
 if __name__ == '__main__':
-    nanop = build_structure_sql('icosahedron', 50, False)
+    nanop = build_structure_sql('icosahedron', 10, True)

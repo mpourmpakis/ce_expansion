@@ -4,6 +4,8 @@ except:
     from npdb.base import Base
 import sqlalchemy as db
 from datetime import datetime
+import os
+import numpy as np
 import ase
 
 
@@ -154,6 +156,7 @@ class Nanoparticles(Base):
     # used to attach bond_list to data entry
     # does not store bond_list in DB
     bonds_list = None
+    num_bonds = None
     atoms_obj = None
 
     def __init__(self, shape, num_atoms, num_shells=None):
@@ -181,6 +184,22 @@ class Nanoparticles(Base):
         self.get_atoms_obj_skel()
         return abs(self.atoms_obj.positions[:, 0].max() -
                    self.atoms_obj.positions[:, 0].min()) / 10
+
+    def load_bonds_list(self):
+        if self.bonds_list:
+            self.num_bonds = len(self.bonds_list)
+            return True
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            '..', '..', 'data', 'bond_lists',
+                            self.shape, '%i.npy' % self.num_shells)
+
+        if os.path.isfile(path):
+            self.bonds_list = np.load(path)
+            self.num_bonds = len(self.bonds_list)
+            return True
+        else:
+            return False
 
 
 class Atoms(Base):
