@@ -51,6 +51,32 @@ base.Base.metadata.create_all(base.engine)
 # BUILD FUNCTIONS
 
 
+def build_df(datatable, lim=None, **kwargs):
+    """
+    GENERIC FUNCTION
+    Returns pandas dataframe of entries in <datatable>
+    that match criteria in <**kwargs>
+    - NOTE: changes 'shape' column name to 'np_shape'!
+
+    Args:
+    datatable (Datatable class): datatable to query
+
+    KArgs:
+    lim (int): max number of entries returned
+               (default: None = no limit)
+    **kwargs: arguments whose name(s) matches a column in the datatable
+
+    Returns:
+        (pd.DataFrame): df of results
+    """
+
+    # convert sql query results into pd.DataFrame
+    qry = get_entry(datatable, lim=lim, **kwargs, return_query=True).statement
+    df = pd.read_sql(qry, session.bind)
+    df.columns = [col if col != 'shape' else 'np_shape' for col in df.columns]
+    return df
+
+
 def build_coefficient_dict(metals):
     """
     Creates a 3D surface plot from NP SQL database
@@ -126,11 +152,9 @@ def build_new_structs_plot(metal_opts, shape_opts):
                 .replace('fcc-cube', 'FCC-Cube') \
                 .replace('elongated-pentagonal-bipyramid', 'J16')
 
-            # query all logged runs that match metals and shape
-            qry = get_bimet_log(m, shape, return_query=True).statement
+            # pd.DataFrame of bimetallic log data
+            df = build_df(tbl.BimetallicLog, metals=m, shape=shape)
 
-            # convert sql query results into pd.DataFrame
-            df = pd.read_sql(qry, session.bind)
             x = df.date.values
             label = '%s%s: %s' % (metal1, metal2, lbl_shape)
             # color = plt.cm.tab20c((i / float(tot_lines)) * 0.62)
@@ -247,10 +271,10 @@ def get_entry(datatable, lim=None, return_query=False, **kwargs):
             else:
                 match_ls.append(getattr(datatable, attr) == kwargs[attr])
     match = db.and_(*match_ls)
-    qry = session.query(datatable).filter(match)
+    qry = session.query(datatable).filter(match).limit(lim)
     if return_query:
         return qry
-    res = qry.limit(lim).all()
+    res = qry.all()
     return res if len(res) != 1 else res[0]
 
 
