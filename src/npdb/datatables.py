@@ -208,7 +208,7 @@ class Atoms(Base):
     x = db.Column(db.Float, nullable=False)
     y = db.Column(db.Float, nullable=False)
     z = db.Column(db.Float, nullable=False)
-    structure_id = db.Column(db.String(36),
+    structure_id = db.Column(db.Integer,
                              db.ForeignKey('nanoparticles.id',
                                            ondelete='CASCADE'))
 
