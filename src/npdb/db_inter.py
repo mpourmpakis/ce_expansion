@@ -12,6 +12,7 @@ except:
     import npdb.datatables as tbl
 import pandas as pd
 import matplotlib
+import matplotlib.ticker
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -176,9 +177,9 @@ def build_new_structs_plot(metal_opts, shape_opts, pct=False):
             i += 1
 
     if pct:
+        ax.yaxis.set_major_formatter(
+            matplotlib.ticker.FuncFormatter('{0:.0%}'.format))
         ax.set_ylim(0, 1)
-        vals = ax.get_yticks()
-        ax.set_yticklabels(['{:,.2%}'.format(o) for o in vals])
         ax.set_ylabel('Percent Count')
     else:
         ax.set_ylabel('Total Count')
@@ -565,7 +566,7 @@ if __name__ == '__main__':
     # get all bimetallic NPs of given metals and shape
     metals = 'aucu'
     shape = 'icosahedron'
-
+    f = build_new_structs_plot(metals, shape, True)
     # only bimetallic NPs
     only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
                          tbl.BimetallicResults.n_metal2 != 0)
