@@ -50,5 +50,5 @@ for n in range(niterations):
             batch_i += 1
 
 # update new structures plot in <datapath>
-fig = db_inter.build_new_structs_plot(metal_opts, shape_opts)
+fig = db_inter.build_new_structs_plot(metal_opts, shape_opts, True)
 fig.savefig(os.path.join(datapath, '%02i_new_struct_log.png' % day))

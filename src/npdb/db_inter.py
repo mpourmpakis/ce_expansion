@@ -125,7 +125,7 @@ def build_metals_list():
             .distinct().order_by(tbl.ModelCoefficients.element1).all()]
 
 
-def build_new_structs_plot(metal_opts, shape_opts):
+def build_new_structs_plot(metal_opts, shape_opts, pct=False):
     """
     Uses BimetallicLog to create 2D line plot of
     new structures found vs. datetime
@@ -134,9 +134,18 @@ def build_new_structs_plot(metal_opts, shape_opts):
     metal_opts (list): list of metal options
     shape_opts (list): list of shape options
 
+    Kargs:
+    pct (bool): if True, y-axis = % new structures
+                else, y-axis = number of new structures
+
     Returns:
         (plt.Figure): 2D line plot object
     """
+    if isinstance(metal_opts, str):
+        metal_opts = [metal_opts]
+    if isinstance(shape_opts, str):
+        shape_opts = [shape_opts]
+
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
               '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
     fig, ax = plt.subplots()
@@ -154,16 +163,27 @@ def build_new_structs_plot(metal_opts, shape_opts):
 
             # pd.DataFrame of bimetallic log data
             df = build_df(tbl.BimetallicLog, metals=m, shape=shape)
-
             x = df.date.values
             label = '%s%s: %s' % (metal1, metal2, lbl_shape)
             # color = plt.cm.tab20c((i / float(tot_lines)) * 0.62)
-            ax.plot(x, df.new_min_structs, '%s-' % point, label=label,
+
+            y = df.new_min_structs.values
+            if pct:
+                y = y / df.tot_structs.values[0]
+
+            ax.plot(x, y, '%s-' % point, label=label,
                     color=colors[j])
             i += 1
+
+    if pct:
+        ax.set_ylim(0, 1)
+        vals = ax.get_yticks()
+        ax.set_yticklabels(['{:,.2%}'.format(o) for o in vals])
+        ax.set_ylabel('Percent Count')
+    else:
+        ax.set_ylabel('Total Count')
     ax.legend(ncol=len(metal_opts))
     ax.set_title('New Minimum Structures Found')
-    ax.set_ylabel('Total Count')
     ax.set_xlabel('Batch Run Date')
 
     # (month/day) x axis tick labels
