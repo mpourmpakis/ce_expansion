@@ -100,6 +100,18 @@ class AtomGraph(object):
                                                   self._p_bond_list,
                                                   p_ordering)
 
+    def get_adjacency_list(self):
+        '''
+        Calculates an adjacency list given the bonds list.
+
+        Returns:
+        The NxM adjacency list represented by the bonds list
+        '''
+        adjacency_list = [[]] * self.num_atoms
+        for bond in self._bond_list:
+            adjacency_list[bond[0]] =  adjacency_list[bond[0]] + bond[1]
+        return adjacency_list
+
     def monte_carlo_movement(self, initial_ordering,
                              num_steps=1000, accept_good_rate=0.8,
                              decline_bad_rate=0.8):
