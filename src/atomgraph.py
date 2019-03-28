@@ -112,23 +112,17 @@ class AtomGraph(object):
             adjacency_list[bond[0]] =  adjacency_list[bond[0]] + [bond[1]]
         return adjacency_list
 
-    def monte_carlo_movement(self, initial_ordering,
-                             num_steps=1000, accept_good_rate=0.8,
-                             decline_bad_rate=0.8):
+    def metropolis_movement(self, initial_ordering,
+                             num_steps=1000, accept_move_rate=0.8):
         '''
-        Monte-carlo simulation of atomic diffusion in the NP
+        Metropolis-Hastings-based simulation of atomic diffusion in the NP
 
         Args:
         atomgraph (atomgraph.AtomGraph) : An atomgraph representing the NP
         initial_ordering (np.array) : 1D chemical ordering array
         kinds (tuple) : Tuple. Index0 is the element a 0 represents. Same for 1 and Index1.
         num_steps (int) : How many steps to simulate for
-        accept_good_rate (float) : How often a step lowering the energy is accepted. 0=0%, 1=100%.
-            A 1 accepts all "good" steps, and leads towards the local minimum.
-            A 0 accepts no "good" steps, and leads to the system only increasing its energy.
-        decline_good_rate (float) : How often a step increasing the energy is declined.
-            A 1 decline all "bad" steps, and only allows movement to the local minimum.
-            A 0 accepts all "bad" steps, and leads to the system only increasing its energy.
+        accept_good_rate (float) : How often a step is accepted. 0=0%, 1=100%.
 
         '''
 
@@ -136,22 +130,24 @@ class AtomGraph(object):
         num_rerolls = 0
         adj_list = self.get_adjacency_list()
         ordering = initial_ordering
+        best_ordering = ordering
         energy = self.getTotalCE(ordering)
-        energy_history = np.zeros[num_steps]
+        best_energy = energy
+        energy_history = np.zeros(num_steps)
         while step < num_steps:
             prev_ordering = ordering
             prev_energy = energy
             # Choose random atom in the NP
-            moved_atom = np.random.choice([0, len(initial_ordering)])
+            moved_atom = np.random.choice(range(0, len(initial_ordering)))
 
             # Choose the atom to swap with
-            destination = np.random.choice([0, len(adj_list[moved_atom])])
+            destination = np.random.choice(adj_list[moved_atom])
 
             # Swap them
             if ordering[destination] == ordering[moved_atom]:
                 # They are the same
                 num_rerolls += 1
-                if num_rerolls < 1000:
+                if num_rerolls < 100:
                     # To make the simulation go faster, try to force it to swap
                     # If no swaps happen after a while, let it be
                     continue
@@ -169,28 +165,19 @@ class AtomGraph(object):
                 # Check the energy
                 energy = self.getTotalCE(ordering)
                 dice_roll = np.random.uniform()
-                if energy < prev_energy:
-                    # Step reduces the energy
-                    if dice_roll < accept_good_rate:
-                        # Step is accepted
-                        energy_history[step] = energy
-                    else:
-                        # Step is declined
-                        energy_history[step] = prev_energy
-                        energy = prev_energy
-                        ordering = prev_ordering
+                if dice_roll < accept_move_rate:
+                    # Step is accepted
+                    energy_history[step] = energy
+                    if energy < best_energy:
+                      best_energy = energy
+                      best_ordering = ordering
                 else:
-                    # Step increases the energy
-                    if dice_roll < decline_bad_rate:
-                        # Step is declined
-                        energy_history[step] = prev_energy
-                        energy = prev_energy
-                        ordering = prev_ordering
-                    else:
-                        # Step is accepted
-                        energy_history[step] = energy
+                    # Step is declined
+                    energy_history[step] = prev_energy
+                    energy = prev_energy
+                    ordering = prev_ordering
                 step += 1
-        return ordering, energy_history
+        return best_ordering, best_energy, energy_history
 
 
 if __name__ == '__main__':
