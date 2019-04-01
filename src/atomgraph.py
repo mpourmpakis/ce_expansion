@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import ctypes
-import pickle
-import os
+
+import numpy as np
 
 import interface
-import numpy as np
 from npdb import db_inter
 
 
@@ -36,6 +35,7 @@ class AtomGraph(object):
     num_atoms (int): The number of atoms in the NP.
     cns (np.array): An array containing the coordination number of each atom.
     """
+
     def __init__(self, bond_list: "np.array", kind0: "str", kind1: "str"):
 
         self._bond_list = bond_list.astype(ctypes.c_long)
@@ -56,7 +56,7 @@ class AtomGraph(object):
 
         # Create pointers
         self._long_num_atoms = ctypes.c_long(self.num_atoms)
-        self._p_cns = self.cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long)) # Windows compatibility?
+        self._p_cns = self.cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))  # Windows compatibility?
         self._long_num_bonds = ctypes.c_long(self._num_bonds)
         self._p_bond_list = self._bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
@@ -100,13 +100,92 @@ class AtomGraph(object):
                                                   self._p_bond_list,
                                                   p_ordering)
 
+    def get_adjacency_list(self):
+        '''
+        Calculates an adjacency list given the bonds list.
+
+        Returns:
+        The NxM adjacency list represented by the bonds list
+        '''
+        adjacency_list = [[]] * self.num_atoms
+        for bond in self._bond_list:
+            adjacency_list[bond[0]] = adjacency_list[bond[0]] + [bond[1]]
+        return adjacency_list
+
+    def metropolis(self, ordering,
+                   num_steps=1000,
+                   swap_any=False):
+        '''
+        Metropolis-Hastings-based exploration of similar NPs
+
+        Args:
+        atomgraph (atomgraph.AtomGraph) : An atomgraph representing the NP
+        ordering (np.array) : 1D chemical ordering array
+        num_steps (int) : How many steps to simulate for
+        swap_any (bool) : Determines whether to restrict the algorithm's swaps
+                          to only atoms directly bound to  the atom of interest.
+                          If set to 'True', the algorithm chooses any two atoms
+                          in the NP regardless of where they are. Selecting
+                          'False' yields a slightly-more-physical case of
+                          atomic diffusion.
+
+        '''
+        # Initialization
+        best_ordering = ordering
+        best_energy = self.getTotalCE(ordering)
+        prev_energy = best_energy
+        energy_history = np.zeros(num_steps)
+        energy_history[0] = best_energy
+        if not swap_any:
+            adj_list = self.get_adjacency_list()
+        for step in range(1, num_steps):
+            # Determine where the ones and zeroes are currently
+            ones = np.where(ordering == 1)[0]
+            zeros = np.where(ordering == 0)[0]
+
+            # Choose a random step
+            if swap_any:
+                chosen_one = np.random.choice(ones)
+                chosen_zero = np.random.choice(zeros)
+            else:
+                # Search the NP for a 1 with heteroatomic bonds
+                for chosen_one in np.random.permutation(ones):
+                    connected_atoms = adj_list[chosen_one]
+                    connected_zeros = np.intersect1d(connected_atoms, zeros, assume_unique=True)
+                    if connected_zeros.size != 0:
+                        # The atom has zeros connected to it
+                        chosen_zero = np.random.choice(connected_zeros)
+                        break
+
+            # Evaluate the energy change
+            prev_ordering = ordering
+            ordering[chosen_one] = 0
+            ordering[chosen_zero] = 1
+            energy = self.getTotalCE(ordering)
+
+            # Metropolis-related stuff
+            ratio = energy / prev_energy
+            if ratio > np.random.uniform():
+                # Commit to the step
+                energy_history[step] = energy
+                if energy < best_energy:
+                    best_energy = energy
+                    best_ordering = ordering
+            else:
+                # Reject the step
+                ordering = prev_ordering
+                energy_history[step] = prev_energy
+
+        return best_ordering, best_energy, energy_history
+
 
 if __name__ == '__main__':
     import ase.cluster
     import adjacency
+    import matplotlib.pyplot as plt
 
     # Create a nanoparticle and its graph object
-    nanoparticle = ase.cluster.Icosahedron('Cu', 2)
+    nanoparticle = ase.cluster.Icosahedron('Cu', 3)
     bond_list = adjacency.buildBondsList(nanoparticle)
     graph = AtomGraph(bond_list, 'Cu', 'Au')
 
@@ -117,3 +196,17 @@ if __name__ == '__main__':
     # Calculate cohesive energy
     cohesive_energy = graph.getTotalCE(chemical_ordering)
     print('Cohesive energy = %.2e' % cohesive_energy)
+
+    # Enter global metropolis
+    opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=True)
+    print("Performed 1000 metropolis steps swapping anywhere, yielding CE = %.2e" % opt_energy)
+    plt.plot(energy_history)
+    plt.show()
+
+    # Enter locally-swapped metropolis
+    opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=False)
+    print("Performed 1000 metropolis steps swapping across bonds, yielding CE = %.2e" % opt_energy)
+    plt.plot(energy_history)
+    plt.show()
+
+    # Exeunt metropolis
