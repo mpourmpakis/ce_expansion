@@ -200,13 +200,15 @@ if __name__ == '__main__':
     # Enter global metropolis
     opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=True)
     print("Performed 1000 metropolis steps swapping anywhere, yielding CE = %.2e" % opt_energy)
-    plt.plot(energy_history)
-    plt.show()
+    plt.plot(energy_history, label="Swap_Global")
 
     # Enter locally-swapped metropolis
     opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=False)
     print("Performed 1000 metropolis steps swapping across bonds, yielding CE = %.2e" % opt_energy)
-    plt.plot(energy_history)
+    plt.plot(energy_history, label="Swap_Local")
+    plt.legend()
+    plt.xlabel("Step")
+    plt.ylabel("Energy (eV)")
     plt.show()
 
     # Exeunt metropolis
