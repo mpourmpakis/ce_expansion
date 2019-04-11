@@ -85,10 +85,37 @@ class AtomGraph(object):
         # Create pointer
         self._p_bond_energies = self._bond_energies.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
 
+    def getMixing(self, ordering: "np.array", holder_array : "np.array" = None) -> "np.array":
+        """
+        Determines the number of homo/hetero-atomic bonds in the system.
+
+        Args:
+            ordering(np.array): Chemcial ordering of the NP
+            holder_array(np.array): A length-2 array to hold the result. Optional. If not supplied,
+                                    will create the array on the spot. May be slower to do this.
+        """
+        ordering = ordering.astype(ctypes.c_long)
+        p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+
+        if holder_array is None:
+            holder_array = np.zeros(2, dtype = ctypes.c_long)
+        p_holder_array = holder_array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+
+        interface.pointerized_calculate_mixing(self._long_num_atoms,
+                                               self._long_num_bonds,
+                                               self._p_bond_list,
+                                               p_ordering,
+                                               p_holder_array)
+
+        return holder_array
+
     def getTotalCE(self, ordering: "np.array") -> "float":
         """
         Calculates the cohesive energy of the NP using the BC model,
         as implemented in interface.py and lib.c
+
+        Args:
+            ordering (np.array): Chemical ordering of the NP.
         """
         ordering = ordering.astype(ctypes.c_long)
         # Pointerize ordering
