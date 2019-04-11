@@ -2,6 +2,7 @@ import sqlalchemy as db
 import numpy as np
 import pickle
 import os
+
 try:
     import db_utils
     import base
@@ -48,6 +49,7 @@ session = base.Session(autoflush=True)
 
 # create all datatables if not present in DB
 base.Base.metadata.create_all(base.engine)
+
 
 # BUILD FUNCTIONS
 
@@ -123,7 +125,7 @@ def build_metals_list():
     Returns list of possible metal combinations for GA sims
     """
     return [r[0] for r in session.query(tbl.ModelCoefficients.element1)
-            .distinct().order_by(tbl.ModelCoefficients.element1).all()]
+        .distinct().order_by(tbl.ModelCoefficients.element1).all()]
 
 
 def build_new_structs_plot(metal_opts, shape_opts, pct=False):
@@ -230,7 +232,7 @@ def build_srf_plot(metals, shape, delg=False, T=298):
         # k_b T [eV] = (25.7 mEV at 298 K)
         kt = 25.7E-3 * (T / 298.)
         del_s = comps * np.ma.log(comps).filled(0) + \
-            (1 - comps) * np.ma.log(1 - comps).filled(0)
+                (1 - comps) * np.ma.log(1 - comps).filled(0)
         del_s *= -kt
 
         ees -= del_s
@@ -257,6 +259,68 @@ def build_srf_plot(metals, shape, delg=False, T=298):
         ax.set_zlabel('EE (eV)')
         ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
     return fig
+
+
+def build_radial_distributions(metals=None, shape=None, num_atoms=None,
+                            n_metal1=None, lim=None, nbins = "Auto"):
+    """
+    Sends a query to get_bimetallic_results to construct a list of NPs,
+    then for each NP found, returns radial distribution functions for the
+    two elements.
+
+    Args:
+    metals (str || iterable): two metal elements
+    shape (str): shape of NP
+    num_atoms (int): number of atoms in NP
+    n_metal1 (int): number of metal1 atoms in NP
+    lim (int): max number of entries returned
+               (default: None = no limit)
+    bins (int || str) : Number of bins to use for the radial distribution.
+                If set to "Auto", uses num_atoms / 10, rounded up
+
+    Returns:
+        A list of N radial distribution functions as dicts. First element gives the
+        atom type. Second element gives the dimension. Third element is the value at
+        that dimension. For example, returned_value["Cu"]["distance"][3] equaling 3.4
+        indicates that whatever returned_value["Cu"]["density"][3] equals is at distance 3.4
+    """
+    # Do the query
+    query = get_bimet_result(metals, shape, num_atoms, n_metal1, lim, return_query=False)
+    if type(query) is not list:
+        query = [query]
+    for system in query:
+        element1 = system.metal1
+        element2 = system.metal2
+        radius = system.diameter / 2
+        np = system.nanoparticle
+        atoms = np.atoms_obj
+
+        # Todo: Figure out why atoms is an ase.Atoms object in console, but is NoneType when running the script
+        import ase
+        assert type(atoms) == ase.Atoms
+        center = np.mean(atoms.positions, axis=0)
+
+        element_1_distances = []
+        element_2_distances = []
+
+        for atom in atoms:
+            if atom.symbol == element1:
+                element_1_distances.append(np.linalg.norm(atom.position - center))
+            elif atom.symbol == element2:
+                element_2_distances.append(np.linalg.normm(atom.position - center))
+
+        if nbins == "Auto":
+            nbins = int(np.ceil(len(atoms) / 10))
+
+        bins = np.linspace(0, radius, nbins)
+
+        element_1_histogram = np.histogram(element_1_distances, bins)
+        element_2_histogram = np.histogram(element_2_distances, bins)
+
+        return zip(bins, element_1_histogram, element_2_histogram)
+
+
+
 
 
 # GET FUNCTIONS
@@ -388,6 +452,7 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
         (tbl.Nanoparticles)(s) if match else (None)
     """
     return get_entry(tbl.Nanoparticles, **locals())
+
 
 # INSERT FUNCTIONS
 
@@ -573,3 +638,6 @@ if __name__ == '__main__':
 
     nps = get_bimet_result(metals=metals, shape=shape, return_query=True) \
         .filter(only_bimet).all()
+
+    # Test histogram
+    print(build_radial_distributions(metals="CuAg", shape="icosahedron", num_atoms=55, lim=12))
