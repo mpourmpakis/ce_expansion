@@ -1,9 +1,12 @@
 ![CE Expansion Logo](/images/logo.png)
 
 
-## James Dean, Michael Cowan, Jonathan Estes, Mahmoud Ramadan
+## James Dean, Michael Cowan, Jonathan Estes, Mahmoud Ramadan, Giannis Mpourmpakis
 
 Explore bimetallic nanoparticles with our program, which implements the bond-centric model of Yan<sup>1</sup> in conjunction with a genetic algorithm.
+
+© 2019 [CANELa Lab](https://mpourmpakis.com/), University of Pittsburgh
+
 
 ### Installation
 
