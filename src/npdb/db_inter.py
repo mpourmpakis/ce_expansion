@@ -195,6 +195,27 @@ def build_new_structs_plot(metal_opts, shape_opts, pct=False):
     return fig
 
 
+def build_shell2num_dict(shape=None):
+    """
+    Builds a number of shells --> number of atoms dict
+
+    Kargs:
+        shape (str): shape of NP
+
+    Returns:
+        dict: shell2num_dict[shape][num_shell] = num_atoms
+    """
+
+    nanops = get_nanoparticle(shape=shape)
+    result = {}
+    for nanop in nanops:
+        if nanop.shape not in result:
+            result[nanop.shape] = {nanop.num_shells: nanop.num_atoms}
+        else:
+            result[nanop.shape][nanop.num_shells] = nanop.num_atoms
+    return result
+
+
 def build_srf_plot(metals, shape, delg=False, T=298):
     """
     Creates a 3D surface plot from NP SQL database
@@ -320,13 +341,11 @@ def build_radial_distributions(metals=None, shape=None, num_atoms=None,
         return zip(bins, element_1_histogram, element_2_histogram)
 
 
-
-
-
 # GET FUNCTIONS
 
 
-def get_entry(datatable, lim=None, return_query=False, **kwargs):
+def get_entry(datatable, lim=None, custom_filter=None,
+              return_query=False, **kwargs):
     """
     GENERIC FUNCTION
     Returns entry/entries from table if criteria is matched
@@ -339,6 +358,7 @@ def get_entry(datatable, lim=None, return_query=False, **kwargs):
     Kargs:
     lim (int): max number of entries returned
                (default: None = no limit)
+    custom_filter:
     return_query (bool): if True, return query and
                          not results
     **kwargs: arguments whose name(s) matches a column in the datatable
@@ -355,6 +375,9 @@ def get_entry(datatable, lim=None, return_query=False, **kwargs):
                 match_ls.append(datatable.metal2 == metal2)
             else:
                 match_ls.append(getattr(datatable, attr) == kwargs[attr])
+
+    if type(custom_filter) != type(None):
+        match_ls.append(custom_filter)
     match = db.and_(*match_ls)
     qry = session.query(datatable).filter(match).limit(lim)
     if return_query:
@@ -385,8 +408,9 @@ def get_bimet_log(metals=None, shape=None, date=None, lim=None,
     return get_entry(tbl.BimetallicLog, **locals())
 
 
-def get_bimet_result(metals=None, shape=None, num_atoms=None,
-                     n_metal1=None, lim=None, return_query=False):
+def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
+                     n_metal1=None, only_bimet=False,
+                     lim=None, return_query=False):
     """
     Returns BimetallicResults entry that matches criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -405,7 +429,20 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None,
     Returns:
         (BimetallicResults)(s) if match is found else (None)
     """
-    return get_entry(tbl.BimetallicResults, **locals())
+    if num_shells and shape:
+        num_atoms = get_shell2num(shape, num_shells)
+    else:
+        num_atoms = None
+
+    if only_bimet:
+        only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
+                             tbl.BimetallicResults.n_metal2 != 0)
+        custom_filter = only_bimet
+    else:
+        custom_filter = None
+    return get_entry(tbl.BimetallicResults, metals=metals, shape=shape,
+                     num_atoms=num_atoms, n_metal1=n_metal1, lim=lim,
+                     return_query=return_query, custom_filter=custom_filter)
 
 
 def get_model_coefficient(element1=None, element2=None, cn=None,
@@ -452,6 +489,18 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
         (tbl.Nanoparticles)(s) if match else (None)
     """
     return get_entry(tbl.Nanoparticles, **locals())
+
+
+def get_shell2num(shape, num_shells):
+    """
+        Returns the number of atoms of an NP
+        given shape and number of shells
+    """
+    nanop = get_nanoparticle(shape=shape, num_shells=num_shells)
+    if nanop:
+        return nanop.num_atoms
+    else:
+        return False
 
 
 # INSERT FUNCTIONS
@@ -629,15 +678,24 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
 
 if __name__ == '__main__':
     # get all bimetallic NPs of given metals and shape
-    metals = 'aucu'
+    metals = 'auag'
     shape = 'icosahedron'
-    f = build_new_structs_plot(metals, shape, True)
+    num_shells = 8
+    # f = build_new_structs_plot(metals, shape, True)
     # only bimetallic NPs
     only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
                          tbl.BimetallicResults.n_metal2 != 0)
 
-    nps = get_bimet_result(metals=metals, shape=shape, return_query=True) \
+    nanops = get_bimet_result(metals=metals, shape=shape, return_query=True) \
         .filter(only_bimet).all()
 
+    bimets = get_bimet_result(metals, shape=shape, num_shells=num_shells,
+                              lim=3, only_bimet=True)
+    res = []
+    for bi in bimets:
+        res.append(bi.build_prdf_plot())
+    plt.show()
+
     # Test histogram
-    print(build_radial_distributions(metals="CuAg", shape="icosahedron", num_atoms=55, lim=12))
+    # print(build_radial_distributions(metals="CuAg", shape="icosahedron",
+    #                                  num_atoms=55, lim=12))
