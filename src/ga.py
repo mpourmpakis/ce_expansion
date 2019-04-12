@@ -352,7 +352,7 @@ class Pop(object):
                 ValueError: can only call run for first GA sim
         """
         if self.has_run:
-            raise ValueError("Simulation has already run."
+            raise ValueError("Simulation has already run. "
                              "Please use continue method.")
 
         # format of string to be written to console during sim
@@ -372,6 +372,21 @@ class Pop(object):
             print(val.center(CENTER), end='\r')
             self.runtime += time.time() - start
         self.stats = np.array(self.stats)
+
+        # run James' metropolis algorithm to search for
+        # minimum struct near current min
+        low_struct = self.pop[0]
+        opt_order, opt_ce, en_hist = self.atomg.metropolis(low_struct.arr,
+                                                           num_steps=500,
+                                                           swap_any=False)
+
+        # if metropolis alg finds a new minimum, drop bottom one from pop
+        if opt_ce < low_struct.ce:
+            print('Found new min with Metropolis!')
+            self.pop = [Chromo(self.atomg,
+                               n_dope=self.n_dope,
+                               arr=opt_order)] + self.pop[:-1]
+
         self.has_run = True
 
     def continue_run(self, nsteps=100, std_cut=0.0, rand=False):
@@ -483,12 +498,14 @@ class Pop(object):
         if not self.has_run:
             raise Exception('No simulation has been run')
 
+        m1, m2 = self.metals
+
         res = ' Min: %.5f\nMean: %.3f\n STD: %.3f\n' % tuple(self.stats[-1, :])
         res += 'Mute: %.2f\nKill: %.2f\n' % (self.mute_rate, self.kill_rate)
         res += ' Pop: %i\n' % self.popsize
         res += 'nRun: %i\n' % (len(self.stats) - 1)
-        res += 'Form: %s%i_%s%i\n' % (metal1, len(atom) - p.n_dope,
-                                      metal2, p.n_dope)
+        res += 'Form: %s%i_%s%i\n' % (m1, self.num_atoms - self.n_dope,
+                                      m2, self.n_dope)
         if self.has_run:
             res += 'Time: %.3e\n' % (self.runtime) + '\n\n\n'
         if disp:
@@ -1055,4 +1072,4 @@ if __name__ == '__main__':
     # run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
     #       shells=6, max_generations=300)
 
-    newp = build_pop_obj(metals, shape, 10, x_dope=0.5, popsize=55)
+    newp = build_pop_obj(metals, shape, 3, x_dope=0.3, popsize=55)
