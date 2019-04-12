@@ -678,7 +678,7 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
 
 if __name__ == '__main__':
     # get all bimetallic NPs of given metals and shape
-    metals = 'auag'
+    metals = 'agcu'
     shape = 'icosahedron'
     num_shells = 8
     # f = build_new_structs_plot(metals, shape, True)
@@ -690,7 +690,7 @@ if __name__ == '__main__':
         .filter(only_bimet).all()
 
     bimets = get_bimet_result(metals, shape=shape, num_shells=num_shells,
-                              lim=3, only_bimet=True)
+                              only_bimet=True)[-3:]
     res = []
     for bi in bimets:
         res.append(bi.build_prdf_plot())
