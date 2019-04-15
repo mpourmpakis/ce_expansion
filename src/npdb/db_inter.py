@@ -341,6 +341,11 @@ def build_radial_distributions(metals=None, shape=None, num_atoms=None,
         return zip(bins, element_1_histogram, element_2_histogram)
 
 
+def build_shapes_list():
+    return sorted([i[0] for i in session.query(tbl.Nanoparticles.shape)
+                   .distinct().all()])
+
+
 # GET FUNCTIONS
 
 
@@ -410,7 +415,7 @@ def get_bimet_log(metals=None, shape=None, date=None, lim=None,
 
 def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
                      n_metal1=None, only_bimet=False,
-                     lim=None, return_query=False):
+                     lim=None, return_query=False, custom_filter=None):
     """
     Returns BimetallicResults entry that matches criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -438,8 +443,7 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
         only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
                              tbl.BimetallicResults.n_metal2 != 0)
         custom_filter = only_bimet
-    else:
-        custom_filter = None
+
     return get_entry(tbl.BimetallicResults, metals=metals, shape=shape,
                      num_atoms=num_atoms, n_metal1=n_metal1, lim=lim,
                      return_query=return_query, custom_filter=custom_filter)
@@ -676,11 +680,31 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
 # ensure model coefficients are in DB
 # insert_model_coefficients()
 
+
+def compare_shapes_prdf(metals, num_shells, x_metal1):
+    figs = []
+    for shape in build_shapes_list():
+        num_atoms = get_shell2num(shape, num_shells)
+        n_metal1 = num_atoms - int(x_metal1 * num_atoms)
+        # custom_filter = (-5 < db.func(tbl.BimetallicResults.n_metal1 - n_metal1) < 5)
+        bi = get_bimet_result(metals=metals,
+                              shape=shape,
+                              num_atoms=num_atoms,
+                              n_metal1=n_metal1)
+                              # custom_filter=custom_filter)
+
+        figs.append(bi.build_prdf_plot())
+    return figs
+
 if __name__ == '__main__':
     # get all bimetallic NPs of given metals and shape
-    metals = 'agcu'
-    shape = 'icosahedron'
+    metals = 'agau'
+    shape = 'fcc-cube'
     num_shells = 8
+
+    figs = compare_shapes_prdf(metals, num_shells, 0.4)
+    plt.show()
+    """
     # f = build_new_structs_plot(metals, shape, True)
     # only bimetallic NPs
     only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
@@ -699,3 +723,4 @@ if __name__ == '__main__':
     # Test histogram
     # print(build_radial_distributions(metals="CuAg", shape="icosahedron",
     #                                  num_atoms=55, lim=12))
+    """

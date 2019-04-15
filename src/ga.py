@@ -371,21 +371,23 @@ class Pop(object):
             val = update_str % (self.x_dope, self.stats[-1][0], i + 1)
             print(val.center(CENTER), end='\r')
             self.runtime += time.time() - start
+
+            # run James' metropolis algorithm to search for
+            # minimum struct near current min
+            low_struct = self.pop[0]
+            opt_order, opt_ce, en_hist = self.atomg.metropolis(low_struct.arr,
+                                                               num_steps=500,
+                                                               swap_any=False)
+
+            # if metropolis alg finds a new minimum, drop bottom one from pop
+            if opt_ce < low_struct.ce:
+                print('Found new min with Metropolis!')
+                self.pop = [Chromo(self.atomg,
+                                   n_dope=self.n_dope,
+                                   arr=opt_order)] + self.pop[:-1]
+                self.update_stats()
+
         self.stats = np.array(self.stats)
-
-        # run James' metropolis algorithm to search for
-        # minimum struct near current min
-        low_struct = self.pop[0]
-        opt_order, opt_ce, en_hist = self.atomg.metropolis(low_struct.arr,
-                                                           num_steps=500,
-                                                           swap_any=False)
-
-        # if metropolis alg finds a new minimum, drop bottom one from pop
-        if opt_ce < low_struct.ce:
-            print('Found new min with Metropolis!')
-            self.pop = [Chromo(self.atomg,
-                               n_dope=self.n_dope,
-                               arr=opt_order)] + self.pop[:-1]
 
         self.has_run = True
 
@@ -875,10 +877,10 @@ def run_ga(metals, shape, save_data=True,
     metals = (metal1, metal2)
 
     # number of shells range to sim ga for each shape
-    shape2shell = {'icosahedron': [2, 14],
-                   'fcc-cube': [1, 15],
-                   'cuboctahedron': [1, 15],
-                   'elongated-pentagonal-bipyramid': [2, 12]
+    shape2shell = {'icosahedron': [3, 14],
+                   'fcc-cube': [2, 15],
+                   'cuboctahedron': [2, 15],
+                   'elongated-pentagonal-bipyramid': [3, 12]
                    }
     nshell_range = shape2shell[shape]
 

@@ -252,9 +252,9 @@ class BimetallicResults(Base):
                                  % (metals[i], metals[j]))
 
         max_y += 0.2 * max_y
-        axes[0, 0].set_ylim(0, max_y)
-        axes[0, 1].set_ylim(0, max_y)
-        axes[1, 1].set_ylim(0, max_y)
+        # axes[0, 0].set_ylim(0, max_y)
+        # axes[0, 1].set_ylim(0, max_y)
+        # axes[1, 1].set_ylim(0, max_y)
         fig.suptitle('Partial Radial Distribution Functions for\n' +
                      self.build_chem_formula() + ' ' + self.shape)
         fig.tight_layout(rect=(0, 0, 1, 0.9))
