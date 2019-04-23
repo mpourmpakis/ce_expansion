@@ -1016,7 +1016,7 @@ def run_ga(metals, shape, save_data=True,
         for i, dope in enumerate(n):
             # INITIALIZE POP object
             pop = Pop(nanop.get_atoms_obj_skel().copy(), nanop.bonds_list,
-                      metals, shape=shape, n_dope=n[0], popsize=popsize,
+                      metals, shape=shape, n_dope=dope, popsize=popsize,
                       kill_rate=kill_rate, mate_rate=mate_rate,
                       mute_rate=mute_rate, mute_num=mute_num)
             # if i:
