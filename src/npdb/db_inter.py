@@ -434,10 +434,8 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
     Returns:
         (BimetallicResults)(s) if match is found else (None)
     """
-    if num_shells and shape:
+    if not num_atoms and (num_shells and shape):
         num_atoms = get_shell2num(shape, num_shells)
-    else:
-        num_atoms = None
 
     if only_bimet:
         only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
