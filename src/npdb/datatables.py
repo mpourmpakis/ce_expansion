@@ -4,6 +4,7 @@ except:
     from npdb.base import Base
 import sqlalchemy as db
 from datetime import datetime
+import tempfile
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -234,7 +235,7 @@ class BimetallicResults(Base):
                 ax = axes[i, j]
 
                 if (i, j) == (1, 0):
-                    path = 'temp.png'
+                    path = os.path.join(tempfile.gettempdir(), 'temp.png')
                     self.save_np(path)
                     im = plt.imread(path)
                     ax.imshow(im)
@@ -248,6 +249,7 @@ class BimetallicResults(Base):
 
                     # plot PRDF
                     ax.plot(x, prdf, color=cols[2 * i + j])
+                    ax.set_xlabel('r ($\\rm \\AA$)')
                     ax.set_title('$\\rm g_{%s, %s}(r)$'
                                  % (metals[i], metals[j]))
 
