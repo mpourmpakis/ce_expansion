@@ -195,6 +195,33 @@ def build_new_structs_plot(metal_opts, shape_opts, pct=False):
     return fig
 
 
+def build_prdf_shapes_comparison(metals, num_shells, x_dope):
+    """
+    Creates list of figures, each containing partial radial distribution
+        functions (PRDFs) of a given shape
+
+    Args:
+    metals (str || iterable): two metal elements
+    num_shells (int): number of shells (i.e. layers) of atoms used to make NP
+    x_dope (float): percentage of metal2 in NPs
+
+    Returns:
+    list of plt.Figure elements containing PRDFs and an image of the NPs
+    """
+    x_metal1 = 1 - x_dope
+    figs = []
+    for shape in build_shapes_list():
+        num_atoms = get_shell2num(shape, num_shells)
+        n_metal1 = num_atoms - int(x_metal1 * num_atoms)
+        bi = get_bimet_result(metals=metals,
+                              shape=shape,
+                              num_atoms=num_atoms,
+                              n_metal1=n_metal1)
+
+        figs.append(bi.build_prdf_plot())
+    return figs
+
+
 def build_shell2num_dict(shape=None):
     """
     Builds a number of shells --> number of atoms dict
@@ -675,32 +702,14 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
         return remove_entry(res)
 
 
-# ensure model coefficients are in DB
-# insert_model_coefficients()
-
-
-def compare_shapes_prdf(metals, num_shells, x_metal1):
-    figs = []
-    for shape in build_shapes_list():
-        num_atoms = get_shell2num(shape, num_shells)
-        n_metal1 = num_atoms - int(x_metal1 * num_atoms)
-        # custom_filter = (-5 < db.func(tbl.BimetallicResults.n_metal1 - n_metal1) < 5)
-        bi = get_bimet_result(metals=metals,
-                              shape=shape,
-                              num_atoms=num_atoms,
-                              n_metal1=n_metal1)
-                              # custom_filter=custom_filter)
-
-        figs.append(bi.build_prdf_plot())
-    return figs
-
 if __name__ == '__main__':
     # get all bimetallic NPs of given metals and shape
     metals = 'agau'
     shape = 'fcc-cube'
     num_shells = 8
+    x_dope = 0.7
 
-    figs = compare_shapes_prdf(metals, num_shells, 0.4)
+    figs = build_prdf_shapes_comparison(metals, num_shells, x_dope)
     plt.show()
     """
     # f = build_new_structs_plot(metals, shape, True)
