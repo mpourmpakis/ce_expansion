@@ -85,7 +85,7 @@ class AtomGraph(object):
         # Create pointer
         self._p_bond_energies = self._bond_energies.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
 
-    def getMixing(self, ordering: "np.array", holder_array : "np.array" = None) -> "np.array":
+    def countMixing(self, ordering: "np.array", holder_array: "np.array" = None) -> "np.array":
         """
         Determines the number of homo/hetero-atomic bonds in the system.
 
@@ -94,12 +94,19 @@ class AtomGraph(object):
             holder_array(np.array): A length-2 array to hold the result. Optional. If not supplied,
                                     will create the array on the spot. May be slower to do this. This
                                     array is OVER-WRITTEN by the C-library, and contains long ints.
+        Returns:
+            The holder array.
         """
         ordering = ordering.astype(ctypes.c_long)
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
         if holder_array is None:
-            holder_array = np.zeros(2, dtype = ctypes.c_long)
+            holder_array = np.zeros(2, dtype=ctypes.c_long)
+        else:
+            # Todo: Just do this in the C library from the get-go
+            holder_array[0] = 0
+            holder_array[1] = 0
+
         p_holder_array = holder_array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
         interface.pointerized_calculate_mixing(self._long_num_atoms,
@@ -109,6 +116,27 @@ class AtomGraph(object):
                                                p_holder_array)
 
         return holder_array
+
+    def calcMixing(self, ordering: "np.array", holder_array: "np.array" = None) -> "np.array":
+        """
+        Calculates the mixing parameter. TODO: Cite that paper.
+
+        Args:
+        ordering(np.array): Chemcial ordering of the NP
+        holder_array(np.array): A length-2 array to hold the result. Optional. If not supplied,
+                                will create the array on the spot. May be slower to do this. This
+                                array is OVER-WRITTEN by the C-library, and contains long ints.
+
+        Returns:
+            The mixing parameter. -1 is fully homo-atomic, 1 is fully hetero-atomic.
+        """
+        if holder_array is None:
+            holder_array = np.zeros(2, dtype=ctypes.c_long)
+        self.countMixing(ordering, holder_array)
+        percent_heteroatomic = holder_array[1] / (holder_array[0] + holder_array[1])
+        mixing_parameter = 2 * percent_heteroatomic - 1
+
+        return mixing_parameter
 
     def getTotalCE(self, ordering: "np.array") -> "float":
         """
@@ -225,8 +253,10 @@ if __name__ == '__main__':
     cohesive_energy = graph.getTotalCE(chemical_ordering)
     print('Cohesive energy = %.2e' % cohesive_energy)
 
-    mixing = graph.getMixing(chemical_ordering)
+    mixing = graph.countMixing(chemical_ordering)
     print(mixing)
+    mixing_parameter = graph.calcMixing(chemical_ordering)
+    print(mixing_parameter)
 
     # Enter global metropolis
     opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=True)
@@ -242,5 +272,3 @@ if __name__ == '__main__':
     plt.ylabel("Energy (eV)")
     plt.show()
     # Exeunt metropoles
-
-

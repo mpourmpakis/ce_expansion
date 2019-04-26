@@ -22,6 +22,7 @@ long int calculate_mixing(long int num_atoms, // Number of atoms in the system
 
     long int i = 0;
 
+
     for (i=0; i < num_bonds; i++){
             long int bond_source = id_array[adj_table[i][0]];
             long int bond_destination = id_array[adj_table[i][1]];
