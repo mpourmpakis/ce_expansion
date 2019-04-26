@@ -4,6 +4,7 @@ except:
     from npdb.base import Base
 import sqlalchemy as db
 from datetime import datetime
+import matplotlib.pyplot as plt
 import os
 import numpy as np
 import ase
@@ -23,6 +24,7 @@ class BimetallicResults(Base):
     shape (string): shape of NP
     num_atoms (int): number of atoms in NP
     diameter (float): "diameter" of NP measured using (atom.cell.max() / 10)
+                      - units = nm
                       - measured in ga.run_ga
                       - NOTE: std measuring, but there might be a better way
     n_metal1, n_metal2 (int): number of metal(1)(2) in NP
@@ -45,6 +47,29 @@ class BimetallicResults(Base):
     Mapped Properties:
     nanoparticle: (Nanoparticle Datatable entry) links to NP skeleton used
                   in GA sim (size, and shape constraints)
+
+    -------
+    METHODS
+    -------
+    build_atoms_obj: Returns atoms object of nanoparticle using ordering
+
+    build_chem_formula: Returns chemical formula of string e.g. 'Au23_Cu32'
+
+    build_prdf: returns data of partial radial distribution function
+        Args:
+            alpha (str): reference position metal
+            beta (str): metal to measure distance from reference metal
+            dr (float): shell size to quantify counts in PRDF
+
+    build_prdf_plot: creates 4 subplots containing
+                     - metal1 : metal1 PRDF (blue)
+                     - metal2 : metal2 PRDF (red)
+                     - metal1 : metal2 PRDF (purple)
+                     - png image of NP
+
+    save_np: saves atoms object of nanoparticle
+        Args:
+            - path (str): path to save Atoms object (*.xyz, *.pdb, etc.)
     """
     __tablename__ = 'bimetallic_results'
 
@@ -75,19 +100,10 @@ class BimetallicResults(Base):
         self.EE = EE
         self.ordering = ordering
 
-    def get_chem_formula(self):
-        """
-        Returns chemical formula of bimetallic NP
-        in alphabetical order
-        - e.g. Ag6_Au7
+        # attribute to store atoms object once it has been built
+        self.atoms_obj = None
 
-        Returns:
-            (str)
-        """
-        return '%s%i_%s%i' % (self.metal1, self.n_metal1,
-                              self.metal2, self.n_metal2)
-
-    def get_atoms_obj(self):
+    def build_atoms_obj(self):
         """
         Returns ase.Atoms object of stable NP found
         - NP built with Nanoparticle.get_atoms_obj_skel
@@ -100,7 +116,149 @@ class BimetallicResults(Base):
         atom = self.nanoparticle.get_atoms_obj_skel()
         for i, a in zip(self.ordering, atom):
             a.symbol = self.metal1 if i == '0' else self.metal2
+        self.atoms_obj = atom.copy()
         return atom
+
+    def build_chem_formula(self, latex=True):
+        """
+        Returns chemical formula of bimetallic NP
+        in alphabetical order
+        - e.g. Ag6_Au7
+
+        Returns:
+            (str)
+        """
+        if latex:
+            return '$\\rm %s_{%i}%s_{%i}$' % (self.metal1, self.n_metal1,
+                                              self.metal2, self.n_metal2)
+        return '%s%i_%s%i' % (self.metal1, self.n_metal1,
+                              self.metal2, self.n_metal2)
+
+    def build_prdf(self, alpha=None, beta=None, dr=0.1):
+        """
+        Calculates partial radial distribution functions
+        of metal <alpha> vs. metal <beta>
+
+        Args:
+            alpha (str):
+            beta (str):
+            dr (float):
+
+        Returns:
+            Histogram data of each metal in the shells
+        """
+
+        # cutoff = diameter in angstrom
+        cutoff = (self.diameter * 10) / 2
+
+        atoms = self.build_atoms_obj().copy()
+
+        if not (alpha or beta):
+            alpha = self.metal1
+            beta = self.metal2
+
+        # booleans to determine if RDF is comparing all atoms,
+        # same type of atoms, or two different atom types
+        pos = []
+        if beta:
+            bet = np.array([i.position for i in atoms if i.symbol == beta])
+            if len(bet) == 0:
+                raise ValueError('%s not present in system' % beta)
+        if alpha:
+            alp = np.array([i.position for i in atoms if i.symbol == alpha])
+
+            if alpha == beta or not beta:
+                atoms = ase.Atoms([i for i in atoms if i.symbol == alpha])
+                pos = atoms.positions
+        else:
+            pos = atoms.positions
+
+        vol = (4/3.) * np.pi * (cutoff / 2.)**3
+        if len(pos):
+            N = float(len(pos))
+            rho = len(pos) / vol
+        else:
+            N = float(len(alp))
+            rho = len(bet) / vol
+
+        def hist(distances, dr=dr, max_d=cutoff):
+            half_dr = dr / 2.
+            high = max_d + (dr - max_d % dr)
+            bins = int(high / dr)
+            gr, x = np.histogram(distances, bins=bins,
+                                 range=(0, high))
+            gr = gr.astype(float)
+            if not isinstance(distances, np.ndarray):
+                return gr, x
+
+            x = x[:-1].astype(float)
+            return gr
+
+        counts, x = hist([])
+        x = x[:-1]
+
+        # if all atoms or same type of atoms
+        if len(pos):
+            for i in range(len(pos)):
+                a = pos[i, :]
+                temp = np.delete(pos, i, axis=0)
+                dists = np.sqrt(((temp - a)**2).sum(1))
+                counts += hist(dists)
+
+        # if two different types of atoms
+        else:
+            for a in alp:
+                dists = np.sqrt(((bet - a)**2).sum(1))
+                counts += hist(dists)
+        gr = np.divide(counts, (4 * np.pi * x**2 * dr * rho * N),
+                       out=counts, where=(x != 0))
+        x = x + (dr / 2.)
+
+        return x, gr
+
+    def build_prdf_plot(self):
+        """
+        Builds a plt.Figure with PRDF subplots:
+        M1 vs M1, M1 vs M2
+        M2 vs M1, M2 vs M2
+        """
+        #        red        purple         blue
+        cols = ['#1f77b4', '#9467bd', '', '#d62728']
+        fig, axes = plt.subplots(2, 2, figsize=(10, 6))
+
+        metals = [self.metal1, self.metal2]
+        max_y = 0
+        for i in range(2):
+            for j in range(2):
+                # select subplot axis
+                ax = axes[i, j]
+
+                if (i, j) == (1, 0):
+                    path = 'temp.png'
+                    self.save_np(path)
+                    im = plt.imread(path)
+                    ax.imshow(im)
+                    ax.axis('off')
+                    os.remove(path)
+                else:
+                    # calculate PRDF
+                    x, prdf = self.build_prdf(alpha=metals[i], beta=metals[j])
+                    if max(prdf) > max_y:
+                        max_y = max(prdf)
+
+                    # plot PRDF
+                    ax.plot(x, prdf, color=cols[2 * i + j])
+                    ax.set_title('$\\rm g_{%s, %s}(r)$'
+                                 % (metals[i], metals[j]))
+
+        max_y += 0.2 * max_y
+        # axes[0, 0].set_ylim(0, max_y)
+        # axes[0, 1].set_ylim(0, max_y)
+        # axes[1, 1].set_ylim(0, max_y)
+        fig.suptitle('Partial Radial Distribution Functions for\n' +
+                     self.build_chem_formula() + ' ' + self.shape)
+        fig.tight_layout(rect=(0, 0, 1, 0.9))
+        return fig
 
     def save_np(self, path):
         """
@@ -112,7 +270,7 @@ class BimetallicResults(Base):
         Returns:
             (bool): True if saved successfully
         """
-        atom = self.get_atoms_obj()
+        atom = self.build_atoms_obj()
         atom.write(path)
         return True
 
