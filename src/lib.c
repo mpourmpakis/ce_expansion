@@ -12,17 +12,15 @@ int char_to_int(char character){
     return result;
 }
 
-double calculate_mixing(long int num_atoms, // Number of atoms in the system
+long int calculate_mixing(long int num_atoms, // Number of atoms in the system
                         long int num_bonds, // Number of bonds in the system
-                        long int adj_table [num_bonds][2], // Adjacency table
+                        long int adj_table [num_bonds][2], // Adjacency table aka bondlist
                         long int id_array[num_atoms], // Representing the identity of each element
-                        long int* return_array[2]){ // Array holding the hetero/homoatomic bond counts respectively
+                        long int return_array[2]){ // Array holding the hetero/homoatomic bond counts respectively
     // Calculates the number of homo/heteroatomic bonds in the system
+    // Changes array in place
 
     long int i = 0;
-
-    return_array[0] = 0;
-    return_array[1] = 1;
 
     for (i=0; i < num_bonds; i++){
             long int bond_source = id_array[adj_table[i][0]];
@@ -35,7 +33,7 @@ double calculate_mixing(long int num_atoms, // Number of atoms in the system
             }
     }
 
-    return return_array;
+    return 0;
 }
 
 double calculate_ce(double bond_energies[num_elements][num_elements][max_coordination], //Table of bond energies
@@ -95,7 +93,7 @@ double calculate_ce(double bond_energies[num_elements][num_elements][max_coordin
             long int coordination = cns[adj_table[i][0]];
 
             // Add the bond energy to the running total
-            double contribution = bond_energies[bond_source][bond_destination][coordination];
+            // double contribution = bond_energies[bond_source][bond_destination][coordination];
             cohesion += bond_energies[bond_source][bond_destination][coordination];
         #endif
     }
