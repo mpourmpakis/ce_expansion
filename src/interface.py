@@ -149,6 +149,7 @@ if __name__ == "__main__":
                          (8, 9), (8, 7), (8, 2), (8, 1), (8, 0), (9, 7), (9, 8), (9, 10), (9, 4), (9, 2), (9, 0),
                          (10, 9), (10, 6), (10, 5), (10, 4), (10, 2), (10, 0), (11, 12), (11, 8), (11, 7), (11, 3),
                          (11, 1), (11, 0), (12, 6), (12, 5), (12, 3), (12, 1), (12, 0), (12, 11)])
+    adjacency_table = np.array([[]])
     num_bonds = bondList.shape[0]
     id_string = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1])
     print(id_string.dtype)
@@ -165,3 +166,6 @@ if __name__ == "__main__":
     )
     print("Testing a 13-atom icosahedron with fake coefficients:")
     print(calculate_ce(test_3Darray, num_atoms, cns, num_bonds, bondList, id_string))
+
+    print("Testing the mixing")
+    print(calculate_mixing(num_atoms, num_bonds, bondList, id_string))

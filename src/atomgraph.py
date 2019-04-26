@@ -92,7 +92,8 @@ class AtomGraph(object):
         Args:
             ordering(np.array): Chemcial ordering of the NP
             holder_array(np.array): A length-2 array to hold the result. Optional. If not supplied,
-                                    will create the array on the spot. May be slower to do this.
+                                    will create the array on the spot. May be slower to do this. This
+                                    array is OVER-WRITTEN by the C-library, and contains long ints.
         """
         ordering = ordering.astype(ctypes.c_long)
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
@@ -224,6 +225,9 @@ if __name__ == '__main__':
     cohesive_energy = graph.getTotalCE(chemical_ordering)
     print('Cohesive energy = %.2e' % cohesive_energy)
 
+    mixing = graph.getMixing(chemical_ordering)
+    print(mixing)
+
     # Enter global metropolis
     opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=True)
     print("Performed 1000 metropolis steps swapping anywhere, yielding CE = %.2e" % opt_energy)
@@ -237,5 +241,6 @@ if __name__ == '__main__':
     plt.xlabel("Step")
     plt.ylabel("Energy (eV)")
     plt.show()
+    # Exeunt metropoles
 
-    # Exeunt metropolis
+
