@@ -95,7 +95,8 @@ class AtomGraph(object):
                                     will create the array on the spot. May be slower to do this. This
                                     array is OVER-WRITTEN by the C-library, and contains long ints.
         Returns:
-            The holder array.
+            The holder array. First index is number of homo-atomic bonds. Second index is the number
+            of heteroatomic bonds.
         """
         ordering = ordering.astype(ctypes.c_long)
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
@@ -119,7 +120,13 @@ class AtomGraph(object):
 
     def calcMixing(self, ordering: "np.array", holder_array: "np.array" = None) -> "np.array":
         """
-        Calculates the mixing parameter. TODO: Cite that paper.
+        Calculates the mixing parameter. From Batista et al. Adsorption of CO, NO, and H2 on the
+        PdnAu55-n nanoclusters: A Density Functional Theory Investigation within the van der
+        Waals D3 Corrections. J Phys Chem C 2019, 123 (12) 7431-7439.
+        Link here: https://pubs.acs.org/doi/10.1021/acs.jpcc.8b12219
+        
+        For bimetallics, this mixing parameter is just the percent of homo-atomic 
+        bonds scaled between -1 and 1, provable using algebra.
 
         Args:
         ordering(np.array): Chemcial ordering of the NP
@@ -128,13 +135,17 @@ class AtomGraph(object):
                                 array is OVER-WRITTEN by the C-library, and contains long ints.
 
         Returns:
-            The mixing parameter. -1 is fully homo-atomic, 1 is fully hetero-atomic.
+            The mixing parameter. +1 indicates complete segregation (e.g. only homo-atomic bonds).
+            -1 indicates complete mixing (e.g. zero bonds between the same element).
         """
         if holder_array is None:
             holder_array = np.zeros(2, dtype=ctypes.c_long)
         self.countMixing(ordering, holder_array)
-        percent_heteroatomic = holder_array[1] / (holder_array[0] + holder_array[1])
-        mixing_parameter = 2 * percent_heteroatomic - 1
+        
+        numerator = holder_array[0] - holder_array[1]
+        denominator = holder_array[0] + holder_array[1]
+        
+        mixing_parameter = numerator / denominator
 
         return mixing_parameter
 
