@@ -735,11 +735,12 @@ if __name__ == '__main__':
     x_dope = 0.7
 
     cutoff = datetime.datetime(2019, 4, 23)
-    f = build_new_structs_plot(['agau', 'aucu', 'agcu'],
-                               ['cuboctahedron', 'icosahedron', 'fcc-cube'],
-                               pct=False, cutoff_date=cutoff)
+    # f = build_new_structs_plot(['agau', 'aucu', 'agcu'],
+    #                           ['cuboctahedron', 'icosahedron', 'fcc-cube'],
+    #                           pct=False, cutoff_date=cutoff)
 
     figs = build_prdf_shapes_comparison(metals, num_shells, x_dope)
+    figs[2].savefig('C:/users/yla/desktop/test.svg')
     plt.show()
     """
     # f = build_new_structs_plot(metals, shape, True)
