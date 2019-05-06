@@ -38,7 +38,7 @@ shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
               'elongated-pentagonal-bipyramid']
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
-niterations = 1
+niterations = 2
 
 # start batch GA run
 batch_tot = len(metal_opts) * len(shape_opts)
@@ -53,6 +53,8 @@ for n in range(niterations):
             batch_i += 1
 
 # update new structures plot in <datapath>
-fig = db_inter.build_new_structs_plot(metal_opts, shape_opts, True)
+cutoff_date = datetime(2019, 4, 24, 18, 30)
+fig = db_inter.build_new_structs_plot(metal_opts, shape_opts, pct=False,
+                                      cutoff_date=cutoff_date)
 # fig.savefig(os.path.join(datapath, '%02i_new_struct_log.png' % day))
 fig.savefig(os.path.join(datapath, 'agaucu_STRUCTS.png'))

@@ -376,7 +376,7 @@ class Pop(object):
             # minimum struct near current min
             low_struct = self.pop[0]
             opt_order, opt_ce, en_hist = self.atomg.metropolis(low_struct.arr,
-                                                               num_steps=500,
+                                                               num_steps=5000,
                                                                swap_any=False)
 
             # if metropolis alg finds a new minimum, drop bottom one from pop
@@ -1000,10 +1000,10 @@ def run_ga(metals, shape, save_data=True,
         tot_structs += float(len(n) - 2)
 
         # INITIALIZE POP object
-        pop = Pop(nanop.get_atoms_obj_skel().copy(), nanop.bonds_list, metals,
-                  shape=shape, n_dope=n[0], popsize=popsize,
-                  kill_rate=kill_rate, mate_rate=mate_rate,
-                  mute_rate=mute_rate, mute_num=mute_num)
+        # pop = Pop(nanop.get_atoms_obj_skel().copy(), nanop.bonds_list,
+        #           metals, shape=shape, n_dope=n[0], popsize=popsize,
+        #           kill_rate=kill_rate, mate_rate=mate_rate,
+        #           mute_rate=mute_rate, mute_num=mute_num)
 
         starting_outp = '%s%s in %i atom %s' % (metal1, metal2,
                                                 num_atoms, shape)
@@ -1014,9 +1014,14 @@ def run_ga(metals, shape, save_data=True,
 
         # sweep over different compositions
         for i, dope in enumerate(n):
-            if i:
-                pop.n_dope = dope
-                pop.initialize_new_run()
+            # INITIALIZE POP object
+            pop = Pop(nanop.get_atoms_obj_skel().copy(), nanop.bonds_list,
+                      metals, shape=shape, n_dope=dope, popsize=popsize,
+                      kill_rate=kill_rate, mate_rate=mate_rate,
+                      mute_rate=mute_rate, mute_num=mute_num)
+            # if i:
+            #    pop.n_dope = dope
+            #    pop.initialize_new_run()
             pop.run(max_runs)
 
             # if new minimum CE found and <save_data>
@@ -1068,10 +1073,10 @@ def run_ga(metals, shape, save_data=True,
             batch_run_num=batch_runinfo)
 
 if __name__ == '__main__':
-    metals = ('Ag', 'Cu')
+    metals = ('Ag', 'Au')
     shape = 'icosahedron'
 
     # run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
     #       shells=6, max_generations=300)
 
-    newp = build_pop_obj(metals, shape, 3, x_dope=0.3, popsize=55)
+    newp = build_pop_obj(metals, shape, 8, x_dope=0.6, popsize=55)

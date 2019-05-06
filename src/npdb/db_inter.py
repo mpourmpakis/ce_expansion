@@ -2,6 +2,7 @@ import sqlalchemy as db
 import numpy as np
 import pickle
 import os
+import datetime
 
 try:
     import db_utils
@@ -16,6 +17,9 @@ import matplotlib
 import matplotlib.ticker
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import sys
+sys.path.append('..')
+import plot_defaults
 
 """
     Functions to interface with NP GA Database
@@ -54,7 +58,7 @@ base.Base.metadata.create_all(base.engine)
 # BUILD FUNCTIONS
 
 
-def build_df(datatable, lim=None, **kwargs):
+def build_df(datatable, lim=None, custom_filter=None, **kwargs):
     """
     GENERIC FUNCTION
     Returns pandas dataframe of entries in <datatable>
@@ -62,19 +66,20 @@ def build_df(datatable, lim=None, **kwargs):
     - NOTE: changes 'shape' column name to 'np_shape'!
 
     Args:
-    datatable (Datatable class): datatable to query
+    - datatable (Datatable class): datatable to query
 
     KArgs:
-    lim (int): max number of entries returned
-               (default: None = no limit)
-    **kwargs: arguments whose name(s) matches a column in the datatable
+    - lim (int): max number of entries returned
+                 (default: None = no limit)
+    - **kwargs: arguments whose name(s) matches a column in the datatable
 
     Returns:
-        (pd.DataFrame): df of results
+    - (pd.DataFrame): df of results
     """
 
     # convert sql query results into pd.DataFrame
-    qry = get_entry(datatable, lim=lim, **kwargs, return_query=True).statement
+    qry = get_entry(datatable, lim=lim, custom_filter=custom_filter,
+                    **kwargs, return_query=True).statement
     df = pd.read_sql(qry, session.bind)
     df.columns = [col if col != 'shape' else 'np_shape' for col in df.columns]
     return df
@@ -88,10 +93,10 @@ def build_coefficient_dict(metals):
       to plot Size vs. Shape vs. G = EE - T * delS(mix)
 
     Args:
-    metals (string || iterable): string(s) containing two metal elements
+    - metals (string || iterable): string(s) containing two metal elements
 
     Returns:
-        (dict): coefficient dictionary for GA sim
+    - (dict): coefficient dictionary for GA sim
     """
     metal1, metal2 = db_utils.sort_metals(metals)
 
@@ -125,29 +130,38 @@ def build_metals_list():
     Returns list of possible metal combinations for GA sims
     """
     return [r[0] for r in session.query(tbl.ModelCoefficients.element1)
-        .distinct().order_by(tbl.ModelCoefficients.element1).all()]
+            .distinct().order_by(tbl.ModelCoefficients.element1).all()]
 
 
-def build_new_structs_plot(metal_opts, shape_opts, pct=False):
+def build_new_structs_plot(metal_opts, shape_opts, pct=False,
+                           cutoff_date=None):
     """
     Uses BimetallicLog to create 2D line plot of
     new structures found vs. datetime
 
     Args:
-    metal_opts (list): list of metal options
-    shape_opts (list): list of shape options
+    - metal_opts (list): list of metal options
+    - shape_opts (list): list of shape options
 
     Kargs:
-    pct (bool): if True, y-axis = % new structures
-                else, y-axis = number of new structures
+    - pct (bool): if True, y-axis = % new structures
+                  else, y-axis = number of new structures
+    - cutoff_date (Datetime.Datetime): if given, will filter out runs
+                                       older than <cutoff_date>
 
     Returns:
-        (plt.Figure): 2D line plot object
+    - (plt.Figure): 2D line plot object
     """
     if isinstance(metal_opts, str):
         metal_opts = [metal_opts]
     if isinstance(shape_opts, str):
         shape_opts = [shape_opts]
+
+    # if cutoff_date, create custom_filter
+    if isinstance(cutoff_date, datetime.datetime):
+        custom_filter = tbl.BimetallicLog.date >= cutoff_date
+    else:
+        custom_filter = None
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
               '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -165,7 +179,8 @@ def build_new_structs_plot(metal_opts, shape_opts, pct=False):
                 .replace('elongated-pentagonal-bipyramid', 'J16')
 
             # pd.DataFrame of bimetallic log data
-            df = build_df(tbl.BimetallicLog, metals=m, shape=shape)
+            df = build_df(tbl.BimetallicLog, metals=m, shape=shape,
+                          custom_filter=custom_filter)
             x = df.date.values
             label = '%s%s: %s' % (metal1, metal2, lbl_shape)
             # color = plt.cm.tab20c((i / float(tot_lines)) * 0.62)
@@ -195,15 +210,42 @@ def build_new_structs_plot(metal_opts, shape_opts, pct=False):
     return fig
 
 
+def build_prdf_shapes_comparison(metals, num_shells, x_dope):
+    """
+    Creates list of figures, each containing partial radial distribution
+        functions (PRDFs) of a given shape
+
+    Args:
+    - metals (str || iterable): two metal elements
+    - num_shells (int): number of shells (i.e. layers) of atoms used to make NP
+    - x_dope (float): percentage of metal2 in NPs
+
+    Returns:
+    - list of plt.Figure elements containing PRDFs and an image of the NPs
+    """
+    x_metal1 = 1 - x_dope
+    figs = []
+    for shape in build_shapes_list():
+        num_atoms = get_shell2num(shape, num_shells)
+        n_metal1 = num_atoms - int(x_metal1 * num_atoms)
+        bi = get_bimet_result(metals=metals,
+                              shape=shape,
+                              num_atoms=num_atoms,
+                              n_metal1=n_metal1)
+
+        figs.append(bi.build_prdf_plot())
+    return figs
+
+
 def build_shell2num_dict(shape=None):
     """
     Builds a number of shells --> number of atoms dict
 
     Kargs:
-        shape (str): shape of NP
+    - shape (str): shape of NP
 
     Returns:
-        dict: shell2num_dict[shape][num_shell] = num_atoms
+    - dict: shell2num_dict[shape][num_shell] = num_atoms
     """
 
     nanops = get_nanoparticle(shape=shape)
@@ -224,11 +266,11 @@ def build_srf_plot(metals, shape, delg=False, T=298):
       to plot Size vs. Shape vs. G = EE - T * delS(mix)
 
     Args:
-    metals (string || iterable): string(s) containing two metal elements
-    shape (string): shape of the NP
+    - metals (string || iterable): string(s) containing two metal elements
+    - shape (string): shape of the NP
 
     Returns:
-        (plt.figure): figure of 3D surface plot
+    - (plt.figure): figure of 3D surface plot
     """
     metal1, metal2 = db_utils.sort_metals(metals)
 
@@ -253,7 +295,7 @@ def build_srf_plot(metals, shape, delg=False, T=298):
         # k_b T [eV] = (25.7 mEV at 298 K)
         kt = 25.7E-3 * (T / 298.)
         del_s = comps * np.ma.log(comps).filled(0) + \
-                (1 - comps) * np.ma.log(1 - comps).filled(0)
+            (1 - comps) * np.ma.log(1 - comps).filled(0)
         del_s *= -kt
 
         ees -= del_s
@@ -342,6 +384,9 @@ def build_radial_distributions(metals=None, shape=None, num_atoms=None,
 
 
 def build_shapes_list():
+    """
+    Returns all shapes found in Nanoparticles Datatable as list of str
+    """
     return sorted([i[0] for i in session.query(tbl.Nanoparticles.shape)
                    .distinct().all()])
 
@@ -358,18 +403,20 @@ def get_entry(datatable, lim=None, custom_filter=None,
       returned
 
     Args:
-    datatable (Datatable class): datatable to query
+    - datatable (Datatable class): datatable to query
 
     Kargs:
-    lim (int): max number of entries returned
-               (default: None = no limit)
-    custom_filter:
-    return_query (bool): if True, return query and
-                         not results
-    **kwargs: arguments whose name(s) matches a column in the datatable
+    - lim (int): max number of entries returned
+                 (default: None = no limit)
+    - custom_filter (sqlalchemy.sql.elements.BinaryExpression):
+                    custom sqlalchemy filter that will be applied
+                    (default: None = no added filter)
+    - return_query (bool): if True, return query and
+                           not results
+    - **kwargs: arguments whose name(s) matches a column in the datatable
 
     Returns:
-        (Datatable instance(s)) if match is found else (None)
+    - (Datatable instance(s)) if match is found else (None)
     """
     match_ls = []
     for attr in kwargs:
@@ -399,16 +446,16 @@ def get_bimet_log(metals=None, shape=None, date=None, lim=None,
       returned
 
     Kargs:
-    metals (str || iterable): two metal elements
-    shape (str): shape of NP
-    date (datetime.datetime): GA batch run completion time
-    lim (int): max number of entries returned
-               (default: None = no limit)
-    return_query (bool): if True, return query and
-                         not results
+    - metals (str || iterable): two metal elements
+    - shape (str): shape of NP
+    - date (datetime.datetime): GA batch run completion time
+    - lim (int): max number of entries returned
+                 (default: None = no limit)
+    - return_query (bool): if True, return query and
+                           not results
 
     Returns:
-        (BimetallicResults)(s) if match is found else (None)
+    - (BimetallicResults)(s) if match is found else (None)
     """
     return get_entry(tbl.BimetallicLog, **locals())
 
@@ -422,22 +469,20 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
       returned
 
     Kargs:
-    metals (str || iterable): two metal elements
-    shape (str): shape of NP
-    num_atoms (int): number of atoms in NP
-    n_metal1 (int): number of metal1 atoms in NP
-    lim (int): max number of entries returned
-               (default: None = no limit)
-    return_query (bool): if True, return query and
-                         not results
+    - metals (str || iterable): two metal elements
+    - shape (str): shape of NP
+    - num_atoms (int): number of atoms in NP
+    - n_metal1 (int): number of metal1 atoms in NP
+    - lim (int): max number of entries returned
+                 (default: None = no limit)
+    - return_query (bool): if True, return query and
+                           not results
 
     Returns:
-        (BimetallicResults)(s) if match is found else (None)
+    - (BimetallicResults)(s) if match is found else (None)
     """
-    if num_shells and shape:
+    if not num_atoms and (num_shells and shape):
         num_atoms = get_shell2num(shape, num_shells)
-    else:
-        num_atoms = None
 
     if only_bimet:
         only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
@@ -458,16 +503,16 @@ def get_model_coefficient(element1=None, element2=None, cn=None,
     - query is always ordered by cn
 
     Kargs:
-    element1 (str): first element
-    element2 (str): second element
-    cn (int): coordination number of element 1
-    lim (int): max number of entries returned
-               (default: None = no limit)
-    return_query (bool): if True, returns just the query
-                         and not the results
+    - element1 (str): first element
+    - element2 (str): second element
+    - cn (int): coordination number of element 1
+    - lim (int): max number of entries returned
+                 (default: None = no limit)
+    - return_query (bool): if True, returns just the query
+                           and not the results
 
     Returns:
-        (tbl.ModelCoefficients)(s) if match else (None)
+    - (tbl.ModelCoefficients)(s) if match else (None)
     """
     return get_entry(tbl.ModelCoefficients, **locals())
 
@@ -480,25 +525,30 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
       returned
 
     Kargs:
-    shape (str): shape of NP
-    num_atoms (int): number of atoms in NP
-    num_shells (int): number of shells used to build NP
-                      from structure_gen module
-    lim (int): max number of entries returned
-               (default: None = no limit)
-    return_query (bool): if True, returns just the query
-                         and not the results
+    - shape (str): shape of NP
+    - num_atoms (int): number of atoms in NP
+    - num_shells (int): number of shells used to build NP
+                        from structure_gen module
+    - lim (int): max number of entries returned
+                 (default: None = no limit)
+    - return_query (bool): if True, returns just the query
+                           and not the results
 
     Returns:
-        (tbl.Nanoparticles)(s) if match else (None)
+    - (tbl.Nanoparticles)(s) if match else (None)
     """
     return get_entry(tbl.Nanoparticles, **locals())
 
 
 def get_shell2num(shape, num_shells):
     """
-        Returns the number of atoms of an NP
-        given shape and number of shells
+    Returns the number of atoms of an NP
+    given shape and number of shells
+
+    Args:
+    - shape (str): shape of NP
+    - num_shells (int): number of shells used to build NP
+                        from structure_gen module
     """
     nanop = get_nanoparticle(shape=shape, num_shells=num_shells)
     if nanop:
@@ -516,12 +566,12 @@ def insert_model_coefficients(coeffs_dict=None):
     - checks DB to ensure entry does not already exist
 
     Kargs:
-    coeffs_dict (dict): dictionary of coefficients
-                        if None, read in from data directory
-                        (default: None)
+    - coeffs_dict (dict): dictionary of coefficients
+                          if None, read in from data directory
+                          (default: None)
 
     Returns:
-        (bool): True if successful insertion else False
+    - (bool): True if successful insertion else False
     """
     if not coeffs_dict:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -544,17 +594,17 @@ def insert_nanoparticle(atom, shape, num_shells=None):
     Inserts NP and their appropriate atoms into DB
 
     Args:
-    atom (ase.Atoms): atoms object of NP skeleton
-    shape (string): common name for shape of NP
-                    - e.g. icosahedron
-                    - always lower case
+    - atom (ase.Atoms): atoms object of NP skeleton
+    - shape (string): common name for shape of NP
+                      - e.g. icosahedron
+                      - always lower case
 
     Kargs:
-    num_shells (int): number of shells used to build NP
-                      from structure_gen module
+    - num_shells (int): number of shells used to build NP
+                        from structure_gen module
 
     Returns:
-        (bool): True if successful insertion else False
+    - (bool): True if successful insertion else False
     """
     np = tbl.Nanoparticles(shape.lower(), len(atom), num_shells=num_shells)
     session.add(np)
@@ -584,10 +634,10 @@ def update_entry(entry_inst):
     Updates datarow object
 
     Args:
-    entry_inst (DataTable): DataTable object where changes have been made
+    - entry_inst (DataTable): DataTable object where changes have been made
 
     Returns:
-        (bool): True if successful
+    - (bool): True if successful
     """
     session.add(entry_inst)
     return db_utils.commit_changes(session)
@@ -602,7 +652,7 @@ def update_bimet_result(metals, shape, num_atoms,
     - will update CE, EE, and ordering of an entry if necessary
 
     Returns:
-        BimetallicResults entry after successfully updating
+    - BimetallicResults entry after successfully updating
     """
     res = get_bimet_result(metals=metals,
                            shape=shape,
@@ -648,7 +698,7 @@ def remove_entry(entry_inst):
     Deletes entry (and its children if applicable) from DB
 
     Args:
-    entry_inst (DataTable instance): datarow to be deleted
+    - entry_inst (DataTable instance): datarow to be deleted
     """
     session.delete(entry_inst)
     return db_utils.commit_changes(session)
@@ -660,13 +710,13 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
     - only commits if a single np is queried to be removed
 
     Kargs:
-    shape (str): shape of NP
-    num_atoms (int): number of atoms in NP
-    num_shells (int): number of shells used to build NP
-                      from structure_gen module
+    - shape (str): shape of NP
+    - num_atoms (int): number of atoms in NP
+    - num_shells (int): number of shells used to build NP
+                        from structure_gen module
 
     Returns:
-        True if successful
+    - True if successful
     """
     res = get_nanoparticle(shape, num_atoms, num_shells)
     if isinstance(res, list):
@@ -677,32 +727,20 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
         return remove_entry(res)
 
 
-# ensure model coefficients are in DB
-# insert_model_coefficients()
-
-
-def compare_shapes_prdf(metals, num_shells, x_metal1):
-    figs = []
-    for shape in build_shapes_list():
-        num_atoms = get_shell2num(shape, num_shells)
-        n_metal1 = num_atoms - int(x_metal1 * num_atoms)
-        # custom_filter = (-5 < db.func(tbl.BimetallicResults.n_metal1 - n_metal1) < 5)
-        bi = get_bimet_result(metals=metals,
-                              shape=shape,
-                              num_atoms=num_atoms,
-                              n_metal1=n_metal1)
-                              # custom_filter=custom_filter)
-
-        figs.append(bi.build_prdf_plot())
-    return figs
-
 if __name__ == '__main__':
     # get all bimetallic NPs of given metals and shape
     metals = 'agau'
     shape = 'fcc-cube'
     num_shells = 8
+    x_dope = 0.7
 
-    figs = compare_shapes_prdf(metals, num_shells, 0.4)
+    cutoff = datetime.datetime(2019, 4, 23)
+    # f = build_new_structs_plot(['agau', 'aucu', 'agcu'],
+    #                           ['cuboctahedron', 'icosahedron', 'fcc-cube'],
+    #                           pct=False, cutoff_date=cutoff)
+
+    figs = build_prdf_shapes_comparison(metals, num_shells, x_dope)
+    figs[2].savefig('C:/users/yla/desktop/test.svg')
     plt.show()
     """
     # f = build_new_structs_plot(metals, shape, True)

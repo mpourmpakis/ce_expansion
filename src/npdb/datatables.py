@@ -4,10 +4,12 @@ except:
     from npdb.base import Base
 import sqlalchemy as db
 from datetime import datetime
+import tempfile
 import matplotlib.pyplot as plt
 import os
 import numpy as np
 import ase
+import ase.visualize.plot
 
 
 class BimetallicResults(Base):
@@ -224,7 +226,7 @@ class BimetallicResults(Base):
         """
         #        red        purple         blue
         cols = ['#1f77b4', '#9467bd', '', '#d62728']
-        fig, axes = plt.subplots(2, 2, figsize=(10, 6))
+        fig, axes = plt.subplots(2, 2, figsize=(10, 7))
 
         metals = [self.metal1, self.metal2]
         max_y = 0
@@ -234,7 +236,8 @@ class BimetallicResults(Base):
                 ax = axes[i, j]
 
                 if (i, j) == (1, 0):
-                    path = 'temp.png'
+                    # ase.visualize.plot.plot_atoms(self.atoms_obj, ax=ax)
+                    path = os.path.join(tempfile.gettempdir(), 'temp.png')
                     self.save_np(path)
                     im = plt.imread(path)
                     ax.imshow(im)
@@ -248,15 +251,19 @@ class BimetallicResults(Base):
 
                     # plot PRDF
                     ax.plot(x, prdf, color=cols[2 * i + j])
+                    ax.set_xlabel('r ($\\rm \\AA$)', fontweight='normal',
+                                  fontsize=14)
                     ax.set_title('$\\rm g_{%s, %s}(r)$'
-                                 % (metals[i], metals[j]))
+                                 % (metals[i], metals[j]),
+                                 fontsize=14)
 
         max_y += 0.2 * max_y
         # axes[0, 0].set_ylim(0, max_y)
         # axes[0, 1].set_ylim(0, max_y)
         # axes[1, 1].set_ylim(0, max_y)
         fig.suptitle('Partial Radial Distribution Functions for\n' +
-                     self.build_chem_formula() + ' ' + self.shape)
+                     self.build_chem_formula() + ' ' + self.shape,
+                     fontweight='normal')
         fig.tight_layout(rect=(0, 0, 1, 0.9))
         return fig
 
