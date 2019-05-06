@@ -175,7 +175,7 @@ class BimetallicResults(Base):
         else:
             pos = atoms.positions
 
-        vol = (4/3.) * np.pi * (cutoff / 2.)**3
+        vol = (4 / 3.) * np.pi * (cutoff / 2.) ** 3
         if len(pos):
             N = float(len(pos))
             rho = len(pos) / vol
@@ -204,15 +204,15 @@ class BimetallicResults(Base):
             for i in range(len(pos)):
                 a = pos[i, :]
                 temp = np.delete(pos, i, axis=0)
-                dists = np.sqrt(((temp - a)**2).sum(1))
+                dists = np.sqrt(((temp - a) ** 2).sum(1))
                 counts += hist(dists)
 
         # if two different types of atoms
         else:
             for a in alp:
-                dists = np.sqrt(((bet - a)**2).sum(1))
+                dists = np.sqrt(((bet - a) ** 2).sum(1))
                 counts += hist(dists)
-        gr = np.divide(counts, (4 * np.pi * x**2 * dr * rho * N),
+        gr = np.divide(counts, (4 * np.pi * x ** 2 * dr * rho * N),
                        out=counts, where=(x != 0))
         x = x + (dr / 2.)
 
@@ -340,7 +340,7 @@ class Nanoparticles(Base):
         """
         if not self.atoms_obj:
             self.atoms_obj = ase.Atoms([ase.Atom('Cu', (i.x, i.y, i.z))
-                                       for i in self.atoms])
+                                        for i in self.atoms])
         return self.atoms_obj
 
     def get_diameter(self):
@@ -455,3 +455,70 @@ class BimetallicLog(Base):
         self.new_min_structs = new_min_structs
         self.tot_structs = tot_structs
         self.batch_run_num = batch_run_num
+
+
+class PartialRadialDists(Base):
+    """
+    Holds partial radial distribution functions.
+
+    Columns:
+        prdf_type (str) : The type of PRDF being calculated here (atom or NP centered)
+                          The type can be one of the two following values:
+                                Atom_Centered
+                                NP_Centered
+                          and will raise a ValueError if one of these two values is not used.
+        element_center (str[2]) : The element at the center of the distribution (if atomic prdf being used)
+                                  If this is supplied for an NP-centered PRDF, the program will raise a ValueError.
+        element_tracked (str[2]) : The element whose radial distribution we are following
+        distance (float) : How far away from the center of the distribution we are
+        frequency (float) : Frequency of element_tracked found at that particular distance
+        np_id (int) : The NP this radial distribution function corresponds to
+
+    """
+    __tablename__ = "PartialRadialDists"
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    prdf_type = db.Column(db.String, nullable=False)
+    element_center = db.Column(db.String(2))
+    element_tracked = db.Column(db.String(2), nullable=False)
+    distance = db.Column(db.Float, nullable=False)
+    frequency = db.Column(db.Float, nullable=False)
+    np_id = db.Column(db.Integer, nullable=False)
+
+    def __init__(self, np_id, prdf_type, element_tracked, distance, frequency, element_center=None):
+        if prdf_type in ["Atom_Centered", "NP_Centered"]:
+            self.prdf_type = prdf_type
+        else:
+            raise ValueError("Expected either Atom_Centered or NP_Centered for prdf_type")
+        self.element_tracked = element_tracked
+        self.distance = distance
+        self.frequency = frequency
+        self.np_id = np_id
+        if element_center:
+            if prdf_type == "Atom_Centered":
+                self.element_center = element_center
+            else:
+                raise ValueError("Element_center only makes sense for atom-centered PRDFs.")
+
+
+class PostProcessing(Base):
+    """
+    Logs post-processed data for a NP.
+
+    Currently we have:
+        - Chemical Ordering Parameter
+        - Partial Radial Distribution Function (atom-centric)
+        - Partial Radial Distribution Function (NP-centric)
+
+    Colunns:
+    """
+    __tablename__ = "PostProcessing"
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    chemical_ordering_parameter = db.Column(db.Float)
+    atomic_prdf_pointer = db.Column(db.Integer)
+    np_prdf_pointer = db.Column(db.Integer)
+    np_id = db.Column(db.Integer, nullable=False)  # Corresponds to the Nanoparticle Class's ID
+
+    def __init__(self, chemical_ordering_parameter = None,
+                 atomic_prdf_pointer = None,
+                 np_prdf_pointer = None):
+        self.np_id = np_id
