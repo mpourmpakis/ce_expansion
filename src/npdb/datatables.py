@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import ase
+from ase.data.colors import jmol_colors
+from ase.data import chemical_symbols
 import ase.visualize.plot
 
 
@@ -265,6 +267,61 @@ class BimetallicResults(Base):
                      self.build_chem_formula() + ' ' + self.shape,
                      fontweight='normal')
         fig.tight_layout(rect=(0, 0, 1, 0.9))
+        return fig
+
+    def build_central_rdf(self, nbins=None):
+        atoms = self.build_atoms_obj().copy()
+
+        # center atoms at origin (COP)
+        atoms.positions -= atoms.positions.mean(0)
+
+        # calculate distances from origin
+        dists = np.linalg.norm(atoms.positions, axis=1)
+
+        binrange = (0, dists.max())
+
+        # set bins to num shells if not given
+        if not nbins:
+            nbins = self.nanoparticle.num_shells
+
+        # organize distances by metal type
+        met1d = np.array([dists[i.index]
+                          for i in atoms if i.symbol == self.metal1])
+        met2d = np.array([dists[i.index]
+                          for i in atoms if i.symbol == self.metal2])
+
+        # calculate bin counts in each shell
+        tot_counts, bins = np.histogram(dists, bins=nbins, range=binrange)
+        met1_counts, bins = np.histogram(met1d, bins=nbins, range=binrange)
+        met2_counts, bins = np.histogram(met2d, bins=nbins, range=binrange)
+
+        print(tot_counts)
+
+        # normalize counts to concentrations
+        norm_met1_counts = met1_counts / tot_counts
+        norm_met2_counts = met2_counts / tot_counts
+
+        fig, axes = plt.subplots(2, 1, sharex=True)
+        ax1, ax2 = axes
+
+        m1_color = jmol_colors[chemical_symbols.index(self.metal1)]
+        m2_color = jmol_colors[chemical_symbols.index(self.metal2)]
+
+        # x = list(range(1, self.nanoparticle.num_shells + 1))
+        x = bins[:-1]
+
+        ax1.plot(x, met1_counts, 'o-', markeredgecolor='k',
+                 color=m1_color, markersize=8)
+        ax1.plot(x, met2_counts, 'o-', markeredgecolor='k',
+                 color=m2_color, markersize=8)
+
+        ax2.plot(x, norm_met1_counts, 'o-', markeredgecolor='k',
+                 color=m1_color, markersize=8)
+        ax2.plot(x, norm_met2_counts, 'o-', markeredgecolor='k',
+                 color=m2_color, markersize=8)
+
+        fig.tight_layout()
+        plt.show()
         return fig
 
     def save_np(self, path):
