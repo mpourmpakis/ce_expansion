@@ -378,7 +378,7 @@ def build_shell2num_dict(shape=None):
     return result
 
 
-def build_srf_plot(metals, shape, delg=False, T=298):
+def build_srf_plot(metals, shape, T=None):
     """
     Creates a 3D surface plot from NP SQL database
     - plots Size vs. Shape vs. Excess Energy (EE)
@@ -388,6 +388,11 @@ def build_srf_plot(metals, shape, delg=False, T=298):
     Args:
     - metals (string || iterable): string(s) containing two metal elements
     - shape (string): shape of the NP
+
+    KArgs:
+    T (float): if temperature is given, plot G(mix)
+               (i.e. include configurational entropy)
+               (Default: None)
 
     Returns:
     - (plt.figure): figure of 3D surface plot
@@ -411,7 +416,7 @@ def build_srf_plot(metals, shape, delg=False, T=298):
     comps = df.comps.values
     ees = df.EE.values
 
-    if delg:
+    if T is not None:
         # k_b T [eV] = (25.7 mEV at 298 K)
         kt = 25.7E-3 * (T / 298.)
         del_s = comps * np.ma.log(comps).filled(0) + \
@@ -854,6 +859,7 @@ if __name__ == '__main__':
     # num_shells = 8
     # x_dope = 0.7
 
+    """
     import pathlib
     path = os.path.join(os.path.expanduser('~'),
                         'Box Sync', 'Michael_Cowan_PhD_research',
@@ -897,9 +903,8 @@ if __name__ == '__main__':
     #                           pct=False, cutoff_date=cutoff)
 
     figs = build_prdf_shapes_comparison(metals, num_shells, x_dope)
-    figs[2].savefig('C:/users/yla/desktop/test.svg')
+    # figs[2].savefig('C:/users/yla/desktop/test.svg')
     plt.show()
-    """
     # f = build_new_structs_plot(metals, shape, True)
     # only bimetallic NPs
     only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,

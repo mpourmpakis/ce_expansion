@@ -59,7 +59,7 @@ def build_structure_sql(shape, num_shells, build_bonds_list=True):
         elif shape == 'elongated-pentagonal-bipyramid':
             atom = ase.cluster.Decahedron('Cu', num_shells, num_shells, 0)
         else:
-            raise NotImplementedError('%s has not been implemented')
+            raise NotImplementedError('%s has not been implemented' % shape)
 
         nanop = db_inter.insert_nanoparticle(atom, shape, num_shells)
         # nanop.get_atoms_obj_skel()
