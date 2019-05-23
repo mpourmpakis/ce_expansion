@@ -18,6 +18,8 @@ import matplotlib.ticker
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import sys
+from ase.data.colors import jmol_colors
+from ase.data import chemical_symbols
 sys.path.append('..')
 import plot_defaults
 
@@ -83,6 +85,124 @@ def build_df(datatable, lim=None, custom_filter=None, **kwargs):
     df = pd.read_sql(qry, session.bind)
     df.columns = [col if col != 'shape' else 'np_shape' for col in df.columns]
     return df
+
+
+def build_atoms_in_shell_list(shape, shell):
+    """
+    Returns:
+    (list): atom indices that are in <shell> selected
+    """
+    has_center = {'cuboctahedron': False,
+                  'fcc-cube': False,
+                  'icosahedron': True,
+                  'elongated-pentagonal-bipyramid': True}
+
+    assert shell != 0 and shell < 15
+    # get positions of all shells < <shell>
+    oneless = get_nanoparticle(shape, num_shells=shell - 1, lim=1)
+    if oneless:
+        rem_atoms = oneless.get_atoms_obj_skel().positions
+    else:
+        rem_atoms = np.zeros((2, 3)) if has_center[shape] else np.zeros(3)
+
+    # get positions of all shells <= <shell>
+    actual = get_nanoparticle(shape, num_shells=shell, lim=1)
+    if not actual:
+        return [0] if has_center[shape] else []
+    keep_atoms = actual.get_atoms_obj_skel().positions
+
+    # center atoms
+    rem_atoms = (rem_atoms - rem_atoms.mean(0)).round(4)
+
+    keep_atoms = (keep_atoms - keep_atoms.mean(0)).round(4)
+
+    if not (isinstance(rem_atoms, np.ndarray) and
+            isinstance(keep_atoms, np.ndarray)):
+        raise ValueError("Unable to find shells")
+
+    rem_atoms = rem_atoms.tolist()
+    keep_atoms = keep_atoms.tolist()
+
+    return [i for i in range(len(keep_atoms))
+            if keep_atoms[i] not in rem_atoms]
+
+
+def build_shell_dist_fig(bimet, show=False):
+    """
+    Creates shell distribution figure of
+    BimetallicResult
+
+    Args:
+
+    Returns:
+    (plt.Figure)
+    """
+    atoms = bimet.build_atoms_obj().copy()
+
+    # center atoms at origin (COP)
+    atoms.positions -= atoms.positions.mean(0)
+
+    shell_ls = []
+    tot_count = []
+    m1_count = []
+    m2_count = []
+
+    for shell in range(1, bimet.nanoparticle.num_shells + 1):
+        inshell = atoms[build_atoms_in_shell_list(bimet.shape, shell)]
+        if len(inshell) == 0:
+            continue
+
+        shell_ls.append(shell)
+        tot_count.append(len(inshell))
+        m1_count.append(len([i for i in inshell if i.symbol == bimet.metal1]))
+        m2_count.append(len([i for i in inshell if i.symbol == bimet.metal2]))
+
+    tot_count = np.array(tot_count)
+    m1_count = np.array(m1_count)
+    m2_count = np.array(m2_count)
+
+    # normalize counts to concentrations
+    norm_m1 = m1_count / tot_count
+    norm_m2 = m2_count / tot_count
+
+    fig, axes = plt.subplots(2, 1, sharex=True)
+    ax1, ax2 = axes
+
+    m1_color = jmol_colors[chemical_symbols.index(bimet.metal1)]
+    m2_color = jmol_colors[chemical_symbols.index(bimet.metal2)]
+
+    ax1.plot(shell_ls, m1_count, 'o-', markeredgecolor='k',
+             color=m1_color, markersize=8, label=bimet.metal1)
+    ax1.plot(shell_ls, m2_count, 'o-', markeredgecolor='k',
+             color=m2_color, markersize=8, label=bimet.metal2)
+    ax1.legend(loc='upper left')
+    ax1.set_xticks(list(range(1, bimet.nanoparticle.num_shells + 1)))
+
+    # set ylim to maximum number of atoms on surface
+    high = int(round((tot_count[-1] + 10) * 10) / 10)
+    ax1.set_ylim(0, high)
+    # ax1.set_yticks(range(0, high + 1, 10))
+    ax1.set_ylabel('# of Atoms')
+
+    ax2.plot(shell_ls, norm_m1, 'o-', markeredgecolor='k',
+             color=m1_color, markersize=8)
+    ax2.plot(shell_ls, norm_m2, 'o-', markeredgecolor='k',
+             color=m2_color, markersize=8)
+    ax2.set_ylabel('Concentration')
+    ax2.set_yticks([0, 0.25, 0.5, 0.75, 1])
+    ax2.set_yticklabels(['{:,.0%}'.format(x) for x in ax2.get_yticks()])
+    ax2.set_xticks(list(range(1, bimet.nanoparticle.num_shells + 1)))
+    ax2.set_xticklabels(['Core'] +
+                        ['Shell %i' % i
+                         for i in range(2, bimet.nanoparticle.num_shells)] +
+                        ['Surface'], rotation=45)
+
+    fig.suptitle(bimet.build_chem_formula().replace('\\rm', '\\rm \\bf') + ' - %s' % shape)
+    fig.tight_layout(rect=(0, 0, 1, 0.9))
+
+    if show:
+        fig.show()
+    return fig
 
 
 def build_coefficient_dict(metals):
@@ -258,7 +378,7 @@ def build_shell2num_dict(shape=None):
     return result
 
 
-def build_srf_plot(metals, shape, delg=False, T=298):
+def build_srf_plot(metals, shape, T=None):
     """
     Creates a 3D surface plot from NP SQL database
     - plots Size vs. Shape vs. Excess Energy (EE)
@@ -268,6 +388,11 @@ def build_srf_plot(metals, shape, delg=False, T=298):
     Args:
     - metals (string || iterable): string(s) containing two metal elements
     - shape (string): shape of the NP
+
+    KArgs:
+    T (float): if temperature is given, plot G(mix)
+               (i.e. include configurational entropy)
+               (Default: None)
 
     Returns:
     - (plt.figure): figure of 3D surface plot
@@ -291,7 +416,7 @@ def build_srf_plot(metals, shape, delg=False, T=298):
     comps = df.comps.values
     ees = df.EE.values
 
-    if delg:
+    if T is not None:
         # k_b T [eV] = (25.7 mEV at 298 K)
         kt = 25.7E-3 * (T / 298.)
         del_s = comps * np.ma.log(comps).filled(0) + \
@@ -729,10 +854,48 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
 
 if __name__ == '__main__':
     # get all bimetallic NPs of given metals and shape
-    metals = 'agau'
-    shape = 'fcc-cube'
-    num_shells = 8
-    x_dope = 0.7
+    metals = 'aucu'
+    shape = 'icosahedron'
+    # num_shells = 8
+    # x_dope = 0.7
+
+    """
+    import pathlib
+    path = os.path.join(os.path.expanduser('~'),
+                        'Box Sync', 'Michael_Cowan_PhD_research',
+                        'data', 'np_ce', 'shell_dist_plots')
+
+    for metals in ['aucu', 'agcu', 'agau']:
+        print(metals.center(40, '-'))
+
+        pathlib.Path(os.path.join(path, metals)).mkdir(exist_ok=True)
+
+        for shape in ['icosahedron', 'cuboctahedron', 'fcc-cube',
+                      'elongated-pentagonal-bipyramid']:
+            print(shape.center(40))
+
+            pathlib.Path(os.path.join(path, metals, shape)).mkdir(
+                exist_ok=True)
+
+            for num_shells in range(2, 11):
+                pathlib.Path(os.path.join(path, metals, shape,
+                                          str(num_shells))).mkdir(
+                                              exist_ok=True)
+
+                results = get_bimet_result(metals, shape,
+                                           num_shells=num_shells)
+                print(str(num_shells).center(40))
+                for i, r in enumerate(results):
+                    f = build_shell_dist_fig(r)
+                    form = r.build_chem_formula(False)
+                    f.savefig(
+                        os.path.join(path, metals, shape, str(num_shells),
+                                     '%02i_%s.png' % (i, form)),
+                        dpi=300)
+                    plt.close('all')
+            print()
+        print()
+    sys.exit()
 
     cutoff = datetime.datetime(2019, 4, 23)
     # f = build_new_structs_plot(['agau', 'aucu', 'agcu'],
@@ -740,9 +903,8 @@ if __name__ == '__main__':
     #                           pct=False, cutoff_date=cutoff)
 
     figs = build_prdf_shapes_comparison(metals, num_shells, x_dope)
-    figs[2].savefig('C:/users/yla/desktop/test.svg')
+    # figs[2].savefig('C:/users/yla/desktop/test.svg')
     plt.show()
-    """
     # f = build_new_structs_plot(metals, shape, True)
     # only bimetallic NPs
     only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,

@@ -1079,4 +1079,4 @@ if __name__ == '__main__':
     # run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
     #       shells=6, max_generations=300)
 
-    newp = build_pop_obj(metals, shape, 8, x_dope=0.6, popsize=55)
+    newp = build_pop_obj(metals, shape, 3, x_dope=0.6, popsize=55)
