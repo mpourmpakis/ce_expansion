@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import ctypes
-import sys, os
+import os
+import sys
 
 # Selects whether to use the debug libs or not
 DEBUG_MODE = False
@@ -31,6 +32,7 @@ _libCalc = ctypes.CDLL(os.sep.join(bin_directory.split(os.sep) + [dll]))
 
 # Function return type
 _libCalc.calculate_ce.restype = ctypes.c_double
+_libCalc.calculate_mixing.restype = ctypes.POINTER(ctypes.c_double)
 
 # Argument types
 _libCalc.calculate_ce.argtypes = [ctypes.POINTER(ctypes.c_double),  # bond_energies
@@ -40,7 +42,12 @@ _libCalc.calculate_ce.argtypes = [ctypes.POINTER(ctypes.c_double),  # bond_energ
                                   ctypes.POINTER(ctypes.c_long),  # adj_table
                                   ctypes.POINTER(ctypes.c_long)  # id_array
                                   ]
-
+_libCalc.calculate_mixing.argtypes = [ctypes.c_long, # num atoms
+                                      ctypes.c_long, # num bonds
+                                      ctypes.POINTER(ctypes.c_long), #adj_table
+                                      ctypes.POINTER(ctypes.c_long), #id_array
+                                      ctypes.POINTER(ctypes.c_long) # Holder for return value
+                                      ]
 
 def pointerized_calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_string):
     """
@@ -82,8 +89,51 @@ def calculate_ce(bond_energies, num_atoms, cns, num_bonds, adjacency_table, id_s
                                  p_adjacency_table,
                                  p_id_string
                                  )
+def pointerized_calculate_mixing(num_atoms, num_bonds, adjacency_table, id_string, return_array):
+    """
+    Version of the calculate_mixing function that takes in all the pointers pre-done
 
+    Args:
+        num_atoms (int): Number of atoms in the system
+        num_bonds (int): Number of bonds in the system
+        adjacency_table (np.array): An Nx2 tableof bonds in the system, of length num_bonds
+        id_string (np.array): An array representing which elements are in the NP, of length num_atoms
+        return_array (int): A length-2 array to hold return values. First value is the number of homo-atomic
+        bonds. Second value is the number of hetero-atomic bonds in the system.
 
+    Returns:
+        None. Return_array is changed in place.
+    """
+    _libCalc.calculate_mixing(num_atoms, num_bonds, adjacency_table, id_string, return_array)
+
+    return None
+
+def calculate_mixing(num_atoms, num_bonds, adjacency_table, id_string):
+    """
+    Version of the calculate_mixing function which creates the pointers on its own.
+    
+    Args:
+        num_atoms (int): Number of atoms in the system
+        num_bonds (int): Number of bonds in the system
+        adjacency_table (np.array): An Nx2 tableof bonds in the system, of length num_bonds
+        id_string (np.array): An array representing which elements are in the NP, of length num_atoms
+        
+    Returns:
+        A length-2 array to hold return values. First value is the number of homo-atomic
+        bonds. Second value is the number of hetero-atomic bonds in the system. 
+    """
+    p_adjacency_table = adjacency_table.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+    p_id_string = id_string.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+    return_array = np.zeros(2,dtype=ctypes.c_long)
+    p_return_array = return_array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+
+    _libCalc.calculate_mixing(ctypes.c_long(num_atoms),
+                              ctypes.c_long(num_bonds),
+                              p_adjacency_table,
+                              p_id_string,
+                              p_return_array)
+
+    return return_array
 if __name__ == "__main__":
     # Just some test stuff
     import numpy as np
@@ -99,6 +149,7 @@ if __name__ == "__main__":
                          (8, 9), (8, 7), (8, 2), (8, 1), (8, 0), (9, 7), (9, 8), (9, 10), (9, 4), (9, 2), (9, 0),
                          (10, 9), (10, 6), (10, 5), (10, 4), (10, 2), (10, 0), (11, 12), (11, 8), (11, 7), (11, 3),
                          (11, 1), (11, 0), (12, 6), (12, 5), (12, 3), (12, 1), (12, 0), (12, 11)])
+    adjacency_table = np.array([[]])
     num_bonds = bondList.shape[0]
     id_string = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1])
     print(id_string.dtype)
@@ -115,3 +166,6 @@ if __name__ == "__main__":
     )
     print("Testing a 13-atom icosahedron with fake coefficients:")
     print(calculate_ce(test_3Darray, num_atoms, cns, num_bonds, bondList, id_string))
+
+    print("Testing the mixing")
+    print(calculate_mixing(num_atoms, num_bonds, bondList, id_string))

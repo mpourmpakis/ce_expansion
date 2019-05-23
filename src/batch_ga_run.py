@@ -20,7 +20,7 @@ datapath = os.path.join(os.path.expanduser('~'), 'Box Sync',
 
 # all metal options
 # 28 total options
-metals = list(itertools.combinations(db_inter.build_metals_list(), 2))
+# metals = list(itertools.combinations(db_inter.build_metals_list(), 2))
 
 
 # run 4 metal options a day to iterate once a week through all options
@@ -29,13 +29,16 @@ day = datetime.now().weekday()
 start_index = day * 4
 
 # chooses 4 metals from list of 28
-metal_opts = metals[start_index:start_index + 4]
+# metal_opts = metals[start_index:start_index + 4]
+
+# ONLY RUN METALS THAT WE WILL FOCUS ON FOR PAPER
+metal_opts = [('Ag', 'Au'), ('Ag', 'Cu'), ('Au', 'Cu')]
 
 shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
               'elongated-pentagonal-bipyramid']
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
-niterations = 1
+niterations = 2
 
 # start batch GA run
 batch_tot = len(metal_opts) * len(shape_opts)
@@ -50,5 +53,8 @@ for n in range(niterations):
             batch_i += 1
 
 # update new structures plot in <datapath>
-fig = db_inter.build_new_structs_plot(metal_opts, shape_opts, True)
-fig.savefig(os.path.join(datapath, '%02i_new_struct_log.png' % day))
+cutoff_date = datetime(2019, 4, 24, 18, 30)
+fig = db_inter.build_new_structs_plot(metal_opts, shape_opts, pct=False,
+                                      cutoff_date=cutoff_date)
+# fig.savefig(os.path.join(datapath, '%02i_new_struct_log.png' % day))
+fig.savefig(os.path.join(datapath, 'agaucu_STRUCTS.png'))
