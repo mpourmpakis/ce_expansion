@@ -98,13 +98,17 @@ def pointerized_calculate_mixing(num_atoms, num_bonds, adjacency_table, id_strin
         num_bonds (int): Number of bonds in the system
         adjacency_table (np.array): An Nx2 tableof bonds in the system, of length num_bonds
         id_string (np.array): An array representing which elements are in the NP, of length num_atoms
-        return_array (int): A length-2 array to hold return values. First value is the number of homo-atomic
-        bonds. Second value is the number of hetero-atomic bonds in the system.
+        return_array (int): A length-2 array to hold return values.
+                              -First value is the number of A-A bonds.
+                              -Second value is the number of B-B bonds.
+                              -Third value is the number of A-B bonds.
 
     Returns:
         None. Return_array is changed in place.
     """
-    _libCalc.calculate_mixing(num_atoms, num_bonds, adjacency_table, id_string, return_array)
+    error_code = _libCalc.calculate_mixing(num_atoms, num_bonds, adjacency_table, id_string, return_array)
+
+    assert (error_code == 0)
 
     return None
 
@@ -119,19 +123,22 @@ def calculate_mixing(num_atoms, num_bonds, adjacency_table, id_string):
         id_string (np.array): An array representing which elements are in the NP, of length num_atoms
         
     Returns:
-        A length-2 array to hold return values. First value is the number of homo-atomic
-        bonds. Second value is the number of hetero-atomic bonds in the system. 
+        A length-3 holding return values.
+          -First value is the number of A-A bonds.
+          -Second value is the number of B-B bonds.
+          -Third value is the number of A-B bonds.
     """
     p_adjacency_table = adjacency_table.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
     p_id_string = id_string.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
-    return_array = np.zeros(2,dtype=ctypes.c_long)
+    return_array = np.zeros(3,dtype=ctypes.c_long)
     p_return_array = return_array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
-    _libCalc.calculate_mixing(ctypes.c_long(num_atoms),
-                              ctypes.c_long(num_bonds),
-                              p_adjacency_table,
-                              p_id_string,
-                              p_return_array)
+    result = _libCalc.calculate_mixing(ctypes.c_long(num_atoms),
+                                       ctypes.c_long(num_bonds),
+                                       p_adjacency_table,
+                                       p_id_string,
+                                       p_return_array)
+    assert (error_code == 0)
 
     return return_array
 if __name__ == "__main__":
