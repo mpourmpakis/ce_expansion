@@ -2,6 +2,11 @@
 
 import requests
 
+import sys
+#####
+sys.exit("Delete this line to re-run database scrape")
+#####
+
 def pullRecord(filename, address):
  """
  A record from the database presented in the following article:
