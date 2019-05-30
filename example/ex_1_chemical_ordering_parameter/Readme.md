@@ -1,6 +1,6 @@
 # Chemical Ordering Parameters for Ag<sub>X</sub>Au<sub>309-X</sub> Icosahedrons
 
-This folder uses /data/schiotz, which was sourced from:
+This folder uses /data/larson_et_al, which was sourced from:
 
   https://cmrdb.fysik.dtu.dk/agau309
   
