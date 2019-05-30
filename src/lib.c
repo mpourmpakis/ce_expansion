@@ -51,7 +51,7 @@ long int calculate_mixing(long int num_atoms, // Number of atoms in the system
             printf("Bond Number: %d; ", i);
             printf("%d - %d; ", bond_source, bond_destination);
             printf("A-B Count: %d\n", return_array[2]);
-         #endif
+        #endif
       }
     }
 
