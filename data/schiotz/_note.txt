@@ -1,4 +1,4 @@
-Data in this directory was taken from the published database at:
+Data in this directory was taken from the published database at on May 29, 2019:
   https://cmrdb.fysik.dtu.dk/agau309
 
 Data cites the following publication:
