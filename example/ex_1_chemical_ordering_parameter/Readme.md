@@ -1,4 +1,4 @@
-#Chemical Ordering Parameters for Ag<sub>X</sub>Au<sub>309-X</sub> Icosahedrons
+# Chemical Ordering Parameters for Ag<sub>X</sub>Au<sub>309-X</sub> Icosahedrons
 
 This folder uses /data/schiotz, which was sourced from:
 
