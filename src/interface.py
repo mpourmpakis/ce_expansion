@@ -32,7 +32,7 @@ _libCalc = ctypes.CDLL(os.sep.join(bin_directory.split(os.sep) + [dll]))
 
 # Function return type
 _libCalc.calculate_ce.restype = ctypes.c_double
-_libCalc.calculate_mixing.restype = ctypes.POINTER(ctypes.c_double)
+_libCalc.calculate_mixing.restype = ctypes.c_int
 
 # Argument types
 _libCalc.calculate_ce.argtypes = [ctypes.POINTER(ctypes.c_double),  # bond_energies
@@ -133,14 +133,12 @@ def calculate_mixing(num_atoms, num_bonds, adjacency_table, id_string):
     return_array = np.zeros(3,dtype=ctypes.c_long)
     p_return_array = return_array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
-    result = _libCalc.calculate_mixing(ctypes.c_long(num_atoms),
-                                       ctypes.c_long(num_bonds),
-                                       p_adjacency_table,
-                                       p_id_string,
-                                       p_return_array)
-    assert (error_code == 0)
-
-    return return_array
+    error_code = _libCalc.calculate_mixing(ctypes.c_long(num_atoms),
+                                           ctypes.c_long(num_bonds),
+                                           p_adjacency_table,
+                                           p_id_string,
+                                           p_return_array)
+    return error_code
 if __name__ == "__main__":
     # Just some test stuff
     import numpy as np
@@ -159,7 +157,7 @@ if __name__ == "__main__":
     adjacency_table = np.array([[]])
     num_bonds = bondList.shape[0]
     id_string = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1])
-    print(id_string.dtype)
+    #print(id_string.dtype)
     test_3Darray = np.array([
         [
             [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
@@ -176,3 +174,5 @@ if __name__ == "__main__":
 
     print("Testing the mixing")
     print(calculate_mixing(num_atoms, num_bonds, bondList, id_string))
+
+    x = calculate_mixing(num_atoms, num_bonds, bondList, id_string)

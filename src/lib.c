@@ -14,7 +14,7 @@ long int calculate_mixing(long int num_atoms, // Number of atoms in the system
                           long int return_array[3]){ // Array holding the hetero/homoatomic bond counts respectively
     // Calculates the number of homo/heteroatomic bonds in the system
     // Changes array in place
-    
+
     // Zero out return-array
     long int i=0;
     for (i=0; i < 3; i++){
@@ -39,6 +39,12 @@ long int calculate_mixing(long int num_atoms, // Number of atoms in the system
         return_array[2] = return_array[1] + 1;
       }
     }
+
+    #ifdef PRINT_DEBUG_INFO
+        printf("A-A Bonds: %d", return_array[0]);
+        printf("B-B Bonds: %d", return_array[1]);
+        printf("A-B Bonds: %d", return_array[2]);
+    #endif
 
     // This double-counts the bonds due to the way we define the bond lists.
     // Hence, we always should have an even number for return_array entries.
