@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+import sys
+
 import requests
 
-import sys
 #####
 sys.exit("Delete this line to re-run database scrape")
 #####
