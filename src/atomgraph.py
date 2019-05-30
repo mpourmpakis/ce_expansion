@@ -251,6 +251,7 @@ if __name__ == '__main__':
     # Create a nanoparticle and its graph object
     nanoparticle = ase.cluster.Icosahedron('Cu', 3)
     bond_list = adjacency.buildBondsList(nanoparticle)
+
     graph = AtomGraph(bond_list, 'Cu', 'Au')
 
     # Generate the chemical ordering
@@ -262,9 +263,12 @@ if __name__ == '__main__':
     print('Cohesive energy = %.2e' % cohesive_energy)
 
     mixing = graph.countMixing(chemical_ordering)
-    print(mixing)
+    print("[A-A   A-B   B-B] =", mixing)
+    print("Sum of homo/hetero-atomic bonds: ", sum(mixing))
+    num_bonds = len(bond_list) // 2
+    print("True bondcount: ", num_bonds)
     mixing_parameter = graph.calcMixing(chemical_ordering)
-    print(mixing_parameter)
+    print("Mixing Parameter: ", mixing_parameter)
 
     # Enter global metropolis
     opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=True)

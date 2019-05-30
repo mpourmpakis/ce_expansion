@@ -20,11 +20,11 @@ _lib_debug.so : lib_debug_unix.o
 lib_win64.o : src/lib.c
 	gcc -fPIC -O3 -c src/lib.c -o obj/lib_win64.o
 lib_debug_win64.o : src/lib.c
-	gcc -fPIC -O3 -c src/lib.c -D PRINT_DEBUG_INFO  -o obj/lib_win64.o
+	gcc -fPIC -O3 -c src/lib.c -D PRINT_DEBUG_INFO  -o obj/lib_debug_win64.o
 _lib.dll : lib_win64.o
 	gcc -shared obj/lib_win64.o -o bin/_lib.dll
 _lib_debug.dll : lib_debug_win64.o
-	gcc -shared obj/lib_win64.o -o bin/_lib_debug.dll
+	gcc -shared obj/lib_debug_win64.o -o bin/_lib_debug.dll
 
 clean_unix : 
 	rm obj/lib_unix.o

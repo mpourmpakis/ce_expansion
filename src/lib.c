@@ -30,20 +30,38 @@ long int calculate_mixing(long int num_atoms, // Number of atoms in the system
         if (bond_source == 1){
           // A-A Bond
           return_array[0] = return_array[0] + 1;
+          #ifdef PRINT_DEBUG_INFO
+            printf("Bond Number: %d; ", i);
+            printf("%d - %d; ", bond_source, bond_destination);
+            printf("A-A Count: %d\n", return_array[0]);
+          #endif
         } else {
           // B-B Bond
           return_array[1] = return_array[1] + 1;
+          #ifdef PRINT_DEBUG_INFO
+            printf("Bond Number: %d; ", i);
+            printf("%d - %d; ", bond_source, bond_destination);
+            printf("B-B Count: %d\n", return_array[1]);
+          #endif
         }
       } else {
         // A-B Bond
-        return_array[2] = return_array[1] + 1;
+        return_array[2] = return_array[2] + 1;
+        #ifdef PRINT_DEBUG_INFO
+            printf("Bond Number: %d; ", i);
+            printf("%d - %d; ", bond_source, bond_destination);
+            printf("A-B Count: %d\n", return_array[2]);
+         #endif
       }
     }
 
+
+
     #ifdef PRINT_DEBUG_INFO
-        printf("A-A Bonds: %d", return_array[0]);
-        printf("B-B Bonds: %d", return_array[1]);
-        printf("A-B Bonds: %d", return_array[2]);
+        printf("\nBond Counts (these are double-counted): \n");
+        printf("A-A Bonds: %d\n", return_array[0]);
+        printf("B-B Bonds: %d\n", return_array[1]);
+        printf("A-B Bonds: %d\n", return_array[2]);
     #endif
 
     // This double-counts the bonds due to the way we define the bond lists.
@@ -57,6 +75,14 @@ long int calculate_mixing(long int num_atoms, // Number of atoms in the system
       // Divide return_array entry by 2
       return_array[i] = return_array[i] / 2;
     }
+
+    #ifdef PRINT_DEBUG_INFO
+        printf("\nBond Counts (these are NOT double-counted): \n");
+        printf("A-A Bonds: %d\n", return_array[0]);
+        printf("B-B Bonds: %d\n", return_array[1]);
+        printf("A-B Bonds: %d\n", return_array[2]);
+    #endif
+
     return incorrect_counting;
 }
 
