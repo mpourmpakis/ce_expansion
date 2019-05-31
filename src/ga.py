@@ -200,8 +200,8 @@ class Pop(object):
         self.num_atoms = len(atom)
 
         self.popsize = popsize
-        if x_dope:
-            self.n_dope = int(self.num_atoms * x_dope)
+        if x_dope is not None:
+            self.n_dope = np.array([self.num_atoms * x_dope]).astype(int)[0]
         else:
             self.n_dope = n_dope
 
@@ -298,7 +298,8 @@ class Pop(object):
 
         :return:
         """
-        return self.stats[:, 0].min()
+        self.sort_pop()
+        return self.pop[0].ce
 
     def step(self, rand=False):
         """
@@ -385,6 +386,7 @@ class Pop(object):
                 self.pop = [Chromo(self.atomg,
                                    n_dope=self.n_dope,
                                    arr=opt_order)] + self.pop[:-1]
+                self.sort_pop()
                 self.update_stats()
 
         self.stats = np.array(self.stats)
@@ -1031,11 +1033,11 @@ def run_ga(metals, shape, save_data=True,
                 tot_new_structs += 1
                 n_metal1 = int(num_atoms - dope)
                 ordering = ''.join([str(i) for i in pop.pop[0].arr])
-                ce = pop.get_min()
+                ce = pop.pop[0].ce
 
                 # calculate excess energy
-                ee = ce - (mono1.CE * (1 - pop.x_dope)) - \
-                    (mono2.CE * pop.x_dope)
+                ee = ag.getEE(pop.pop[0].arr)
+
                 if abs(ee) < 1E-10:
                     ee = 0
 
@@ -1072,11 +1074,58 @@ def run_ga(metals, shape, save_data=True,
             tot_structs=tot_structs,
             batch_run_num=batch_runinfo)
 
-if __name__ == '__main__':
-    metals = ('Ag', 'Au')
-    shape = 'icosahedron'
 
+def check_db_values(update_db=False):
+    """
+    Checks CE values in database to ensure they match their ordering
+
+    KArgs:
+    update_db (bool): if True and mismatch is found, the database will be
+                      updated to the correct CE and EE
+                      (Default: False)
+    """
+    metal_opts = [('Ag', 'Au'),
+                  ('Ag', 'Cu'),
+                  ('Au', 'Cu')]
+
+    shape_opts = ['icosahedron', 'cuboctahedron', 'fcc-cube',
+                  'elongated-pentagonal-bipyramid']
+
+    fails = []
+    for shape in shape_opts:
+        for shell in range(2, 15):
+            for metals in metal_opts:
+                for x_dope in np.linspace(0, 1, 11):
+                    newp = build_pop_obj(metals, shape, shell,
+                                         x_dope=x_dope, popsize=5)
+                    res = newp.prev_results
+                    if not res:
+                        continue
+                    ordering = np.array(list(map(int, res.ordering)))
+                    actual_ce = newp.atomg.getTotalCE(ordering)
+                    actual_ee = newp.atomg.getEE(ordering)
+                    if abs(actual_ce - res.CE) > 1E-10:
+                        fails.append([res.CE, actual_ce, res.EE, actual_ee])
+                        if update_db:
+                            db_inter.update_bimet_result(
+                                metals=metals,
+                                shape=res.shape,
+                                num_atoms=res.num_atoms,
+                                diameter=res.diameter,
+                                n_metal1=res.n_metal1,
+                                CE=actual_ce,
+                                ordering=res.ordering,
+                                EE=actual_ee,
+                                nanop=res.nanoparticle,
+                                allow_insert=False,
+                                ensure_ce_min=False)
+
+                        print(res.build_chem_formula(False))
+
+    fails = np.array(fails)
+    print(len(fails))
+
+
+if __name__ == '__main__':
     # run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
     #       shells=6, max_generations=300)
-
-    newp = build_pop_obj(metals, shape, 3, x_dope=0.6, popsize=55)
