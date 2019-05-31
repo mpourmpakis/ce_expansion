@@ -7,5 +7,3 @@ This directory contains the following examples:
     * Shows how to calculate the chemical ordering parameter 
 2. ex_2_agcu_Icosahedrons
     * Shows how to perform database queries to search for existing particles in np.db
-    * Shows how to construct an atomgraph using the database interface
-    * Shows how to calculate excses energies using the built-in atomgraph method
