@@ -1123,9 +1123,10 @@ def check_db_values(update_db=False):
                         print(res.build_chem_formula(False))
 
     fails = np.array(fails)
-    print(len(fails))
-
+    print('%i issue%s found' % (len(fails), ['s', ''][bool(len(fails) == 1)]))
+    return fails
 
 if __name__ == '__main__':
     # run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
     #       shells=6, max_generations=300)
+    check_db_values()
