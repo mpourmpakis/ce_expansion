@@ -97,22 +97,18 @@ class AtomGraph(object):
 
         Args:
             ordering(np.array): Chemcial ordering of the NP
-            holder_array(np.array): A length-2 array to hold the result. Optional. If not supplied,
+            holder_array(np.array): A length-3 array to hold the result. Optional. If not supplied,
                                     will create the array on the spot. May be slower to do this. This
                                     array is OVER-WRITTEN by the C-library, and contains long ints.
         Returns:
-            The holder array. First index is number of homo-atomic bonds. Second index is the number
-            of heteroatomic bonds.
+            The holder array. First index is number of A-A bonds. Second index is the number
+            of B-B bonds. Third index is the number of A-B bonds.
         """
         ordering = ordering.astype(ctypes.c_long)
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
         if holder_array is None:
-            holder_array = np.zeros(2, dtype=ctypes.c_long)
-        else:
-            # Todo: Just do this in the C library from the get-go
-            holder_array[0] = 0
-            holder_array[1] = 0
+            holder_array = np.zeros(3, dtype=ctypes.c_long)
 
         p_holder_array = holder_array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
 
@@ -131,25 +127,26 @@ class AtomGraph(object):
         Waals D3 Corrections. J Phys Chem C 2019, 123 (12) 7431-7439.
         Link here: https://pubs.acs.org/doi/10.1021/acs.jpcc.8b12219
         
-        For bimetallics, this mixing parameter is just the percent of homo-atomic 
-        bonds scaled between -1 and 1, provable using algebra.
+        For bimetallics, this mixing parameter is the percent of homo-atomic 
+        bonds scaled between -1 and 1.
 
         Args:
         ordering(np.array): Chemcial ordering of the NP
-        holder_array(np.array): A length-2 array to hold the result. Optional. If not supplied,
-                                will create the array on the spot. May be slower to do this. This
-                                array is OVER-WRITTEN by the C-library, and contains long ints.
+        holder_array(np.array): A length-3 array to hold the result of countMixing. 
+                                Optional. If not supplied, will create the array on the spot. 
+                                May be slower to do this. This array is OVER-WRITTEN by the 
+                                C-library, and contains long ints.
 
         Returns:
             The mixing parameter. +1 indicates complete segregation (e.g. only homo-atomic bonds).
             -1 indicates complete mixing (e.g. zero bonds between the same element).
         """
         if holder_array is None:
-            holder_array = np.zeros(2, dtype=ctypes.c_long)
+            holder_array = np.zeros(3, dtype=ctypes.c_long)
         self.countMixing(ordering, holder_array)
         
-        numerator = holder_array[0] - holder_array[1]
-        denominator = holder_array[0] + holder_array[1]
+        numerator = (holder_array[0] + holder_array[1]) - holder_array[2]
+        denominator = (holder_array[0] + holder_array[1]) + holder_array[2]
         
         mixing_parameter = numerator / denominator
 
@@ -283,6 +280,7 @@ if __name__ == '__main__':
     # Create a nanoparticle and its graph object
     nanoparticle = ase.cluster.Icosahedron('Cu', 3)
     bond_list = adjacency.buildBondsList(nanoparticle)
+
     graph = AtomGraph(bond_list, 'Cu', 'Au')
 
     # Generate the chemical ordering
@@ -294,9 +292,12 @@ if __name__ == '__main__':
     print('Cohesive energy = %.2e' % cohesive_energy)
 
     mixing = graph.countMixing(chemical_ordering)
-    print(mixing)
+    print("[A-A   A-B   B-B] =", mixing)
+    print("Sum of homo/hetero-atomic bonds: ", sum(mixing))
+    num_bonds = len(bond_list) // 2
+    print("True bondcount: ", num_bonds)
     mixing_parameter = graph.calcMixing(chemical_ordering)
-    print(mixing_parameter)
+    print("Mixing Parameter: ", mixing_parameter)
 
     # Enter global metropolis
     opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=True)
