@@ -224,7 +224,9 @@ class AtomGraph(object):
 
         '''
         # Initialization
-        best_ordering = ordering
+        # create new instance of ordering array
+        ordering = ordering.copy()
+        best_ordering = ordering.copy()
         best_energy = self.getTotalCE(ordering)
         prev_energy = best_energy
         energy_history = np.zeros(num_steps)
@@ -244,14 +246,15 @@ class AtomGraph(object):
                 # Search the NP for a 1 with heteroatomic bonds
                 for chosen_one in np.random.permutation(ones):
                     connected_atoms = adj_list[chosen_one]
-                    connected_zeros = np.intersect1d(connected_atoms, zeros, assume_unique=True)
+                    connected_zeros = np.intersect1d(connected_atoms, zeros,
+                                                     assume_unique=True)
                     if connected_zeros.size != 0:
                         # The atom has zeros connected to it
                         chosen_zero = np.random.choice(connected_zeros)
                         break
 
             # Evaluate the energy change
-            prev_ordering = ordering
+            prev_ordering = ordering.copy()
             ordering[chosen_one] = 0
             ordering[chosen_zero] = 1
             energy = self.getTotalCE(ordering)
@@ -263,10 +266,10 @@ class AtomGraph(object):
                 energy_history[step] = energy
                 if energy < best_energy:
                     best_energy = energy
-                    best_ordering = ordering
+                    best_ordering = ordering.copy()
             else:
                 # Reject the step
-                ordering = prev_ordering
+                ordering = prev_ordering.copy()
                 energy_history[step] = prev_energy
 
         return best_ordering, best_energy, energy_history
