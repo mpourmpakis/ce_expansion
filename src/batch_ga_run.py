@@ -22,6 +22,11 @@ datapath = os.path.join(os.path.expanduser('~'), 'Box Sync',
 # 28 total options
 # metals = list(itertools.combinations(db_inter.build_metals_list(), 2))
 
+max_generations = 5000
+max_nochange = 1000
+
+# HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
+niterations = 1
 
 # run 4 metal options a day to iterate once a week through all options
 # e.g. (Saturday = 5) * 4 = 20
@@ -37,9 +42,6 @@ metal_opts = [('Ag', 'Au'), ('Ag', 'Cu'), ('Au', 'Cu')]
 shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
               'elongated-pentagonal-bipyramid']
 
-# HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
-niterations = 2
-
 # start batch GA run
 batch_tot = len(metal_opts) * len(shape_opts)
 for n in range(niterations):
@@ -49,7 +51,9 @@ for n in range(niterations):
             ga.run_ga(metals=metals,
                       shape=shape,
                       save_data=True,  # True,
-                      batch_runinfo='%i of %i' % (batch_i, batch_tot))
+                      batch_runinfo='%i of %i' % (batch_i, batch_tot),
+                      max_generations=max_generations,
+                      max_nochange=max_nochange)
             batch_i += 1
 
 # update new structures plot in <datapath>

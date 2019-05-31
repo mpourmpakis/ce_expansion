@@ -49,7 +49,6 @@ class Chromo(object):
         else:
             self.n_dope = n_dope
         # self.atomg = atomg
-        self.arr = np.zeros(self.num_atoms).astype(int)
 
         if n_dope > self.num_atoms:
             raise ValueError("Can't dope more atoms than there are atoms...")
@@ -59,6 +58,7 @@ class Chromo(object):
             self.arr = np.array(arr)
             self.n_dope = self.arr.sum()
         else:
+            self.arr = np.zeros(self.num_atoms).astype(int)
             self.arr[:n_dope] = 1
             np.random.shuffle(self.arr)
 
@@ -159,8 +159,9 @@ class Chromo(object):
                 break
 
         assert child1.sum() == child2.sum() == self.n_dope
-        return [Chromo(self.atomg, n_dope=self.n_dope, arr=child1),
-                Chromo(self.atomg, n_dope=self.n_dope, arr=child2)]
+        children = [Chromo(self.atomg, n_dope=self.n_dope, arr=child1.copy()),
+                    Chromo(self.atomg, n_dope=self.n_dope, arr=child2.copy())]
+        return children
 
     def calc_score(self):
         """
@@ -200,8 +201,8 @@ class Pop(object):
         self.num_atoms = len(atom)
 
         self.popsize = popsize
-        if x_dope:
-            self.n_dope = int(self.num_atoms * x_dope)
+        if x_dope is not None:
+            self.n_dope = np.array([self.num_atoms * x_dope]).astype(int)[0]
         else:
             self.n_dope = n_dope
 
@@ -298,7 +299,8 @@ class Pop(object):
 
         :return:
         """
-        return self.stats[:, 0].min()
+        self.sort_pop()
+        return self.pop[0].ce
 
     def step(self, rand=False):
         """
@@ -337,12 +339,14 @@ class Pop(object):
         self.sort_pop()
         self.update_stats()
 
-    def run(self, nsteps=100, std_cut=0.0, rand=False):
+    def run(self, nsteps=100, max_nochange=50,
+            std_cut=0.0, rand=False):
         """
         Runs a GA simulation
 
         Kargs:
         nsteps (int): (default: 100)
+        max_nochange (int): (default: 50)
         std_cut (float): (default: 0.0)
         rand (bool): (default: False)
 
@@ -358,6 +362,10 @@ class Pop(object):
         # format of string to be written to console during sim
         update_str = 'dopeX = %.2f\tMin: %.5f eV/atom\t%05i'
 
+        # GA will not continue if <maxnochange> generations are
+        # taken without a change in minimum CE
+        nochange = 0
+
         # no GA required for monometallic systems
         if self.n_dope not in [0, self.atomg.num_atoms]:
             start = time.time()
@@ -368,14 +376,26 @@ class Pop(object):
                 # if STD less than std_cut end the GA
                 if self.stats[-1][2] < std_cut:
                     break
+
+                # track if there was a change
+                if self.stats[-1][0] == self.stats[-2][0]:
+                    nochange += 1
+                else:
+                    nochange = 0
+
+                # if no change has been made after <maxnochange>, stop GA
+                if nochange == max_nochange:
+                    break
+
             val = update_str % (self.x_dope, self.stats[-1][0], i + 1)
             print(val.center(CENTER), end='\r')
             self.runtime += time.time() - start
 
-            # run James' metropolis algorithm to search for
+            # run James' metropolis algorithm function to search for
             # minimum struct near current min
             low_struct = self.pop[0]
-            opt_order, opt_ce, en_hist = self.atomg.metropolis(low_struct.arr,
+            low_ordering = low_struct.arr.copy()
+            opt_order, opt_ce, en_hist = self.atomg.metropolis(low_ordering,
                                                                num_steps=5000,
                                                                swap_any=False)
 
@@ -385,6 +405,7 @@ class Pop(object):
                 self.pop = [Chromo(self.atomg,
                                    n_dope=self.n_dope,
                                    arr=opt_order)] + self.pop[:-1]
+                self.sort_pop()
                 self.update_stats()
 
         self.stats = np.array(self.stats)
@@ -422,10 +443,11 @@ class Pop(object):
 
         Returns: None
         """
+        self.sort_pop()
         s = np.array([i.ce for i in self.pop])
-        self.stats.append([s[0],
-                          s.mean(),
-                          s.std()])
+        self.stats.append([s.min(),  # minimum CE
+                          s.mean(),  # mean CE
+                          s.std()])  # STD CE
         self.min_struct_ls.append(Chromo(self.atomg, self.n_dope,
                                          arr=self.pop[0].arr.copy()))
 
@@ -820,7 +842,9 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
 
 def run_ga(metals, shape, save_data=True,
            batch_runinfo=None, shells=None,
-           max_generations=None):
+           max_generations=5000,
+           max_nochange=2000,
+           add_coreshell=True):
     """
     Submission function to run GAs of a given metal combination and
     shape, sweeping over different sizes (measured in number of shells)
@@ -855,7 +879,13 @@ def run_ga(metals, shape, save_data=True,
                           (default: None)
     max_generations (int): if not None, use specified value as max generations
                            for each GA sim
-                           (default: None)
+                           (default: 5000)
+    max_nochange (int): maximum generations GA will go without a change in
+                        minimum CE
+                        (default: 2000)
+    add_coreshell (bool): if True, core shell structures will be included in
+                          GA simulations
+                          (Default: True)
 
     Returns: None
     """
@@ -905,10 +935,8 @@ def run_ga(metals, shape, save_data=True,
     # GA PROPERTIES
 
     # number of generations for each GA sim
-    if max_generations:
-        max_runs = max_generations
-    else:
-        max_runs = 5000
+    if max_generations < 0 or not isinstance(max_generations, int):
+        raise ValueError("max_generations must be an integer greater than 0")
 
     # population size
     popsize = 50
@@ -996,6 +1024,14 @@ def run_ga(metals, shape, save_data=True,
             # recalc concentration to match n
             x = n / float(num_atoms)
 
+        # add core-shell structures list of comps to run
+        if add_coreshell:
+            srfatoms = db_inter.build_atoms_in_shell_list(shape, nshells)
+            nsrf = len(srfatoms)
+            ncore = num_atoms - nsrf
+            n = np.unique(n.tolist() + [ncore, nsrf])
+            x = n / float(num_atoms)
+
         # total structures checked ( - 2 to exclude monometallics)
         tot_structs += float(len(n) - 2)
 
@@ -1022,7 +1058,7 @@ def run_ga(metals, shape, save_data=True,
             # if i:
             #    pop.n_dope = dope
             #    pop.initialize_new_run()
-            pop.run(max_runs)
+            pop.run(max_generations, max_nochange=max_nochange)
 
             # if new minimum CE found and <save_data>
             # store result in DB
@@ -1031,11 +1067,14 @@ def run_ga(metals, shape, save_data=True,
                 tot_new_structs += 1
                 n_metal1 = int(num_atoms - dope)
                 ordering = ''.join([str(i) for i in pop.pop[0].arr])
-                ce = pop.get_min()
+                ce = pop.pop[0].ce
+
+                # ensure ordering and CE match
+                assert ag.getTotalCE(pop.pop[0].arr) == pop.pop[0].ce
 
                 # calculate excess energy
-                ee = ce - (mono1.CE * (1 - pop.x_dope)) - \
-                    (mono2.CE * pop.x_dope)
+                ee = ag.getEE(pop.pop[0].arr)
+
                 if abs(ee) < 1E-10:
                     ee = 0
 
@@ -1066,17 +1105,80 @@ def run_ga(metals, shape, save_data=True,
             metal1=metal1,
             metal2=metal2,
             shape=shape,
-            ga_generations=max_runs,
+            ga_generations=max_generations,
             shell_range='%i - %i' % tuple(nshell_range),
             new_min_structs=tot_new_structs,
             tot_structs=tot_structs,
             batch_run_num=batch_runinfo)
 
-if __name__ == '__main__':
-    metals = ('Ag', 'Au')
-    shape = 'icosahedron'
 
+def check_db_values(update_db=False):
+    """
+    Checks CE values in database to ensure they match their ordering
+
+    KArgs:
+    update_db (bool): if True and mismatch is found, the database will be
+                      updated to the correct CE and EE
+                      (Default: False)
+
+    Returns:
+
+    """
+    metal_opts = [('Ag', 'Au'),
+                  ('Ag', 'Cu'),
+                  ('Au', 'Cu')]
+
+    shape_opts = ['icosahedron', 'cuboctahedron', 'fcc-cube',
+                  'elongated-pentagonal-bipyramid']
+
+    fails = []
+    for shape in shape_opts:
+        for shell in range(2, 15):
+            nanop = structure_gen.build_structure_sql(shape, shell,
+                                                      build_bonds_list=True)
+            for metals in metal_opts:
+                atomg = atomgraph.AtomGraph(nanop.bonds_list,
+                                            metals[0], metals[1])
+
+                # find all bimetallic results matching shape, size, and metals
+                results = db_inter.get_bimet_result(metals, shape=shape,
+                                                    num_shells=shell)
+                for res in results:
+                    ordering = np.array(list(map(int, res.ordering)))
+                    actual_ce = atomg.getTotalCE(ordering)
+                    actual_ee = atomg.getEE(ordering)
+
+                    outp = '%s %s' % (res.shape[:3].upper(),
+                                      res.build_chem_formula())
+
+                    print(outp.rjust(20), end='')
+                    if abs(actual_ce - res.CE) > 1E-10:
+                        fails.append([res.CE, actual_ce, res.EE, actual_ee])
+                        if update_db:
+                            db_inter.update_bimet_result(
+                                metals=metals,
+                                shape=res.shape,
+                                num_atoms=res.num_atoms,
+                                diameter=res.diameter,
+                                n_metal1=res.n_metal1,
+                                CE=actual_ce,
+                                ordering=res.ordering,
+                                EE=actual_ee,
+                                nanop=res.nanoparticle,
+                                allow_insert=False,
+                                ensure_ce_min=False)
+
+                        # print(res.build_chem_formula())
+                        print(' WRONG VALUE!')
+                    else:
+                        print('')
+
+    fails = np.array(fails)
+    nfail = len(fails)
+    print('%i issue%s found' % (nfail, ['s', ''][nfail == 1]))
+    return fails
+
+if __name__ == '__main__':
     # run_ga(metals, shape, save_data=True, batch_runinfo='testing...',
     #       shells=6, max_generations=300)
-
-    newp = build_pop_obj(metals, shape, 3, x_dope=0.6, popsize=55)
+    fails = check_db_values(update_db=True)

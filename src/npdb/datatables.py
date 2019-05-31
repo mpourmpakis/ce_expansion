@@ -123,11 +123,15 @@ class BimetallicResults(Base):
         self.atoms_obj = atom.copy()
         return atom
 
-    def build_chem_formula(self, latex=True):
+    def build_chem_formula(self, latex=False):
         """
         Returns chemical formula of bimetallic NP
         in alphabetical order
         - e.g. Ag6_Au7
+
+        KArgs:
+        latex (bool): if True, chemical formula is returned in Latex Math form
+                      (Default: False)
 
         Returns:
             (str)

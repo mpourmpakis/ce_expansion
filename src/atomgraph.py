@@ -34,6 +34,8 @@ class AtomGraph(object):
                    using /tools/gen_coeffs.py.
     num_atoms (int): The number of atoms in the NP.
     cns (np.array): An array containing the coordination number of each atom.
+    mono_ce0 (float): CE value for monometallic NP of "kind0"
+    mono_ce1 (float): CE value for monometallic NP of "kind1"
     """
 
     def __init__(self, bond_list: "np.array", kind0: "str", kind1: "str"):
@@ -59,6 +61,10 @@ class AtomGraph(object):
         self._p_cns = self.cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))  # Windows compatibility?
         self._long_num_bonds = ctypes.c_long(self._num_bonds)
         self._p_bond_list = self._bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+
+        # calculate monometallic CEs
+        self.mono_ce0 = self.getTotalCE(np.zeros(self.num_atoms))
+        self.mono_ce1 = self.getTotalCE(np.ones(self.num_atoms))
 
     def __len__(self):
         return self._num_bonds
@@ -164,6 +170,29 @@ class AtomGraph(object):
                                                   self._p_bond_list,
                                                   p_ordering)
 
+    def getEE(self, ordering: "np.array") -> "float":
+        """
+        Calculates the excess energy in eV / atom of a given ordering
+
+        Args:
+        ordering (np.array): 1D chemical ordering array
+
+        Returns:
+        (float): Excess Energy (EE) in eV / atom
+        """
+        # number and concentration of "kind1"
+        n1 = ordering.sum()
+        x1 = n1 / self.num_atoms
+
+        # number and concentration of "kind0"
+        n0 = self.num_atoms - n1
+        x0 = n0 / self.num_atoms
+
+        # excess energy
+        ee = self.getTotalCE(ordering) - \
+            (x0 * self.mono_ce0 + x1 * self.mono_ce1)
+        return ee
+
     def get_adjacency_list(self):
         '''
         Calculates an adjacency list given the bonds list.
@@ -195,7 +224,9 @@ class AtomGraph(object):
 
         '''
         # Initialization
-        best_ordering = ordering
+        # create new instance of ordering array
+        ordering = ordering.copy()
+        best_ordering = ordering.copy()
         best_energy = self.getTotalCE(ordering)
         prev_energy = best_energy
         energy_history = np.zeros(num_steps)
@@ -215,14 +246,15 @@ class AtomGraph(object):
                 # Search the NP for a 1 with heteroatomic bonds
                 for chosen_one in np.random.permutation(ones):
                     connected_atoms = adj_list[chosen_one]
-                    connected_zeros = np.intersect1d(connected_atoms, zeros, assume_unique=True)
+                    connected_zeros = np.intersect1d(connected_atoms, zeros,
+                                                     assume_unique=True)
                     if connected_zeros.size != 0:
                         # The atom has zeros connected to it
                         chosen_zero = np.random.choice(connected_zeros)
                         break
 
             # Evaluate the energy change
-            prev_ordering = ordering
+            prev_ordering = ordering.copy()
             ordering[chosen_one] = 0
             ordering[chosen_zero] = 1
             energy = self.getTotalCE(ordering)
@@ -234,10 +266,10 @@ class AtomGraph(object):
                 energy_history[step] = energy
                 if energy < best_energy:
                     best_energy = energy
-                    best_ordering = ordering
+                    best_ordering = ordering.copy()
             else:
                 # Reject the step
-                ordering = prev_ordering
+                ordering = prev_ordering.copy()
                 energy_history[step] = prev_energy
 
         return best_ordering, best_energy, energy_history
