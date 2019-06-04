@@ -103,7 +103,8 @@ def build_atoms_in_shell_list(shape, shell):
     if oneless:
         rem_atoms = oneless.get_atoms_obj_skel().positions
     else:
-        rem_atoms = np.zeros((2, 3)) if has_center[shape] else np.zeros(3)
+        rem_atoms = []
+        # rem_atoms = np.zeros((2, 3)) if has_center[shape] else np.zeros(3)
 
     # get positions of all shells <= <shell>
     actual = get_nanoparticle(shape, num_shells=shell, lim=1)
@@ -111,10 +112,13 @@ def build_atoms_in_shell_list(shape, shell):
         return [0] if has_center[shape] else []
     keep_atoms = actual.get_atoms_obj_skel().positions
 
-    # center atoms
-    rem_atoms = (rem_atoms - rem_atoms.mean(0)).round(4)
+    if len(rem_atoms) == 0:
+        return range(len(keep_atoms))
 
-    keep_atoms = (keep_atoms - keep_atoms.mean(0)).round(4)
+    # center atoms
+    rem_atoms = (rem_atoms - rem_atoms.mean(0)).round(3)
+
+    keep_atoms = (keep_atoms - keep_atoms.mean(0)).round(3)
 
     if not (isinstance(rem_atoms, np.ndarray) and
             isinstance(keep_atoms, np.ndarray)):
