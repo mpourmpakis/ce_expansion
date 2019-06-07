@@ -733,7 +733,7 @@ def insert_nanoparticle(atom, shape, num_shells=None):
                         from structure_gen module
 
     Returns:
-    - (bool): True if successful insertion else False
+    - (Nanoparticle): tbl.Nanoparticles object
     """
     np = tbl.Nanoparticles(shape.lower(), len(atom), num_shells=num_shells)
     session.add(np)
