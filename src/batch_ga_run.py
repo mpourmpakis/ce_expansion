@@ -32,6 +32,7 @@ with open(running, 'w') as fid:
 
 max_generations = -1
 max_nochange = 500
+spike = False
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
 niterations = 1
@@ -65,7 +66,9 @@ for n in range(niterations):
                       batch_runinfo='%i of %i' % (batch_i, batch_tot),
                       max_generations=max_generations,
                       max_nochange=max_nochange,
-                      spike=False)
+                      spike=spike)
+            with open(running, 'a') as fid:
+                fid.write('\ncompleted %i of %i' % (batch_i, batch_tot))
             batch_i += 1
 
 # update new structures plot in <datapath>

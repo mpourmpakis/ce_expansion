@@ -231,14 +231,30 @@ class Chromo(object):
 
 class Pop(object):
     def __init__(self, atom, bond_list, metals, shape, n_metal2=1,
-                 popsize=50, mute_pct=0.8, n_mute_atomswaps=1, spike=False,
+                 popsize=50, mute_pct=0.8, n_mute_atomswaps=None, spike=False,
                  x_metal2=None, random=False, num_shells=None):
         """
-        TODO: Write Pop object description
+        Bimetallic nanoparticle genetic algorithm population
+        - initialize a population of nanoparticles
+        - call self.run to run a GA simulation
+        - if random=True, self.run will conduct a random search
 
         Args:
+        - atom (ase.Atoms): nanoparticle atoms object
+        - bond_list (list): list of atom indices connected by a bond
+        - metals (tuple): metal types in nanoparticle
+        - shape (str): nanoparticle shape
 
         KArgs:
+        - n_metal2 (int): number of metal2 in nanoparticle
+                          (Default: 1)
+        - popsize (int): size of population
+                         (Default: 50)
+        - mute_pct (float): percentage of population to mutate each generation
+                            (Default: 0.8)
+        - n_mute_atomswaps (int): number of atom swaps to make
+                                  during a mutation
+                                  (Default: None: half min(n_metal1, n_metal2))
         - spike (bool): if True, following structures are added to generation 0
                         - if same structure and composition found in DB,
                           it is added to population
@@ -246,6 +262,13 @@ class Pop(object):
                           (depending on which is more fit) also added
                           to population - structure created using
                           fill_cn function
+        - x_metal2 (float): concentration of metal2 - not required, but will be
+                            used over n_metal2
+                            (Default: None)
+        - random (bool): if True, self.run does a random search and
+                         does not perform a GA optimization
+        - num_shells (int): number of shells in nanoparticle
+                            - used when saving nanoparticle to database
         """
         # atoms object
         self.atom = atom
@@ -281,20 +304,30 @@ class Pop(object):
         else:
             self.n_metal2 = n_metal2
 
+        self.n_metal2 = int(self.n_metal2)
+
         # calculate exact x_metal2
         self.x_metal2 = self.n_metal2 / self.num_atoms
 
         # set n_metal1
-        self.n_metal1 = self.num_atoms - self.n_metal2
+        self.n_metal1 = int(self.num_atoms - self.n_metal2)
+
+        self.popsize = popsize
 
         # determine number of chromos that will be mutated each generation
-        self.popsize = popsize
-        self.mute_pct = mute_pct
-        self.n_mute = int(popsize * mute_pct)
+        # popsize - 1 is max number of chromo objects that can be mutated
+        self.n_mute = min(int(popsize * mute_pct), popsize - 1)
+        self.mute_pct = self.n_mute / self.popsize
 
         # determine number of atom swaps to apply to a chromo
         # when it's getting mutated
         self.n_mute_atomswaps = n_mute_atomswaps
+
+        # if no specific atomswap number given, choose half of the
+        # minimum atom type (min(n_mute_atomswaps) is 1)
+        if self.n_mute_atomswaps is None:
+            self.n_mute_atomswaps = max(min(self.n_metal1, self.n_metal2) // 50,
+                                        1)
 
         # spike ga with previous run and structures from fill_cn
         self.spike = spike
@@ -755,7 +788,7 @@ class Pop(object):
             ax.plot([], [], ':', color='gray', label='MIN')
             ax.plot([], [], color='k', label='MEAN')
             ax.fill_between([], 0, 0, color='k', label='STD')
-            ax.legend()
+            ax.legend(ncol=3, loc='upper center')
             ax.set_ylabel('Cohesive Energy (eV / atom)')
             ax.set_xlabel('Generation')
 
@@ -810,7 +843,7 @@ class Pop(object):
             shape=self.shape,
             num_atoms=self.num_atoms,
             diameter=nanop.get_diameter(),
-            n_metal1=self.num_atoms - self.n_metal2,
+            n_metal1=self.n_metal1,
             CE=ce,
             ordering=''.join(map(str, best.ordering)),
             EE=ee,
@@ -938,17 +971,18 @@ def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
     - n_metal2 (int): number of dopants
 
     Kargs:
-    max_search (int): if there are a number of possible structures with
-                      partially-filled sites, the function will search
-                      max_search options and return lowest CE structure
-                      (default: 50)
-    low_first (bool): if True, fills low CNs, else fills high CNs
-                      (default: True)
-    return_n (bool): if > 0, function will return a list of possible
-                     structures
-                     (default: None)
-    verbose (bool): if True, function will print info to console
-                    (default: False)
+    - max_search (int): if there are a number of possible structures with
+                        partially-filled sites, the function will search
+                        max_search options and return lowest CE structure
+                        (Default: 50)
+    - low_first (bool): if True, fills low CNs, else fills high CNs
+                        (Default: True)
+    - return_n (bool): if > 0, function will return a list of possible
+                       structures
+                       (Default: None)
+    - verbose (bool): if True, function will print info to console
+                      (Default: False)
+
     Returns:
     if return_n > 0:
     - (list): list of chemical ordering np.ndarrays
@@ -1284,24 +1318,36 @@ def run_ga(metals, shape, save_data=True,
             batch_run_num=batch_runinfo)
 
 
-def check_db_values(update_db=False):
+def check_db_values(update_db=False, metal_opts=None,
+                    shape_opts=None):
     """
-    Checks CE values in database to ensure they match their ordering
+    Checks CE values in database to ensure CE and EE match their ordering
 
     KArgs:
-    update_db (bool): if True and mismatch is found, the database will be
-                      updated to the correct CE and EE
-                      (Default: False)
+    - update_db (bool): if True and mismatch is found, the database will be
+                        updated to the correct CE and EE
+                        (Default: False)
+    - metal_opts (list): can pass in list of metal combination options to check
+                         (Default: [('Ag', 'Au'), ('Ag', 'Cu'), ('Au', 'Cu')])
+    - shape_opts (list): can pass in list of nanoparticle shapes to check
+                         (Default: ['icosahedron', 'cuboctahedron', 'fcc-cube',
+                                    'elongated-pentagonal-bipyramid'])
 
     Returns:
+    - (np.ndarray): CE's and EE's of mismatches found
+                    - each row contains: [CE-db, CE-actual, EE-db, EE-actual]
 
     """
-    metal_opts = [('Ag', 'Au'),
-                  ('Ag', 'Cu'),
-                  ('Au', 'Cu')]
+    if metal_opts is None:
+        metal_opts = [('Ag', 'Au'),
+                      ('Ag', 'Cu'),
+                      ('Au', 'Cu')]
 
-    shape_opts = ['icosahedron', 'cuboctahedron', 'fcc-cube',
-                  'elongated-pentagonal-bipyramid']
+    if shape_opts is None:
+        shape_opts = ['icosahedron', 'cuboctahedron', 'fcc-cube',
+                      'elongated-pentagonal-bipyramid']
+    elif isinstance(shape_opts, str):
+        shape_opts = [shape_opts]
 
     fails = []
     for shape in shape_opts:
@@ -1352,7 +1398,7 @@ def check_db_values(update_db=False):
 
 
 def benchmark_plot(max_nochange=50, metals=('Ag', 'Cu'), shape='icosahedron',
-                   num_shells=10, x_metal2=0.57):
+                   num_shells=10, x_metal2=0.57, spike=False, **kwargs):
     """
     Creates a plot comparing GA simulation vs. random search
 
@@ -1369,18 +1415,21 @@ def benchmark_plot(max_nochange=50, metals=('Ag', 'Cu'), shape='icosahedron',
                         (Default: 10 (2869-atom nanoparticle))
     - x_metal2 (float): concentration of metal2 in nanoparticle
                         (Default: 0.57)
+    - **kwargs (type): additional kwargs get passed in to Pop class
+                       - examples: popsize, mute_pct, n_mute_atomswaps
 
     Returns:
     - plt.Figure, plt.axis: figure and axis object of plot
     """
     # create population to run GA and to run random search
     newp = build_pop_obj(metals, shape, num_shells, x_metal2=x_metal2,
-                         spike=False)
+                         spike=spike, **kwargs)
     randp = build_pop_obj(metals, shape, num_shells, x_metal2=x_metal2,
                           random=True)
 
     # run GA until it converges (no changes for <max_nochanges> generations)
     newp.run(max_nochange=max_nochange)
+    print('RUNTIME: %.3f s' % newp.runtime)
 
     # random search for same number of generations
     randp.run(newp.max_gens, max_nochange=-1)
@@ -1466,9 +1515,12 @@ def test_FePt_nanop():
               n_metal2=sum([1 for i in atom if i.symbol == 'Pt']))
 
 if __name__ == '__main__':
-    bench_fig, ax1 = benchmark_plot()
-    scale_fig, ax2 = scaling_plot()
-    plt.show()
+    for n in range(2, 11):
+        bench_fig, ax1 = benchmark_plot(num_shells=n, x_metal2=0.5)
+        bench_fig.savefig('C:\\users\\yla\\desktop\\bench-%ishells.png' % n)
+        print('%i shells fig saved.' % n)
+    # scale_fig, ax2 = scaling_plot()
+    plt.close('all')
 
     # bench_fig.savefig('ga_benchmark.svg')
     # bench_fig.savefig('ga_benchmark.png')
