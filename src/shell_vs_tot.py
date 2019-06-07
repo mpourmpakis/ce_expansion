@@ -61,6 +61,10 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
     nanoparticles = db_inter.get_bimet_result(metals=metals, shape=shape,
                                               num_shells=num_shells)
 
+    # get NP with lowest Cohesive Energy (CE) and Excess Energy (EE)
+    min_atoms = {'CE': min(nanoparticles, key=lambda i: i.CE),
+                 'EE': min(nanoparticles, key=lambda i: i.EE)}
+
     # initialize results matrix
     results = np.zeros((len(nanoparticles), len(shell_dict) + 2))
 
@@ -122,7 +126,7 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
                 label='Shell %i' % col, zorder=col)
 
     # used to match Larsen et al.'s plot
-    if num_shells == 5 and not (pcty or pctx):
+    if num_shells == 5 and not (pcty or pctx) and shape == 'icosahedron':
         ax.set_xlim(0, 315)
         ax.set_ylim(0, 180)
 
@@ -159,25 +163,36 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
         fig.savefig(path + title.replace(' ', '_') + '.png')
     if show:
         plt.show()
-    return fig, results
+    return fig, results, min_atoms
 
 if __name__ == '__main__':
+    desk = os.path.join(os.path.expanduser('~'), 'Desktop')
+
     metals = 'agau'
-    shape = 'cuboctahedron'
+    shape = 'icosahedron'
     pctx = False
-    pcty = False
+    pcty = True
 
     save = False
     show = True
     show_ee = True
 
     shell_range = range(2, 12)
-    for num_shells in [2]:
-        build_nmet2_nmet2shell_plot(metals,
-                                    shape,
-                                    num_shells,
-                                    show=show,
-                                    save=save,
-                                    show_ee=show_ee,
-                                    pctx=pctx,
-                                    pcty=pcty)
+    for num_shells in [3]:
+        fig, results, min_atoms = build_nmet2_nmet2shell_plot(
+            metals,
+            shape,
+            num_shells,
+            show=False,
+            save=save,
+            show_ee=show_ee,
+            pctx=pctx,
+            pcty=pcty)
+
+        for en in min_atoms:
+            res = min_atoms[en]
+            name = '%s-%s-%s.xyz' % (en, res.build_chem_formula(),
+                                     res.shape[:3])
+            res.save_np(os.path.join(desk, name))
+        if show:
+            plt.show()
