@@ -30,8 +30,8 @@ with open(running, 'w') as fid:
 # 28 total options
 # metals = list(itertools.combinations(db_inter.build_metals_list(), 2))
 
-max_generations = 5000
-max_nochange = 1000
+max_generations = -1
+max_nochange = 500
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
 niterations = 1
@@ -64,7 +64,8 @@ for n in range(niterations):
                       save_data=True,  # True,
                       batch_runinfo='%i of %i' % (batch_i, batch_tot),
                       max_generations=max_generations,
-                      max_nochange=max_nochange)
+                      max_nochange=max_nochange,
+                      spike=False)
             batch_i += 1
 
 # update new structures plot in <datapath>
