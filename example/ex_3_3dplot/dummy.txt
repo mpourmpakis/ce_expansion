@@ -1,3 +1,0 @@
-This is a dummy file to ensure the directory is created
-
-If you're reading this, it did it's job!
