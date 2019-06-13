@@ -21,18 +21,15 @@ home = os.path.expanduser('~')
 datapath = os.path.join(home, 'Box Sync',
                         'Michael_Cowan_PhD_research', 'data', 'np_ce')
 
-# create text file on desktop to indicate GA is running
-running = os.path.join(home, 'Desktop', 'RUNNING-GA.txt')
-with open(running, 'w') as fid:
-    fid.write('GA is currently running...hopefully')
-
 # all metal options
 # 28 total options
 # metals = list(itertools.combinations(db_inter.build_metals_list(), 2))
 
+min_generations = 500
 max_generations = -1
+
 max_nochange = 500
-spike = False
+spike = True
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
 niterations = 1
@@ -51,6 +48,17 @@ metal_opts = [('Ag', 'Au'), ('Ag', 'Cu'), ('Au', 'Cu')]
 shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
               'elongated-pentagonal-bipyramid']
 
+# run one metal combination if int arg (0, 1, or 2) is passed in
+if len(sys.argv) > 1:
+    i = int(sys.argv[1])
+    if -1 < i < 3:
+        metal_opts = [metal_opts[i]]
+
+# create text file on desktop to indicate GA is running
+running = os.path.join(home, 'Desktop', 'RUNNING-GA.txt')
+with open(running, 'w') as fid:
+    fid.write('GA is currently running...hopefully')
+
 start = time.time()
 startstr = datetime.now().strftime('%Y-%m-%d %H:%M %p')
 
@@ -65,6 +73,7 @@ for n in range(niterations):
                       save_data=True,  # True,
                       batch_runinfo='%i of %i' % (batch_i, batch_tot),
                       max_generations=max_generations,
+                      min_generations=min_generations,
                       max_nochange=max_nochange,
                       spike=spike)
             with open(running, 'a') as fid:
