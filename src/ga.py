@@ -232,7 +232,7 @@ class Chromo(object):
 class Pop(object):
     def __init__(self, atom, bond_list, metals, shape, n_metal2=1,
                  popsize=50, mute_pct=0.8, n_mute_atomswaps=None, spike=False,
-                 x_metal2=None, random=False, num_shells=None):
+                 x_metal2=None, random=False, num_shells=None, atomg=None):
         """
         Bimetallic nanoparticle genetic algorithm population
         - initialize a population of nanoparticles
@@ -294,7 +294,7 @@ class Pop(object):
         self.metal2 = self.metals[1]
 
         # create AtomGraph instance
-        self.atomg = self.__make_atomg__()
+        self.atomg = atomg if atomg is not None else self.__make_atomg__()
 
         # determine number of metal2
         # use x_metal2 if passed in
@@ -361,10 +361,10 @@ class Pop(object):
                                    self.metal1,
                                    self.metal2)
 
-    def __reload_atomg__(self):
+    def reload_atomg(self):
         """
         Used to reinitialize AtomGraph objects
-        in self, and two lists of Chromos
+        in self and two lists of Chromos
         """
 
         self.atomg = self.__make_atomg__()
@@ -534,7 +534,7 @@ class Pop(object):
         self.last_min = self.stats[-1][0]
         print(val.center(CENTER), end=end)
 
-    def run(self, max_gens=-1, max_nochange=50):
+    def run(self, max_gens=-1, max_nochange=50, min_gens=-1):
         """
         Runs a GA simulation
 
@@ -546,6 +546,10 @@ class Pop(object):
                               without finding a better NP
                               -1: GA will run to <max_gens>
                               (default: 50)
+        - min_gens (int): minimum generations that the GA runs before checking
+                          the max_nochange criteria
+                          -1: no minimum
+                          (Default: -1)
 
         Raises:
         - TypeError: can only call run for first GA sim
@@ -557,6 +561,10 @@ class Pop(object):
         elif max_gens == max_nochange == -1:
             raise ValueError("max_gens and max_nochange cannot both be "
                              "turned off (equal: -1)")
+
+        # atomg might be None from loading a pickled Pop object
+        if self.atomg is None:
+            self.reload_atomg()
 
         self.max_gens = max_gens
 
@@ -572,8 +580,9 @@ class Pop(object):
                 # step to next generation
                 self.step()
 
-                # track if there was a change
-                if max_nochange:
+                # track if there was a change (if min_gens has been passed)
+                if (max_nochange and min_gens and
+                        self.generation > min_gens):
                     if self.stats[-1][0] == self.stats[-2][0]:
                         nochange += 1
                     else:
@@ -617,7 +626,7 @@ class Pop(object):
 
         self.has_run = True
 
-    def continue_run(self, max_gens=-1, max_nochange=50):
+    def continue_run(self, max_gens=-1, max_nochange=50, min_gens=-1):
         """
         Used to continue GA sim from where it left off
 
@@ -629,6 +638,10 @@ class Pop(object):
                             without finding a better NP
                             -1: GA will run to <max_gens>
                             (default: 50)
+        - min_gens (int): minimum generations that the GA runs before checking
+                          the max_nochange criteria
+                          -1: no minimum
+                          (Default: -1)
         """
         # remake AtomGraph objects
         if not self.atomg:
@@ -636,7 +649,8 @@ class Pop(object):
 
         self.has_run = False
         self.stats = list(self.stats)
-        self.run(max_gens, max_nochange)
+        self.run(max_gens=max_gens, max_nochange=max_nochange,
+                 min_gens=min_gens)
         self.continued += 1
 
     def sort_pop(self):
@@ -702,6 +716,9 @@ class Pop(object):
         # pickle self
         with open(path, 'wb') as fidw:
             pickle.dump(self, fidw, protocol=pickle.HIGHEST_PROTOCOL)
+
+        # reload AtomGraph after saving pickle
+        self.reload_atomg()
 
     def summ_results(self, disp=False):
         """
@@ -792,14 +809,15 @@ class Pop(object):
             ax.set_ylabel('Cohesive Energy (eV / atom)')
             ax.set_xlabel('Generation')
 
-        # format latex formula for plot title
-        tex_form = re.sub('([A-Z][a-z])([0-9]+)-([A-Z][a-z])([0-9]+)',
-                          '\\1_{\\2}\\3_{\\4}$',
-                          self.formula)
-        ax.set_title('$\\rm %s %s\n%.3f eV' % (tex_form, self.shape, low[-1]),
-                     fontdict=dict(weight='normal'))
-        # ax.set_title('Min CE: %.5f' % (self.get_min()))
-        fig.tight_layout()
+            # format latex formula for plot title
+            tex_form = re.sub('([A-Z][a-z])([0-9]+)-([A-Z][a-z])([0-9]+)',
+                              '\\1_{\\2}\\3_{\\4}$',
+                              self.formula)
+            ax.set_title('$\\rm %s %s\n%.3f eV'
+                         % (tex_form, self.shape, low[-1]),
+                         fontdict=dict(weight='normal'))
+            # ax.set_title('Min CE: %.5f' % (self.get_min()))
+            fig.tight_layout()
 
         # save figure if <savepath> was specified
         if savepath:
@@ -851,6 +869,25 @@ class Pop(object):
         print('New min NP added to database.')
 
 
+def load_pop(path):
+    """
+    Load a pickled Pop object
+
+    Args:
+    path (str): path to Pop object (*.pickle file)
+
+    Returns:
+    (Pop): pop object
+    """
+    with open(path, 'rb') as fid:
+        unpickler = pickle.Unpickler(fid)
+        pop = unpickler.load()
+
+    # reload AtomGraph object
+    pop.reload_atomg()
+    return pop
+
+
 def make_xyz(atom, chrom, path, verbose=False):
     """
     Creates an XYZ file given Atoms obj skeleton and
@@ -869,6 +906,7 @@ def make_xyz(atom, chrom, path, verbose=False):
     atom = atom.copy()
     metal1, metal2 = chrom.atomg.symbols
     atom.info['CE'] = chrom.ce
+    atom.info['EE'] = chrom.atomg.getEE(chrom.ordering)
     atom.set_tags(None)
     for i, dope in enumerate(chrom.ordering):
         atom[i].symbol = metal2 if dope else metal1
@@ -995,9 +1033,8 @@ def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
     """
     # handle monometallic cases efficiently
     if n_metal2 in [0, atomg.num_atoms]:
-        if n_metal2 == 0:
-            # all '0's if no metal2, else all '1' since all metal2
-            struct_min = [np.zeros, np.ones][bool(n_metal2)](atomg.num_atoms)
+        # all '0's if no metal2, else all '1' since all metal2
+        struct_min = [np.zeros, np.ones][bool(n_metal2)](atomg.num_atoms)
         struct_min = struct_min.astype(int)
         ce = atomg.getTotalCE(struct_min)
         checkall = True
@@ -1107,6 +1144,7 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
 def run_ga(metals, shape, save_data=True,
            batch_runinfo=None, shells=None,
            max_generations=5000,
+           min_generations=-1,
            max_nochange=2000,
            add_coreshell=True,
            **kwargs):
@@ -1128,7 +1166,7 @@ def run_ga(metals, shape, save_data=True,
     Kargs:
     - plotit (bool): if true, a 3D surface plot is made of GA sims
                      dope concentration vs. size vs. excess energy
-                     (default: False)
+                     (Default: False)
     - save_data (bool): - if true, GA sim data is saved to BimetallicResults
                           table in database
                         (Default: True)
@@ -1136,13 +1174,17 @@ def run_ga(metals, shape, save_data=True,
                            (Default: None)
     - shells (int || list): if int, only that shell size is simulated
                             elif list of ints, nshell_range = shells
-                            (default: None)
-    - max_generations (int): if not None, use specified value as max
+                            (Default: None)
+    - max_generations (int): if not -1, use specified value as max
                              generations for each GA sim
-                             (default: 5000)
+                             (Default: 5000)
+    - min_generations (int): if not -1, use specified value as min
+                             generations that run before max_nochange
+                             criteria is applied
+                             (Default: -1)
     - max_nochange (int): maximum generations GA will go without a change in
                           minimum CE
-                          (default: 2000)
+                          (Default: 2000)
     - add_coreshell (bool): if True, core shell structures will be included in
                             GA simulations
                             (Default: True)
@@ -1288,7 +1330,7 @@ def run_ga(metals, shape, save_data=True,
                       metals, shape=shape, n_metal2=nmet2, **kwargs)
 
             # run GA simulation
-            pop.run(max_generations, max_nochange)
+            pop.run(max_generations, min_generations, max_nochange)
 
             # if new minimum CE found and <save_data>
             # store result in DB
@@ -1398,7 +1440,8 @@ def check_db_values(update_db=False, metal_opts=None,
 
 
 def benchmark_plot(max_nochange=50, metals=('Ag', 'Cu'), shape='icosahedron',
-                   num_shells=10, x_metal2=0.57, spike=False, **kwargs):
+                   num_shells=10, x_metal2=0.57, spike=False, max_gens=-1,
+                   min_gens=-1, **kwargs):
     """
     Creates a plot comparing GA simulation vs. random search
 
@@ -1415,6 +1458,21 @@ def benchmark_plot(max_nochange=50, metals=('Ag', 'Cu'), shape='icosahedron',
                         (Default: 10 (2869-atom nanoparticle))
     - x_metal2 (float): concentration of metal2 in nanoparticle
                         (Default: 0.57)
+    - spike (bool): if True, following structures are added to generation 0
+                    - if same structure and composition found in DB,
+                      it is added to population
+                    - minCN-filled or maxCN-filled nanoparticle
+                      (depending on which is more fit) also added
+                      to population - structure created using
+                      fill_cn function
+                    (Default: False)
+    - max_gens (int): if not -1, use specified value as max
+                      generations for each GA sim
+                      (Default: -1)
+    - min_gens (int): if not -1, use specified value as min
+                      generations that run before max_nochange
+                      criteria is applied
+                      (Default: -1)
     - **kwargs (type): additional kwargs get passed in to Pop class
                        - examples: popsize, mute_pct, n_mute_atomswaps
 
@@ -1428,7 +1486,7 @@ def benchmark_plot(max_nochange=50, metals=('Ag', 'Cu'), shape='icosahedron',
                           random=True)
 
     # run GA until it converges (no changes for <max_nochanges> generations)
-    newp.run(max_nochange=max_nochange)
+    newp.run(max_gens=max_gens, min_gens=min_gens, max_nochange=max_nochange)
     print('RUNTIME: %.3f s' % newp.runtime)
 
     # random search for same number of generations
@@ -1491,39 +1549,68 @@ def test_FePt_nanop():
     Optimizes FePt structure from Nano Lett. paper
     - NOTE: not complemented
     """
+    # get path to FePt_np folder in data
+    filedir = os.path.dirname(os.path.realpath(__file__))
+    fept_path = os.path.join(filedir, '..', 'data', 'fept_np')
+
     # read in atoms object
-    path = 'C:\\users\\yla\\desktop\\FePt_cns.xyz'
-    atom = ase.io.read(path)
-    metals = ('Fe', 'Pt')
+    atompath = os.path.join(fept_path, 'FePt_cns.xyz')
+    atom = ase.io.read(atompath)
 
+    # get bonds from .npy file (if it exists)
+    bondpath = os.path.join(fept_path, 'fept_bonslist.npy')
+    if os.path.isfile(bondpath):
+        bonds = np.load(bondpath)
+    # else get bonds list from xyz file
+    else:
+        bonds = []
+        with open(atompath, 'r') as fid:
+            for i, line in enumerate(fid):
+                if i > 1:
+                    for b in map(int, line.split('[')[-1]
+                                 .strip(']\n').split(', ')):
+                        newbond = [i - 2, b]
+                        bonds.append(newbond)
+        bonds = np.array(bonds)
+
+    # define GA properties
     # shape is required to interface with database
-    shape = 'blah'
+    metals = ('Fe', 'Pt')
+    shape = 'fept'
 
-    # get bonds list from xyz file
-    bonds = []
-    with open(path, 'r') as fid:
-        for i, line in enumerate(fid):
-            if i > 1:
-                for b in map(int, line.split('[')[-1]
-                             .strip(']\n').split(', ')):
-                    newbond = sorted([i - 1, b])
-                    bonds.append(newbond)
-    bonds = np.array(bonds)
+    # initialize atom graph
+    ag = atomgraph.AtomGraph(bonds.copy(), 'Fe', 'Pt')
 
-    # initialize population
-    pop = Pop(atom, bonds, metals, shape,
-              n_metal2=sum([1 for i in atom if i.symbol == 'Pt']))
+    # number of Platinum (metal 2) atoms
+    n_metal2 = sum(atom.numbers == 78)
+
+    # initialize and run GA
+    pop = Pop(atom, bonds.copy(), metals, shape,
+              n_metal2=n_metal2, atomg=ag)
+
+    # GA simulation
+    pop.run(max_nochange=500)
+    # pop.save(os.path.join(fept_path, 'fept_gapop.pickle'))
+
+    # simulate random pop for same gens as GA
+    max_gens = pop.max_gens
+
+    randpop = Pop(atom, bonds.copy(), metals, shape,
+                  n_metal2=n_metal2, atomg=ag, random=True)
+    randpop.run(max_gens=max_gens, max_nochange=-1)
+
+    # save best structure from GA and random search
+    make_xyz(pop.atom, pop[0], os.path.join(fept_path, 'ga.xyz'))
+    make_xyz(randpop.atom, randpop[0], os.path.join(fept_path, 'random.xyz'))
+
+    # plot results
+    fig, ax = pop.plot_results()
+    randpop.plot_results(ax=ax)
+    fig.tight_layout()
+    fig.savefig(os.path.join(fept_path, 'results.png'))
+    fig.savefig(os.path.join(fept_path, 'results.svg'))
+    return fig, ax
 
 if __name__ == '__main__':
-    for n in range(2, 11):
-        bench_fig, ax1 = benchmark_plot(num_shells=n, x_metal2=0.5)
-        bench_fig.savefig('C:\\users\\yla\\desktop\\bench-%ishells.png' % n)
-        print('%i shells fig saved.' % n)
-    # scale_fig, ax2 = scaling_plot()
-    plt.close('all')
-
-    # bench_fig.savefig('ga_benchmark.svg')
-    # bench_fig.savefig('ga_benchmark.png')
-
-    # scale_fig.savefig('ga_scaling.svg')
-    # scale_fig.savefig('ga_scaling.png')
+    fig, ax = test_FePt_nanop()
+    plt.show()
