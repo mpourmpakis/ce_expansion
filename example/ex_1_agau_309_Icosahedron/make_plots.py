@@ -11,6 +11,7 @@ fig, ax0 = plt.subplots()
 ax0.plot(csv['Ag'], csv['Mixing_Parameter'], color="#1C2957")
 ax0.set_ylabel("Mixing Parameter (unitless)")
 plt.xlabel("Ag")
+plt.title("Structures Reported by Larson et al")
 
 ax1 = ax0.twinx()
 ax1.plot(csv['Ag'], csv['Excess_Energy_(eV)'], color="#CDB87D")
@@ -33,8 +34,9 @@ excess_energy = list(map(lambda i: i.EE, results))
 
 
 # Make the plot:
-plt.plot(ag, excess_energy, color="#1C2957", label="BC Model")
+plt.plot(ag, excess_energy, color="#1C2957", label="GA Results")
 plt.plot(csv['Ag'], csv['Excess_Energy_(eV)'], color="#CDB87D", label="Larson et al")
+plt.title("Comparison of Lowest-Energy Structures")
 plt.xlabel("Ag")
 plt.ylabel("Excess Energy (eV)")
 plt.legend(loc="upper center", fontsize=20)

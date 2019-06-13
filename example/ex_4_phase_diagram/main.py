@@ -186,6 +186,7 @@ def make_phase(results, colors, alloy):
         label = shape + "_" + str(size)
         labels.append(label)
 
+    plt.title(alloy)
     plt.scatter([x[0] for x in points], [y[1] for y in points], c=colors, marker="s")
     plt.savefig("figure_" + alloy + ".png", dpi=1200)
 
