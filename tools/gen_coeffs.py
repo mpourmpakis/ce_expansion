@@ -127,3 +127,57 @@ def generate_coefficient_dictionary(element1: "str",
                   element2: {element1: element2_coeffs}}
 
     return coeff_dict
+
+
+def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
+                             homo_bde_m1, homo_bde_m2, hetero_bde, cnmax=12):
+    """
+        Generates the Bond-Centric half bond energy terms for a bimetallic
+        pair AB. Coordination number 0 is given the value None. Dictionary is
+        used with AtomGraph to calculate total CE of bimetallic nanoparticles.
+        Relies on raw data arguments to create dictionary.
+
+        Args:
+        - metal1 (str): atomic symbol of metal 1
+        - metal2 (str): atomic symbol of metal 2
+        - bulkce_m1 (float): bulk cohesive energy (in eV / atom) of metal1
+        - bulkce_m2 (float): bulk cohesive energy (in eV / atom) of metal2
+        - homo_bde_m1 (float): m1-m1 (homoatomic) bond dissociation energy
+        - homo_bde_m2 (float): m2-m2 (homoatomic) bond dissociation energy
+        - hetero_bde (float): m1-m2 (heteroatomic) bond dissociation energy
+
+        KArgs:
+        - cnmax: maximum bulk coordination number (CN) of metals
+                 (Default: 12)
+
+        Returns:
+        - (dict): form dict[m1][m2][CN] = half bond energy term
+    """
+    metals = [metal1, metal2]
+
+    # calculate gammas
+    gamma_m1 = (2 * (hetero_bde - homo_bde_m2)) / (homo_bde_m1 - homo_bde_m2)
+    gamma_m2 = 2 - gamma_m1
+
+    # create bulkce and gamma dictionaries
+    bulkce = {metal1: bulkce_m1,
+              metal2: bulkce_m2}
+    gammas = {metal1: {metal1: 1, metal2: gamma_m1},
+              metal2: {metal2: 1, metal1: gamma_m2}}
+
+    # calculate "total gamma" params (part of BC model that is independent of
+    # current atomic CN)
+    totgamma = {}
+    for m in metals:
+        totgamma[m] = {}
+        for m2 in metals:
+            totgamma[m][m2] = gammas[m][m2] * bulkce[m] / np.sqrt(cnmax)
+
+    # create coefficient dictionary
+    coeffs = {}
+    for m in metals:
+        coeffs[m] = {}
+        for m2 in metals:
+            coeffs[m][m2] = [None if cn == 0 else totgamma[m][m2] / np.sqrt(cn)
+                             for cn in range(cnmax + 1)]
+    return coeffs
