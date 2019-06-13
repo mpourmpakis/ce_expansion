@@ -1,4 +1,5 @@
 import os
+import pathlib
 import numpy as np
 import matplotlib.pyplot as plt
 from npdb import db_inter
@@ -148,19 +149,26 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
     ax.legend(loc='upper center', ncol=4,
               handletextpad=0.2, columnspacing=0.6)
     fig.tight_layout()
-    path = 'C:\\Users\\YLA\\Box Sync\\Michael_Cowan_PhD_research\\np_ga\\' \
-           'FIGURES\\%smet_vs_%smetshell-LARSON\\%s%s-%s\\' % (xtype, ytype,
-                                                               nanop.metal1,
-                                                               nanop.metal2,
-                                                               nanop.shape[:3])
+    user = os.path.expanduser('~')
+    path = os.path.join(user,
+                        'Box Sync',
+                        'Michael_Cowan_PhD_research',
+                        'np_ga',
+                        'FIGURES',
+                        '%smet_vs_%smetshell-LARSON\\%s%s-%s'
+                        % (xtype, ytype, nanop.metal1,
+                           nanop.metal2, nanop.shape[:3]))
     if save:
         if not os.path.isdir(path):
-            os.mkdir(path)
+            pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         if show_ee:
-            path += 'ee\\'
+            path = os.path.join(path, 'ee')
             if not os.path.isdir(path):
                 os.mkdir(path)
-        fig.savefig(path + title.replace(' ', '_') + '.png')
+        fig.savefig(os.path.join(path, title.replace(' ', '_') + '.png'))
+        res = min_atoms['EE']
+        res.save_np(os.path.join(path, 'EE-%s-%s.xyz'
+                                 % (res.build_chem_formula(), res.shape[:3])))
     if show:
         plt.show()
     return fig, results, min_atoms
@@ -173,26 +181,27 @@ if __name__ == '__main__':
     pctx = False
     pcty = True
 
-    save = False
-    show = True
-    show_ee = True
+    save = True
+    show = False
+    show_ee = False
 
     shell_range = range(2, 12)
-    for num_shells in [3]:
-        fig, results, min_atoms = build_nmet2_nmet2shell_plot(
-            metals,
-            shape,
-            num_shells,
-            show=False,
-            save=save,
-            show_ee=show_ee,
-            pctx=pctx,
-            pcty=pcty)
+    # NESTED MESS
+    for shape in ['fcc-cube', 'cuboctahedron', 'icosahedron']:
+        for pcty in [False, True]:
+            for metals in ['agau', 'agcu', 'aucu']:
+                for show_ee in [False, True]:
+                    for num_shells in shell_range:
+                        fig, results, min_atoms = build_nmet2_nmet2shell_plot(
+                            metals,
+                            shape,
+                            num_shells,
+                            show=False,
+                            save=save,
+                            show_ee=show_ee,
+                            pctx=pctx,
+                            pcty=pcty)
 
-        for en in min_atoms:
-            res = min_atoms[en]
-            name = '%s-%s-%s.xyz' % (en, res.build_chem_formula(),
-                                     res.shape[:3])
-            res.save_np(os.path.join(desk, name))
-        if show:
-            plt.show()
+                        if show:
+                            plt.show()
+                        plt.close('all')
