@@ -1612,5 +1612,6 @@ def test_FePt_nanop():
     return fig, ax
 
 if __name__ == '__main__':
-    fig, ax = test_FePt_nanop()
-    plt.show()
+    pass
+    # fig, ax = test_FePt_nanop()
+    # plt.show()

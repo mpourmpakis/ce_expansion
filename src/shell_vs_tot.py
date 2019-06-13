@@ -173,19 +173,11 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
         plt.show()
     return fig, results, min_atoms
 
-if __name__ == '__main__':
-    desk = os.path.join(os.path.expanduser('~'), 'Desktop')
 
-    metals = 'agau'
-    shape = 'icosahedron'
+def batch_build_figs():
     pctx = False
-    pcty = True
-
-    save = True
-    show = False
-    show_ee = False
-
     shell_range = range(2, 12)
+
     # NESTED MESS
     for shape in ['fcc-cube', 'cuboctahedron', 'icosahedron']:
         for pcty in [False, True]:
@@ -197,7 +189,7 @@ if __name__ == '__main__':
                             shape,
                             num_shells,
                             show=False,
-                            save=save,
+                            save=True,
                             show_ee=show_ee,
                             pctx=pctx,
                             pcty=pcty)
@@ -205,3 +197,33 @@ if __name__ == '__main__':
                         if show:
                             plt.show()
                         plt.close('all')
+
+if __name__ == '__main__':
+    desk = os.path.join(os.path.expanduser('~'), 'Desktop')
+
+    metals = 'agcu'
+    shape = 'icosahedron'
+    pctx = False
+    pcty = False
+
+    save = False
+    show = True
+    show_ee = True
+
+    shell_range = range(2, 12)
+    for num_shells in [5]:
+        fig, results, min_atoms = build_nmet2_nmet2shell_plot(
+            metals,
+            shape,
+            num_shells,
+            show=False,
+            save=save,
+            show_ee=show_ee,
+            pctx=pctx,
+            pcty=pcty)
+
+        ee = min_atoms['EE']
+        print(ee.EE)
+        ee.save_np(os.path.join(desk, ee.build_chem_formula() + '_gaopt.xyz'))
+        if show:
+            plt.show()
