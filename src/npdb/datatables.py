@@ -339,6 +339,8 @@ class BimetallicResults(Base):
             (bool): True if saved successfully
         """
         atom = self.build_atoms_obj()
+        atom.info['CE'] = self.CE
+        atom.info['EE'] = self.EE
         atom.write(path)
         return True
 
