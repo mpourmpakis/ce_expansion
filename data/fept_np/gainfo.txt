@@ -1,0 +1,5 @@
+MaxNoChange: 500
+    Runtime: 66145.606
+     N Gens: 145957
+         CE: -4.99500
+         EE: -0.08155
