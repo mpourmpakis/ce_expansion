@@ -20,6 +20,7 @@ def _build_atomgraph(bimetallic_result):
     assert bondlist is not None
     return atomgraph.AtomGraph(bondlist, kind0=bimetallic_result.metal1, kind1=bimetallic_result.metal2)
 
+
 def _verbose_printer(verbose):
     if verbose:
         def inner(string):
@@ -106,3 +107,4 @@ def plot_bond_types_3D(systems, system_colors,
 
     plt.legend()
     plt.show()
+    plt.close()

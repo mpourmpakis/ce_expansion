@@ -157,7 +157,7 @@ def scale_colors(sizes, shapes):
             # Green
             colors.append(greenmap[size_set.index(size)])
         elif shape == "cuboctahedron":
-            #Blue
+            # Blue
             colors.append(bluemap[size_set.index(size)])
         else:
             raise ValueError
@@ -189,6 +189,7 @@ def make_phase(results, colors, alloy):
     plt.title(alloy)
     plt.scatter([x[0] for x in points], [y[1] for y in points], c=colors, marker="s")
     plt.savefig("figure_" + alloy + ".png", dpi=1200)
+    plt.close()
 
 
 alloys = ["AgAu", "AgCu", "AuCu"]

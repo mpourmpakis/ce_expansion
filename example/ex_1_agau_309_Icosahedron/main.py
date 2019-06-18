@@ -70,7 +70,7 @@ for i in range(0, 310):
                    309 - i,
                    mixing_parameter,
                    cohesive_energy,
-                   atoms.get_total_energy()*-1]
+                   atoms.get_total_energy() * -1]
 
 # We need the monometallic cohesive energies to calculate excess energy
 for i in csv_data:
@@ -90,7 +90,6 @@ for entry in csv_data:
     if abs(excess_energy) < 1E-10:
         excess_energy = 0
     entry.append(excess_energy)
-
 
 # Write to file and call it a day
 print("Writing to File mixing_parameter_data.csv")

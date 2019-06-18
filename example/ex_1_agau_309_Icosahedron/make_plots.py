@@ -28,10 +28,9 @@ plt.close()
 
 # Build up a list of 309-atom icosahedral AgAu NPs
 results = npdb.db_inter.get_bimet_result(metals="AgAu", shape="icosahedron", num_atoms=309)
-results = sorted(results, key=lambda i: i.n_metal1) # Prevent the line-plot spaghettification
+results = sorted(results, key=lambda i: i.n_metal1)  # Prevent the line-plot spaghettification
 ag = list(map(lambda i: i.n_metal1, results))
 excess_energy = list(map(lambda i: i.EE, results))
-
 
 # Make the plot:
 plt.plot(ag, excess_energy, color="#1C2957", label="GA Results")
@@ -42,4 +41,4 @@ plt.ylabel("Excess Energy (eV)")
 plt.legend(loc="upper center", fontsize=20)
 plt.tight_layout()
 plt.savefig("Excess_Energy_Comparison.png", dpi=DEFAULT_DPI)
-
+plt.close()

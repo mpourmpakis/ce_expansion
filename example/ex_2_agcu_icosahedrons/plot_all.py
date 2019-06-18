@@ -24,17 +24,17 @@ for alloy in alloys:
             # Perform the database query
             query = npdb.db_inter.get_bimet_result(metals=alloy, shape=shape, num_atoms=size)
             query = sorted(query, key=lambda i: i.n_metal2)
-    
+
             # Calculate the copper content and pull excess energy
             dope_content = list(map(lambda i: i.n_metal2 / size, query))
             excess_energy = list(map(lambda i: i.EE, query))
-    
+
             # Make the plot
             ax.plot(dope_content, excess_energy,
                     color=coloration,
-                    label=str(size)+"_"+lbl,
+                    label=str(size) + "_" + lbl,
                     linestyle=style)
-    
+
     dopant = alloy[2:]
     plt.title(alloy)
     plt.xlabel("% " + dopant)
