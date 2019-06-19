@@ -32,7 +32,7 @@ max_nochange = 500
 spike = True
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
-niterations = 1
+niterations = 3
 
 # run 4 metal options a day to iterate once a week through all options
 # e.g. (Saturday = 5) * 4 = 20
