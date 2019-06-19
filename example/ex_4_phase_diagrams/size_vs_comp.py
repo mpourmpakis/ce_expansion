@@ -229,7 +229,7 @@ def make_unfilled(points, alloy):
         ax.set_ylabel("Size (N Atoms)")
 
         # Save figure
-        plt.savefig(alloy + "_" + str(temp) + "K_nocolor.png")
+        plt.savefig("unfilled/size_comp_" + alloy + "_" + str(temp) + "K_nocolor.png")
         plt.close()
 
 def make_filled(points, alloy, resolution=10):
@@ -287,7 +287,7 @@ def make_filled(points, alloy, resolution=10):
                          matplotlib.lines.Line2D([0],[0], color=cmap_bold(1), marker="o", lw=0),
                          matplotlib.lines.Line2D([0],[0], color=cmap_bold(2), marker="o", lw=0)]
         ax.legend(custom_legend, ["Ico", "EPB", "Cuboct"], fancybox=True, framealpha=0.5)
-        plt.savefig(alloy + "_" + str(temp) + "K.png")
+        plt.savefig("size_comp_" + alloy + "_" + str(temp) + "K.png")
         plt.close()
 
 alloys = ["AgAu" , "AgCu", "AuCu"]
