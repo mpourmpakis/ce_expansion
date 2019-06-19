@@ -123,7 +123,7 @@ class BimetallicResults(Base):
         self.atoms_obj = atom.copy()
         return atom
 
-    def build_chem_formula(self, latex=False):
+    def build_chem_formula(self, latex=False, bold=False):
         """
         Returns chemical formula of bimetallic NP
         in alphabetical order
@@ -137,8 +137,11 @@ class BimetallicResults(Base):
             (str)
         """
         if latex:
-            return '$\\rm %s_{%i}%s_{%i}$' % (self.metal1, self.n_metal1,
+            form = '$\\rm %s_{%i}%s_{%i}$' % (self.metal1, self.n_metal1,
                                               self.metal2, self.n_metal2)
+            if bold:
+                form = form.replace('\\rm', '\\rm \\bf')
+            return form
         return '%s%i_%s%i' % (self.metal1, self.n_metal1,
                               self.metal2, self.n_metal2)
 
