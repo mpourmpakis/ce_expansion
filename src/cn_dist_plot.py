@@ -73,7 +73,6 @@ def cn_dist_plot(bimet_res: "dt.BimetallicResults",
     formula = bimet_res.build_chem_formula(True)
     ax.set_title(f'{formula} ({bimet_res.num_atoms}-atom {shape.title()})')
     ax.set_xlabel('CN')
-    ax.set_ylabel('Number of Atoms')
     ax.set_xticks(x)
     ax.set_xticklabels(cn_dist['cn_options'])
 
@@ -81,11 +80,13 @@ def cn_dist_plot(bimet_res: "dt.BimetallicResults",
     if pcty:
         cn_dist['m1_counts'] = cn_dist['m1_counts'] / cn_dist['tot_counts']
         cn_dist['m2_counts'] = cn_dist['m2_counts'] / cn_dist['tot_counts']
+        ax.set_ylabel('Percentage of Atoms')
         ax.set_ylim(0, 1.2)
         ax.set_yticklabels(['{:,.0%}'.format(x)
                             for x in ax.get_yticks()[:-1]] + [''])
 
     else:
+        ax.set_ylabel('Number of Atoms')
         ax.set_ylim(0, max(cn_dist['tot_counts']) * 1.1)
 
     ax.bar(x, cn_dist['m1_counts'], color=m1_color, edgecolor='k',
