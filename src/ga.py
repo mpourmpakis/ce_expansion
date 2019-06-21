@@ -12,6 +12,7 @@ import itertools as it
 import atomgraph
 import structure_gen
 import ase.io
+from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
 import numpy as np
 import plot_defaults
@@ -868,7 +869,8 @@ class Pop(object):
             CE=ce,
             ordering=''.join(map(str, best.ordering)),
             EE=ee,
-            nanop=nanop)
+            nanop=nanop,
+            allow_insert=False)
         print('New min NP added to database.')
 
 
@@ -1213,7 +1215,7 @@ def run_ga(metals, shape, save_data=True,
     metals = (metal1, metal2)
 
     # number of shells range to sim ga for each shape
-    shape2shell = {'icosahedron': [4, 5],  # [3, 14],
+    shape2shell = {'icosahedron': [5, 6],  # [3, 14],
                    'fcc-cube': [4, 5],  # [2, 15],
                    'cuboctahedron': [4, 5],  # [2, 15],
                    'elongated-pentagonal-bipyramid': [5, 6],  # [3, 12]
@@ -1581,6 +1583,61 @@ def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
     return fig, ax
 
 
+def build_central_rdf(atoms, metals, nbins=5, pcty=False, ax=None):
+    # center atoms at origin (COP)
+    atoms.positions -= atoms.positions.mean(0)
+
+    metal1, metal2 = metals
+
+    # atomic numbers for each metal
+    num_m1 = chemical_symbols.index(metal1)
+    num_m2 = chemical_symbols.index(metal2)
+
+    # calculate distances from origin
+    dists = np.linalg.norm(atoms.positions, axis=1)
+
+    # calculate distances from COP for each metal type
+    dist_m1 = dists[atoms.numbers == num_m1]
+    dist_m2 = dists[atoms.numbers == num_m2]
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
+    m1_color = jmol_colors[num_m1]
+    m2_color = jmol_colors[num_m2]
+
+    binrange = (0, dists.max())
+
+    counts_m1, bin_edges = np.histogram(dist_m1, bins=nbins, range=binrange)
+    counts_m2, bin_edges = np.histogram(dist_m2, bins=nbins, range=binrange)
+
+    # get bins for ax.hist
+    bins = np.linspace(0, dists.max(), nbins + 1)
+
+    if pcty:
+        counts_tot, bin_edges = np.histogram(dists, bins=nbins, range=binrange)
+        counts_m1 = counts_m1 / counts_tot
+        counts_m2 = counts_m2 / counts_tot
+
+    x = (bin_edges[1:] + bin_edges[:-1]) / 2
+    width = x[1] - x[0]
+    if not pcty:
+        ax.bar(x, counts_m1, edgecolor='k', color=m1_color,
+               width=width, label=metal1)
+        ax.bar(x, counts_m2, edgecolor='k', color=m2_color,
+               width=width, label=metal2, bottom=counts_m1)
+    else:
+        ax.bar(x, counts_m1, color=m1_color, width=width,
+               label=metal1, zorder=2)
+        ax.bar(x, counts_m2, bottom=counts_m1, color=m2_color,
+               width=width, label=metal2, zorder=0)
+
+    ax.set_xlabel('Distance from Core ($\\rm \\AA$)')
+    return fig, ax
+
+
 def vis_FePt_results(pcty=False):
     """
     Load in exp. FePt and GA opt FePt NPs
@@ -1604,6 +1661,34 @@ def vis_FePt_results(pcty=False):
 
     gapath = os.path.join(fept_path, 'ga.xyz')
     ga = ase.io.read(gapath)
+
+    rand = ga.copy()
+    nums = rand.numbers.copy()
+    np.random.shuffle(nums)
+    rand.numbers = nums.copy()
+
+    metals = ('Fe', 'Pt')
+    fig, axes = plt.subplots(1, 3, sharey=True)
+    ga_ax, orig_ax, rand_ax = axes.flatten()
+    ga_ax.set_title('GA-Optimized FePt NP')
+    orig_ax.set_title('Experimental FePt NP')
+    rand_ax.set_title('Random FePt NP')
+    nbins = 20
+    percenty = True
+    build_central_rdf(ga, metals, nbins=nbins, pcty=percenty, ax=ga_ax)
+    build_central_rdf(orig, metals, nbins=nbins, pcty=percenty, ax=orig_ax)
+    build_central_rdf(rand, metals, nbins=nbins, pcty=percenty, ax=rand_ax)
+
+    if percenty:
+        ga_ax.set_ylim(0, 1.1)
+        ga_ax.set_yticklabels(['{:,.0%}'.format(x) for x in ga_ax.get_yticks()])
+        ga_ax.set_ylabel('Atom Type Composition')
+    else:
+        ga_ax.set_ylabel('Number of Atoms')
+    ga_ax.legend(ncol=2, frameon=False)
+    fig.tight_layout()
+    plt.show()
+    return
 
     # get bonds from .npy file (if it exists)
     bondpath = os.path.join(fept_path, 'fept_bonslist.npy')
