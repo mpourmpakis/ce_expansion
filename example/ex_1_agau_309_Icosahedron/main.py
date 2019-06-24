@@ -32,7 +32,7 @@ csv_data = [None] * 310
 # Now we'll iterate over every xyz file in the directory
 print("Calculating mixing parameters and cohesive energies...")
 for i in range(0, 310):
-    # Specify the path to the file and open it as an ASE Atoms Object
+    # Specify the path to the file and open it as an ASE_Atoms Object
     filename = "Ag" + str(i) + "Au" + str(309 - i) + ".xyz"
     print(filename[:-4])
     path = os.path.join(data, filename)
@@ -61,9 +61,9 @@ for i in range(0, 310):
     #   2 - Number of Ag atoms
     #   3 - Number of Au atoms
     #   4 - Mixing Parameter
-    #   5 - Cohesive Energy (eV)
-    #   6 - DFT Energy (eV)
-    #   7 - Excess Energy (eV)
+    #   5 - BCM_BCM_CE_eV_eV
+    #   6 - SE_Energy_eV
+    #   7 - BCM_EE_eV
 
     csv_data[i] = [atoms.get_chemical_formula(),
                    i,
@@ -94,6 +94,6 @@ for entry in csv_data:
 # Write to file and call it a day
 print("Writing to File mixing_parameter_data.csv")
 with open("mixing_parameter_data.csv", "w") as outp:
-    outp.write("Chemical_Formula,Ag,Au,Mixing_Parameter,Cohesive_Energy_(eV),DFT_Energy_(eV),Excess_Energy_(eV)\n")
+    outp.write("Chemical_Formula,Ag,Au,Mixing_Parameter,BCM_CE_eV,SE_Energy_eV,BCM_EE_eV\n")
     for entry in csv_data:
         outp.write(",".join(map(str, entry)) + "\n")

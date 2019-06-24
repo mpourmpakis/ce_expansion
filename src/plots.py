@@ -279,5 +279,6 @@ def plot_bond_types_2D(systems, system_colors,
     plt.tight_layout()
     if scale:
         title += " (Normalized)"
-    plt.savefig(title + ".png", dpi=600)
+    #plt.savefig(title + ".png", dpi=600)
+    plt.show()
     plt.close()
