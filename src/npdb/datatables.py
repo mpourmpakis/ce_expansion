@@ -416,9 +416,9 @@ class Nanoparticles(Base):
                    self.atoms_obj.positions[:, 0].min()) / 10
 
     def load_bonds_list(self):
-        if self.bonds_list:
+        if isinstance(self.bonds_list, np.ndarray):
             self.num_bonds = len(self.bonds_list)
-            return True
+            return self.bonds_list
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             '..', '..', 'data', 'bond_lists',
@@ -427,9 +427,9 @@ class Nanoparticles(Base):
         if os.path.isfile(path):
             self.bonds_list = np.load(path)
             self.num_bonds = len(self.bonds_list)
-            return True
+            return self.bonds_list
         else:
-            return False
+            return None
 
 
 class Atoms(Base):
