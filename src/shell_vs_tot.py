@@ -5,10 +5,26 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from npdb import db_inter
 import plot_defaults
+try:
+    from ce_expansion.src.npdb import db_inter
+    import ce_expansion.src.plot_defaults as plot_defaults
+except:
+    pass
 
 palette = sns.color_palette('husl', 10)
 # sns.palplot(palette)
 sns.set_palette(palette)
+
+# GET BOX SYNC PATH
+user = os.path.expanduser('~')
+box = user
+for option in [os.path.join(user, 'Box Sync'),
+               'D:\\MCowan\\Box Sync']:
+    if os.path.isdir(option):
+        box = option
+        break
+else:
+    print('Could not find Box Sync path.')
 
 plt.rcParams['axes.spines.top'] = False
 plt.rcParams['legend.fontsize'] = 12
@@ -157,8 +173,7 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
               handletextpad=0.2, columnspacing=0.6)
     fig.tight_layout()
     user = os.path.expanduser('~')
-    path = os.path.join(user,
-                        'Box Sync',
+    path = os.path.join(box,
                         'Michael_Cowan_PhD_research',
                         'np_ga',
                         'FIGURES',
@@ -204,6 +219,8 @@ def batch_build_figs():
                         plt.close('all')
 
 if __name__ == '__main__':
+    batch_build_figs()
+    """
     desk = os.path.join(os.path.expanduser('~'), 'Desktop')
 
     metals = 'agcu'
@@ -232,3 +249,4 @@ if __name__ == '__main__':
         ee.save_np(os.path.join(desk, ee.build_chem_formula() + '_gaopt.xyz'))
         if show:
             plt.show()
+    """
