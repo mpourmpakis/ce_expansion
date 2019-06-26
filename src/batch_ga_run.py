@@ -18,7 +18,7 @@ from npdb import db_inter
              - should take a little over 17 hours
 """
 home = os.path.expanduser('~')
-datapath = os.path.join(home, 'Box Sync',
+datapath = os.path.join('D:\\MCowan', 'Box Sync',
                         'Michael_Cowan_PhD_research', 'data', 'np_ce')
 
 # all metal options
@@ -43,10 +43,10 @@ start_index = day * 4
 # metal_opts = metals[start_index:start_index + 4]
 
 # ONLY RUN METALS THAT WE WILL FOCUS ON FOR PAPER
-metal_opts = [('Ag', 'Au'), ('Ag', 'Cu'), ('Au', 'Cu')]
+metal_opts = [('Ag', 'Au'), ('Ag', 'Cu'), ('Au', 'Cu')][::-1]
 
 shape_opts = ['icosahedron', 'fcc-cube', 'cuboctahedron',
-              'elongated-pentagonal-bipyramid']
+              'elongated-pentagonal-bipyramid'][::-1]
 
 # run one metal combination if int arg (0, 1, or 2) is passed in
 if len(sys.argv) > 1:
