@@ -20,6 +20,10 @@ import matplotlib.pyplot as plt
 import matplotlib
 from mpl_toolkits.mplot3d import Axes3D
 from npdb import db_inter
+try:
+    import ce_expansion.src.npdb.db_inter as db_inter
+except:
+    pass
 
 # random.seed(9876)
 
@@ -1387,9 +1391,11 @@ def check_db_values(update_db=False, metal_opts=None,
 
     """
     if metal_opts is None:
-        metal_opts = [('Ag', 'Au'),
-                      ('Ag', 'Cu'),
-                      ('Au', 'Cu')]
+        ms = db_inter.build_metals_list()
+        metal_opts = list([sorted(i) for i in it.combinations(ms, 2)])
+        # metal_opts = [('Ag', 'Au'),
+        #               ('Ag', 'Cu'),
+        #               ('Au', 'Cu')]
 
     if shape_opts is None:
         shape_opts = ['icosahedron', 'cuboctahedron', 'fcc-cube',
@@ -1403,8 +1409,12 @@ def check_db_values(update_db=False, metal_opts=None,
             nanop = structure_gen.build_structure_sql(shape, shell,
                                                       build_bonds_list=True)
             for metals in metal_opts:
-                atomg = atomgraph.AtomGraph(nanop.bonds_list,
-                                            metals[0], metals[1])
+                try:
+                    atomg = atomgraph.AtomGraph(nanop.bonds_list,
+                                                metals[0], metals[1])
+                except:
+                    continue
+ 
 
                 # find all bimetallic results matching shape, size, and metals
                 results = db_inter.get_bimet_result(metals, shape=shape,
@@ -1662,17 +1672,15 @@ def vis_FePt_results(pcty=False):
     gapath = os.path.join(fept_path, 'ga.xyz')
     ga = ase.io.read(gapath)
 
-    rand = ga.copy()
-    nums = rand.numbers.copy()
-    np.random.shuffle(nums)
-    rand.numbers = nums.copy()
+    # get random structure from benchmark plot in data\\fept_np
+    rand = ase.io.read('D:\\MCowan\\projects\\ce_expansion\\data\\fept_np\\random.xyz')
 
     metals = ('Fe', 'Pt')
     fig, axes = plt.subplots(1, 3, sharey=True)
     ga_ax, orig_ax, rand_ax = axes.flatten()
-    ga_ax.set_title('GA-Optimized FePt NP')
-    orig_ax.set_title('Experimental FePt NP')
-    rand_ax.set_title('Random FePt NP')
+    # ga_ax.set_title('GA-Optimized FePt NP')
+    # orig_ax.set_title('Experimental FePt NP')
+    # rand_ax.set_title('Random FePt NP')
     nbins = 20
     percenty = True
     build_central_rdf(ga, metals, nbins=nbins, pcty=percenty, ax=ga_ax)
@@ -1855,4 +1863,7 @@ def test_FePt_nanop():
     return fig, ax
 
 if __name__ == '__main__':
+    for r in plt.rcParams:
+        if plt.rcParams[r] == 'bold':
+            plt.rcParams[r] = 'normal'
     vis_FePt_results()
