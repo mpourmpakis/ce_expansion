@@ -34,6 +34,9 @@ class AtomGraph(object):
                    using /tools/gen_coeffs.py.
     num_atoms (int): The number of atoms in the NP.
     cns (np.array): An array containing the coordination number of each atom.
+    unique_cns (np.array): array of unique coordination numbers of NP
+    min_cn (int): minimum coordination number of NP
+    max_cn (int): maximum coordination number of NP
     mono_ce0 (float): CE value for monometallic NP of "kind0"
     mono_ce1 (float): CE value for monometallic NP of "kind1"
     """
@@ -51,6 +54,11 @@ class AtomGraph(object):
         self.cns = np.bincount(bond_list[:, 0])
         self.cns = self.cns.astype(ctypes.c_long)
 
+        # precalculate some useful info on CNs
+        self.unique_cns = np.unique(self.cns)
+        self.min_cn = self.unique_cns.min()
+        self.max_cn = self.unique_cns.max()
+
         # Set up the matrix of bond energies
         self._bond_energies = np.zeros((2, 2, 13), dtype=ctypes.c_double)
         self._p_bond_energies = None
@@ -58,9 +66,13 @@ class AtomGraph(object):
 
         # Create pointers
         self._long_num_atoms = ctypes.c_long(self.num_atoms)
-        self._p_cns = self.cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))  # Windows compatibility?
+
+        # Windows compatibility?
+        self._p_cns = self.cns.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+
         self._long_num_bonds = ctypes.c_long(self._num_bonds)
-        self._p_bond_list = self._bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+        self._p_bond_list = self._bond_list.ctypes.data_as(
+                                ctypes.POINTER(ctypes.c_long))
 
         # calculate monometallic CEs
         self.mono_ce0 = self.getTotalCE(np.zeros(self.num_atoms))
@@ -69,10 +81,14 @@ class AtomGraph(object):
     def __len__(self):
         return self._num_bonds
 
+    def __getitem__(self, i):
+        """AtomGraph returns CN of given atom index"""
+        return self.cns[i]
+
     def set_composition(self, kind0: "str", kind1: "str") -> "None":
         """
-        Sets the bond energies to be passed to the C library. Energies come from the coeffs
-        attribute.
+        Sets the bond energies to be passed to the C library. Energies come
+        from the coeffs attribute.
 
         Args:
         kind0 (str): The element a "0" represents.
@@ -89,20 +105,55 @@ class AtomGraph(object):
                         self._bond_energies[i][j][cn] = coefficient
 
         # Create pointer
-        self._p_bond_energies = self._bond_energies.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        self._p_bond_energies = self._bond_energies.ctypes.data_as(
+                                        ctypes.POINTER(ctypes.c_double))
 
-    def countMixing(self, ordering: "np.array", holder_array: "np.array" = None) -> "np.array":
+    def calc_cn_dist(self, ordering: "np.array") -> "dict":
+        """
+        Gets CN distribution of each atom type
+        - can be used to create bar plots of CN distribution
+
+        Args:
+        - ordering (np.array): chemical ordering of the NP
+
+        Returns:
+        - (dict): {cn_options (np.array): possible CN options,
+                   m1_counts (np.array): metal1 CN counts,
+                   m2_counts (np.array): metal2 CN counts,
+                   tot_counts (np.array): total CN counts}
+        """
+        # create arrays of CNs occupied by each metal type
+        metal1_cns = self.cns[np.where(ordering == 0)[0]]
+        metal2_cns = self.cns[np.where(ordering == 1)[0]]
+
+        # counts of CN type for each metal
+        m1_counts = np.array([(metal1_cns == cn).sum()
+                              for cn in self.unique_cns])
+        m2_counts = np.array([(metal2_cns == cn).sum()
+                              for cn in self.unique_cns])
+
+        # total counts of CN type
+        tot_counts = m1_counts + m2_counts
+
+        return dict(cn_options=self.unique_cns,
+                    m1_counts=m1_counts,
+                    m2_counts=m2_counts,
+                    tot_counts=tot_counts)
+
+    def countMixing(self, ordering: "np.array",
+                    holder_array: "np.array" = None) -> "np.array":
         """
         Determines the number of homo/hetero-atomic bonds in the system.
 
         Args:
-            ordering(np.array): Chemcial ordering of the NP
-            holder_array(np.array): A length-3 array to hold the result. Optional. If not supplied,
-                                    will create the array on the spot. May be slower to do this. This
-                                    array is OVER-WRITTEN by the C-library, and contains long ints.
+        - ordering (np.array): Chemcial ordering of the NP
+        - holder_array (np.array): A length-3 array to hold the result.
+                                   Optional. If not supplied, will create
+                                   the array on the spot. May be slower to do
+                                   this. This array is OVER-WRITTEN by the
+                                   C-library, and contains long ints.
         Returns:
-            The holder array. First index is number of A-A bonds. Second index is the number
-            of B-B bonds. Third index is the number of A-B bonds.
+            Bond counts(np.array): [A-A bonds, B-B bonds, A-B bonds]
         """
         ordering = ordering.astype(ctypes.c_long)
         p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
@@ -110,7 +161,8 @@ class AtomGraph(object):
         if holder_array is None:
             holder_array = np.zeros(3, dtype=ctypes.c_long)
 
-        p_holder_array = holder_array.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+        p_holder_array = holder_array.ctypes.data_as(
+                            ctypes.POINTER(ctypes.c_long))
 
         interface.pointerized_calculate_mixing(self._long_num_atoms,
                                                self._long_num_bonds,
@@ -120,7 +172,8 @@ class AtomGraph(object):
 
         return holder_array
 
-    def calcMixing(self, ordering: "np.array", holder_array: "np.array" = None) -> "np.array":
+    def calcMixing(self, ordering: "np.array",
+                   holder_array: "np.array" = None) -> "np.array":
         """
         Calculates the mixing parameter. From Batista et al. Adsorption of CO, NO, and H2 on the
         PdnAu55-n nanoclusters: A Density Functional Theory Investigation within the van der
