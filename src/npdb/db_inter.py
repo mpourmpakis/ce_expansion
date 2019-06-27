@@ -20,7 +20,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import sys
 from ase.data.colors import jmol_colors
 from ase.data import chemical_symbols
-sys.path.append('..')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import plot_defaults
 
 """
@@ -908,6 +908,10 @@ def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
 
 
 if __name__ == '__main__':
+    res = get_bimet_result('agcu', 'icosahedron', num_shells=10)[6]
+    res.build_central_rdf(nbins=15)
+    sys.exit()
+
     cnmax = 12
     metal1 = 'Fe'
     metal2 = 'Pt'

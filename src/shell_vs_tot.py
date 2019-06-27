@@ -2,11 +2,31 @@ import os
 import pathlib
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from npdb import db_inter
 import plot_defaults
+try:
+    from ce_expansion.src.npdb import db_inter
+    import ce_expansion.src.plot_defaults as plot_defaults
+except:
+    pass
+
+palette = sns.color_palette('husl', 10)
+# sns.palplot(palette)
+sns.set_palette(palette)
+
+# GET BOX SYNC PATH
+user = os.path.expanduser('~')
+box = user
+for option in [os.path.join(user, 'Box Sync'),
+               'D:\\MCowan\\Box Sync']:
+    if os.path.isdir(option):
+        box = option
+        break
+else:
+    print('Could not find Box Sync path.')
 
 plt.rcParams['axes.spines.top'] = False
-plt.rcParams['axes.spines.right'] = True
 plt.rcParams['legend.fontsize'] = 12
 
 for opt in plt.rcParams:
@@ -18,6 +38,9 @@ first = {'icosahedron': 2,
          'elongated-pentagonal-bipyramid': 2,
          'cuboctahedron': 1,
          'fcc-cube': 1}
+
+COLORS = ['cyan', 'blue', 'red', 'green', 'gold',
+          'orange', 'purple', 'pink', '#bcbd22', '#8c564b', 'gray']
 
 
 def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
@@ -54,9 +77,6 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
     # if pct use X else N
     xtype = 'X' if pctx else 'N'
     ytype = 'X' if pcty else 'N'
-
-    # add central atom to first shell
-    # shell_dict[2].append(0)
 
     # all results run with specific size, shape, and metals
     nanoparticles = db_inter.get_bimet_result(metals=metals, shape=shape,
@@ -95,36 +115,40 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
         pass
         # assert (results[:, 0] == results[:, 1:-1].sum(1)).all()
 
-    shell_color = ['cyan', 'blue', 'red', 'green', 'gold',
-                   'orange', 'purple', 'pink', '#bcbd22', '#8c564b', 'gray']
-
     fig, ax = plt.subplots(figsize=(9, 7))
 
+    plt.rcParams['axes.spines.right'] = show_ee
     if show_ee:
         # excess energy secondary axis
-        ee_color = 'deepskyblue'
+        ee_color = 'dodgerblue'
 
         ax2 = ax.twinx()
         ax2.tick_params(axis='y', labelcolor=ee_color)
 
-        ax.scatter([], [], marker='s', label='EE', color=ee_color,
-                   edgecolor='k')
+        ax.scatter([], [], marker='o', label='EE', color=ee_color,
+                   s=50, edgecolor='k')
 
-        ax2.scatter(results[:, 0], results[:, -1], marker='s', label='EE',
-                    color=ee_color, zorder=-100, edgecolor='k', s=50)
+        ax2.scatter(results[:, 0], results[:, -1], marker='o',
+                    color=ee_color, edgecolor='k', s=50)
         ax2.set_ylabel('Excess Energy (eV / atom)', color=ee_color)
 
         # set ylim
         mag = (results[:, -1].max() - results[:, -1].min())
         buffmin = mag * 0.1
-        buffmax = mag * 0.2
+        buffmax = mag * 0.3
         ax2.set_ylim(results[:, -1].min() - buffmin,
                      results[:, -1].max() + buffmax)
 
     # plot (n or x)i vs (n or x)i-shell
     for i, col in enumerate(range(results.shape[1] - 2, 0, -1)):
-        ax.plot(results[:, 0], results[:, col], 'o-', color=shell_color[i],
-                label='Shell %i' % col, zorder=col)
+        if not i:
+            lab = 'Surface'
+        elif col == 1:
+            lab = 'Core'
+        else:
+            lab = 'Shell %i' % col
+        ax.plot(results[:, 0], results[:, col], 'o-',
+                label=lab, zorder=col)
 
     # used to match Larsen et al.'s plot
     if num_shells == 5 and not (pcty or pctx) and shape == 'icosahedron':
@@ -133,7 +157,6 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
 
     if pctx:
         ax.set_xlim(-0.1, 1.1)
-        # ax.set_xticklabels(['{:,.0%}'.format(x) for x in ax.get_xticks()])
 
     if pcty:
         ax.set_ylim(0, 1.19)
@@ -150,8 +173,7 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
               handletextpad=0.2, columnspacing=0.6)
     fig.tight_layout()
     user = os.path.expanduser('~')
-    path = os.path.join(user,
-                        'Box Sync',
+    path = os.path.join(box,
                         'Michael_Cowan_PhD_research',
                         'np_ga',
                         'FIGURES',
@@ -165,7 +187,7 @@ def build_nmet2_nmet2shell_plot(metals, shape, num_shells,
             path = os.path.join(path, 'ee')
             if not os.path.isdir(path):
                 os.mkdir(path)
-        fig.savefig(os.path.join(path, title.replace(' ', '_') + '.png'))
+        fig.savefig(os.path.join(path, title.replace(' ', '_') + '.svg'))
         res = min_atoms['EE']
         res.save_np(os.path.join(path, 'EE-%s-%s.xyz'
                                  % (res.build_chem_formula(), res.shape[:3])))
@@ -184,7 +206,7 @@ def batch_build_figs():
             for metals in ['agau', 'agcu', 'aucu']:
                 for show_ee in [False, True]:
                     for num_shells in shell_range:
-                        fig, results, min_atoms = build_nmet2_nmet2shell_plot(
+                        build_nmet2_nmet2shell_plot(
                             metals,
                             shape,
                             num_shells,
@@ -194,11 +216,11 @@ def batch_build_figs():
                             pctx=pctx,
                             pcty=pcty)
 
-                        if show:
-                            plt.show()
                         plt.close('all')
 
 if __name__ == '__main__':
+    batch_build_figs()
+    """
     desk = os.path.join(os.path.expanduser('~'), 'Desktop')
 
     metals = 'agcu'
@@ -206,7 +228,7 @@ if __name__ == '__main__':
     pctx = False
     pcty = False
 
-    save = False
+    save = True
     show = True
     show_ee = True
 
@@ -227,3 +249,4 @@ if __name__ == '__main__':
         ee.save_np(os.path.join(desk, ee.build_chem_formula() + '_gaopt.xyz'))
         if show:
             plt.show()
+    """
