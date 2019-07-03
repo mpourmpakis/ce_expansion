@@ -41,14 +41,18 @@ class AtomGraph(object):
     mono_ce1 (float): CE value for monometallic NP of "kind1"
     """
 
-    def __init__(self, bond_list: "np.array", kind0: "str", kind1: "str"):
+    def __init__(self, bond_list: "np.array", kind0: "str", kind1: "str",
+                 coeffs: "dict" = None):
 
         self._bond_list = bond_list.astype(ctypes.c_long)
         self._num_bonds = len(bond_list)
 
         # Public attributes
         self.symbols = (None, None)
-        self.coeffs = db_inter.build_coefficient_dict(kind0 + kind1)
+        if coeffs is None:
+            self.coeffs = db_inter.build_coefficient_dict(kind0 + kind1)
+        else:
+            self.coeffs = coeffs
         self.num_atoms = len(set(bond_list[:, 0]))
 
         self.cns = np.bincount(bond_list[:, 0])

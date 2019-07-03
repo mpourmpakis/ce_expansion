@@ -428,7 +428,7 @@ def build_srf_plot(metals, shape, T=None):
 
     # plots surface as heat map with warmer colors for larger EEs
     colormap = plt.get_cmap('coolwarm')
-    normalize = matplotlib.colors.Normalize(vmin=ees.min(), vmax=ees.max())
+    normalize = matplotlib.colors.Normalize(vmin=ees.min(), vmax=-ees.min())
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -441,13 +441,13 @@ def build_srf_plot(metals, shape, T=None):
                      cmap=colormap, norm=normalize)
     ax.set_xlabel('$X_{%s}$' % metal2)
     ax.set_ylabel('Size (nm)')
-    if delg:
+    if T is not None:
         ax.set_zlabel('G (eV)')
         ax.set_title('%iK\n%s %s %s' % (T, metal1, metal2, shape.title()))
     else:
         ax.set_zlabel('EE (eV)')
         ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
-    return fig
+    return fig, ax
 
 
 def build_radial_distributions(metals=None, shape=None, num_atoms=None,
@@ -908,96 +908,48 @@ def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
 
 
 if __name__ == '__main__':
-    res = get_bimet_result('agcu', 'icosahedron', num_shells=10)[6]
-    res.build_central_rdf(nbins=15)
-    sys.exit()
+    plt.rcParams['axes.labelpad'] = 20
+    metals = 'agcu'
+    shapes = {'icosahedron': 'r', 'cuboctahedron': 'blue',
+              'elongated-pentagonal-bipyramid': 'gold',
+              'fcc-cube': 'violet'}
+    posee = tbl.BimetallicResults.EE > 0
 
-    cnmax = 12
-    metal1 = 'Fe'
-    metal2 = 'Pt'
-    bulkce_m1 = -4.28
-    bulkce_m2 = -5.84
+    res = get_bimet_result(metals=metals, shape=None, custom_filter=posee)
+    res = sorted(res, key=lambda i: i.num_atoms)
 
-    homo_bde_m1 = 100
-    homo_bde_m2 = 278
-    hetero_bde = 206
+    def Smix(x):
+        """Entropy of mixing (eV / atom K) for binary system"""
+        return -8.617333262145E-5 * (x * np.log(x) + (1 - x) * np.log(1 - x))
 
-    coeffs = gen_coeffs_dict_from_raw(metal1=metal1, metal2=metal2,
-                                      bulkce_m1=bulkce_m1, bulkce_m2=bulkce_m2,
-                                      homo_bde_m1=homo_bde_m1,
-                                      homo_bde_m2=homo_bde_m2,
-                                      hetero_bde=hetero_bde)
-    # insert_model_coefficients(coeffs)
-    sys.exit()
+    # create 3D scatter plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
+    ax.set_xlabel('$\\rm N_{Atoms}$')
+    ax.set_ylabel('$\\rm X_{Cu}$')
+    ax.set_zlabel('$\\rm T_{mix}$')
+
+    for s in shapes:
+        temp = [r for r in res if r.shape == s]
+        ns = [t.num_atoms for t in temp]
+        conc = [t.n_metal2 / t.num_atoms for t in temp]
+        Ts = [t.EE / Smix(t.n_metal2 / t.num_atoms) for t in temp]
+        ax.scatter(ns, conc, Ts, alpha=1, c=shapes[s], label=s.upper()[:3],
+                   edgecolor='k', s=50)
+
+    ax.set_title('$\\rm AgCu\\ NPs$')
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
+
+    """
     # get all bimetallic NPs of given metals and shape
-    metals = 'aucu'
+    metals = 'agcu'
     shape = 'icosahedron'
     # num_shells = 8
     # x_dope = 0.7
 
-    """
-    import pathlib
-    path = os.path.join(os.path.expanduser('~'),
-                        'Box Sync', 'Michael_Cowan_PhD_research',
-                        'data', 'np_ce', 'shell_dist_plots')
-
-    for metals in ['aucu', 'agcu', 'agau']:
-        print(metals.center(40, '-'))
-
-        pathlib.Path(os.path.join(path, metals)).mkdir(exist_ok=True)
-
-        for shape in ['icosahedron', 'cuboctahedron', 'fcc-cube',
-                      'elongated-pentagonal-bipyramid']:
-            print(shape.center(40))
-
-            pathlib.Path(os.path.join(path, metals, shape)).mkdir(
-                exist_ok=True)
-
-            for num_shells in range(2, 11):
-                pathlib.Path(os.path.join(path, metals, shape,
-                                          str(num_shells))).mkdir(
-                                              exist_ok=True)
-
-                results = get_bimet_result(metals, shape,
-                                           num_shells=num_shells)
-                print(str(num_shells).center(40))
-                for i, r in enumerate(results):
-                    f = build_shell_dist_fig(r)
-                    form = r.build_chem_formula(False)
-                    f.savefig(
-                        os.path.join(path, metals, shape, str(num_shells),
-                                     '%02i_%s.png' % (i, form)),
-                        dpi=300)
-                    plt.close('all')
-            print()
-        print()
-    sys.exit()
-
-    cutoff = datetime.datetime(2019, 4, 23)
-    # f = build_new_structs_plot(['agau', 'aucu', 'agcu'],
-    #                           ['cuboctahedron', 'icosahedron', 'fcc-cube'],
-    #                           pct=False, cutoff_date=cutoff)
-
-    figs = build_prdf_shapes_comparison(metals, num_shells, x_dope)
-    # figs[2].savefig('C:/users/yla/desktop/test.svg')
+    f, a = build_srf_plot(metals, shape)
     plt.show()
-    # f = build_new_structs_plot(metals, shape, True)
-    # only bimetallic NPs
-    only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
-                         tbl.BimetallicResults.n_metal2 != 0)
-
-    nanops = get_bimet_result(metals=metals, shape=shape, return_query=True) \
-        .filter(only_bimet).all()
-
-    bimets = get_bimet_result(metals, shape=shape, num_shells=num_shells,
-                              only_bimet=True)[-3:]
-    res = []
-    for bi in bimets:
-        res.append(bi.build_prdf_plot())
-    plt.show()
-
-    # Test histogram
-    # print(build_radial_distributions(metals="CuAg", shape="icosahedron",
-    #                                  num_atoms=55, lim=12))
     """
