@@ -145,7 +145,7 @@ if __name__ == '__main__':
     metals = metals_ls[0]
 
     shapes = 'icosahedron', 'cuboctahedron', 'elongated-pentagonal-bipyramid'
-    shell_sizes = list(range(2, 10))
+    shell_sizes = list(range(2, 11))
 
     colors = ['lime', 'red', 'royalblue']
     markers = ['o', 's', '^']
@@ -158,6 +158,8 @@ if __name__ == '__main__':
         ax = None
         for shell in shell_sizes:
             for i, shape in enumerate(shapes):
+                if shape == 'cuboctahedron' and shell == 10:
+                    continue
                 num_atoms = db_inter.get_shell2num(shape, shell)
                 aa, bb, ee = get_fracs(metals=metals,
                                        return_ee=True, shape=shape,
@@ -168,16 +170,16 @@ if __name__ == '__main__':
                     xlab='$\\rm F_{%s-%s}$' % (metals[0], metals[0]),
                     ylab='$\\rm F_{%s-%s}$' % (metals[1], metals[1]),
                     z=z, zmin=min_n, zmax=max_n,
-                    label=shape.upper()[:3] if shell == shell_sizes[-1] else None,
                     marker=markers[i],
-                    legend=i == 2 and shell == shell_sizes[-1],
                     cmap=cm.get_cmap('rainbow'))
 
         ax.text(0.5, 0.5, ''.join(metals), fontsize=FS, rotation=135,
                 va='bottom', ha='center')
         ax.text(0.5, 1, '$\\rm N_{Atoms}$', fontsize=FS)
-        fig.colorbar(s, orientation='vertical', aspect=40)
+        fig.colorbar(s, orientation='vertical', aspect=40,
+                     ticks=[13, 500, 1000, 1500, 2000, 2500, 2869])
 
         fig.tight_layout()
-        # fig.savefig('C:\\users\\yla\\desktop\\%s_colorbar.svg' % ''.join(metals))
+        # fig.savefig('C:\\users\\yla\\desktop\\%s_colorbar.svg'
+        #             % ''.join(metals))
     plt.show()
