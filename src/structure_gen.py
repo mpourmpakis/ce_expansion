@@ -135,7 +135,7 @@ def build_structure(shape, nshell, return_bond_list=True):
         elif shape == 'elongated-pentagonal-bipyramid':
             atom = ase.cluster.Decahedron('Cu', nshell, nshell, 0)
         else:
-            raise NotImplementedError('%s has not been implemented')
+            raise NotImplementedError('%s has not been implemented' % shape)
 
         with open(apath, 'wb') as fidw:
             pickle.dump(atom, fidw)
@@ -238,4 +238,6 @@ def cuboctahedron(num_layers: "int", kind: "str" = "Cu") -> "ase.Atoms":
 
 
 if __name__ == '__main__':
-    nanop = build_structure_sql('icosahedron', 10, True)
+    nanop, bonds = build_structure('fcc-cube', 3, True)
+
+    print(nanop)
