@@ -157,7 +157,7 @@ class Chromo(object):
 
     def mate(self, chromo2):
         """
-        Crossover algorithm to mix two parent chromosomes into
+        Pairwise crossover algorithm to mix two parent chromosomes into
         two new child chromosomes, taking traits from each parent
         - conserves doping concentration
         - about O(N^2) scaling
@@ -1131,7 +1131,7 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
                          - icosahedron
                          - cuboctahedron
                          - fcc-cube
-                         - elongated-trigonal-pyramic
+                         - elongated-trigonal-bipyramid
     - num_shells (int): number of shells used to generate atom size
                       e.g. icosahedron with 3 shells makes a 55-atom object
                       ( 1 in core + 12 in shell_1 + 42 in shell_2)
