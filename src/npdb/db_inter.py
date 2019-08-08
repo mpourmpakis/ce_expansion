@@ -115,6 +115,16 @@ def build_atoms_in_shell_list(shape, shell):
     if len(rem_atoms) == 0:
         return range(len(keep_atoms))
 
+    for i in range(len(rem_atoms)):
+        z = abs(keep_atoms - rem_atoms[i])
+        print(rem_atoms[i])
+        # print(z)
+        break
+        low = z.min()
+        print(low)
+        print(np.where(z == low)[0])
+        break
+    # return
     # center atoms
     rem_atoms = (rem_atoms - rem_atoms.mean(0)).round(3)
 
@@ -908,6 +918,9 @@ def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
 
 
 if __name__ == '__main__':
+    build_atoms_in_shell_list('cuboctahedron', 3)
+    sys.exit()
+
     plt.rcParams['axes.labelpad'] = 20
     metals = 'agcu'
     shapes = {'icosahedron': 'r', 'cuboctahedron': 'blue',

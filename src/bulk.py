@@ -14,10 +14,11 @@ except:
 # GLOBAL fontsize of axis labels and text
 FS = 40
 
-shape = ['icosahedron', 'cuboctahedron', 'elongated-pentagonal-bipyramid'][1]
+shape = ['icosahedron', 'cuboctahedron',
+         'elongated-pentagonal-bipyramid', 'fcc-cube'][0]
 metals = 'aucu'
 minn = 1 if shape.startswith('cub') else 2
-for s in range(5, 11):
+for s in range(4, 11):
     if shape.startswith('cub'):
         s -= 1
     # get number of atoms
@@ -37,6 +38,14 @@ for s in range(5, 11):
 
     # build atomgraph object
     ag = atomgraph.AtomGraph(bonds, 'Au', 'Cu')
+
+    # TEMP FIX!!!
+    # only look at CN 12 atoms
+    tokeep = np.where(ag.cns == 12)[0]
+    todrop = np.where(ag.cns != 12)[0]
+    nshellstudy = s - 1
+
+    """
     z = ag.countMixing(ordering)
     tot_bondfracs = z / z.sum()
 
@@ -52,7 +61,7 @@ for s in range(5, 11):
 
     # list of atom indices to use in calculation
     tokeep = [i for i in range(len(ordering)) if i not in todrop]
-
+    """
     # track counts
     # [Au-Au, Au-Cu, Cu-Cu]
     counts = np.zeros((len(tokeep), 3))
@@ -77,7 +86,7 @@ for s in range(5, 11):
     # save half of test_atom
     if nshellstudy > 0:
         test_atom.positions -= test_atom.positions.mean(0)
-        test_atom = test_atom[np.where(
+        test_atom2 = test_atom[np.where(
                         abs(test_atom.positions[:, 0]) < 0.5)[0]]
         test_atom.write(os.path.expanduser('~') +
                         '\\desktop\\SAMPLES\\%ishells_%s.xyz'
