@@ -1,3 +1,4 @@
+import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,7 +18,12 @@ FS = 40
 shape = ['icosahedron', 'cuboctahedron',
          'elongated-pentagonal-bipyramid', 'fcc-cube'][0]
 metals = 'aucu'
+
 minn = 1 if shape.startswith('cub') else 2
+
+# number of shells on inside and outside to ignore in calculation
+buffer = 2
+
 for s in range(4, 11):
     if shape.startswith('cub'):
         s -= 1
@@ -38,6 +44,10 @@ for s in range(4, 11):
 
     # build atomgraph object
     ag = atomgraph.AtomGraph(bonds, 'Au', 'Cu')
+
+    shells = db_inter.build_atoms_in_shell_list(shape, s)
+
+    # TODO:
 
     # TEMP FIX!!!
     # only look at CN 12 atoms

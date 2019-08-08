@@ -87,58 +87,87 @@ def build_df(datatable, lim=None, custom_filter=None, **kwargs):
     return df
 
 
-def build_atoms_in_shell_list(shape, shell):
+def build_atoms_in_shell_list(shape, shells):
     """
+    NOTE: <shell> does not map to shells in DB and structure_gen.py
+
+    CURRENT MAPPING:
+    shell 0: core atom
+    shell 1: 12-atom layer
+    shell 2: 42-atom layer
+    etc.
+
+    Args:
+    shape (str): shape of the nanoparticle
+
+    shells (int): shells to create NP from DB
+
     Returns:
-    (list): atom indices that are in <shell> selected
+    (dict): {<shell>: atom indices that are in <shell>}
     """
-    has_center = {'cuboctahedron': False,
-                  'fcc-cube': False,
+    has_center = {'cuboctahedron': True,
+                  'fcc-cube': True,
                   'icosahedron': True,
                   'elongated-pentagonal-bipyramid': True}
 
-    assert shell != 0 and shell < 15
-    # get positions of all shells < <shell>
-    oneless = get_nanoparticle(shape, num_shells=shell - 1, lim=1)
-    if oneless:
-        rem_atoms = oneless.get_atoms_obj_skel().positions
-    else:
-        rem_atoms = []
-        # rem_atoms = np.zeros((2, 3)) if has_center[shape] else np.zeros(3)
+    assert 0 <= shells < 15
 
-    # get positions of all shells <= <shell>
-    actual = get_nanoparticle(shape, num_shells=shell, lim=1)
-    if not actual:
-        return [0] if has_center[shape] else []
-    keep_atoms = actual.get_atoms_obj_skel().positions
+    # get nanoparticle, atoms object, and bonds list
+    nanop = get_nanoparticle(shape, num_shells=shells)
+    atom = nanop.get_atoms_obj_skel()
+    bonds = nanop.load_bonds_list()
 
-    if len(rem_atoms) == 0:
-        return range(len(keep_atoms))
+    # indices dictionary {shell #: indices of atoms in shell}
+    indices = {}
 
-    for i in range(len(rem_atoms)):
-        z = abs(keep_atoms - rem_atoms[i])
-        print(rem_atoms[i])
-        # print(z)
-        break
-        low = z.min()
-        print(low)
-        print(np.where(z == low)[0])
-        break
-    # return
-    # center atoms
-    rem_atoms = (rem_atoms - rem_atoms.mean(0)).round(3)
+    # track atoms already accounted for
+    found = []
 
-    keep_atoms = (keep_atoms - keep_atoms.mean(0)).round(3)
+    # center atom
+    atom.positions -= atom.positions.mean(0)
 
-    if not (isinstance(rem_atoms, np.ndarray) and
-            isinstance(keep_atoms, np.ndarray)):
-        raise ValueError("Unable to find shells")
+    # get all atom's distance to origin
+    dist2origin = np.linalg.norm(atom.positions, axis=1)
 
-    rem_atoms = rem_atoms.tolist()
-    keep_atoms = keep_atoms.tolist()
+    # find core atom
+    coreatom = np.where(dist2origin == dist2origin.min())[0]
+    assert coreatom.size == 1
+    indices[0] = coreatom.tolist()
 
-    return [i for i in range(len(keep_atoms))
-            if keep_atoms[i] not in rem_atoms]
+    # add core atom to found
+    found.append(coreatom[0])
+
+    # find shell 1
+    orderdist = sorted(dist2origin.copy())
+    shell1 = []
+    for i in range(1, 13):
+        temp = np.where(dist2origin == orderdist[i])[0]
+        shell1 += temp.tolist()
+
+    shell1 = sorted(set(shell1))
+    indices[1] = shell1
+    found += shell1
+
+    # use nearest neighbors to find next shells
+    for shell in range(2, shells + 1):
+        # find all atoms bonded to outer most known shell
+        bondedto = bonds[np.where(
+                            np.isin(bonds,
+                                    indices[shell - 1]))[0]].flatten()
+
+        # get the indices of atoms not currently found (i.e. in new shell)
+        nextatoms = sorted(set([i for i in bondedto if i not in found]))
+
+        # add new shell to dictionary and to found list
+        indices[shell] = nextatoms
+        found += nextatoms
+
+        # break loop if all atoms are found
+        if len(found) == len(atom):
+            break
+
+    # return shell indices dictionary
+    return indices
 
 
 def build_shell_dist_fig(bimet, show=False):
@@ -918,7 +947,7 @@ def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
 
 
 if __name__ == '__main__':
-    build_atoms_in_shell_list('cuboctahedron', 3)
+    shells = build_atoms_in_shell_list('icosahedron', 8)
     sys.exit()
 
     plt.rcParams['axes.labelpad'] = 20
