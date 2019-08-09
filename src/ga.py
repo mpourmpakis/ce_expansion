@@ -1682,12 +1682,12 @@ def vis_FePt_results(pcty=False):
     # orig_ax.set_title('Experimental FePt NP')
     # rand_ax.set_title('Random FePt NP')
     nbins = 20
-    percenty = True
-    build_central_rdf(ga, metals, nbins=nbins, pcty=percenty, ax=ga_ax)
-    build_central_rdf(orig, metals, nbins=nbins, pcty=percenty, ax=orig_ax)
-    build_central_rdf(rand, metals, nbins=nbins, pcty=percenty, ax=rand_ax)
 
-    if percenty:
+    build_central_rdf(ga, metals, nbins=nbins, pcty=pcty, ax=ga_ax)
+    build_central_rdf(orig, metals, nbins=nbins, pcty=pcty, ax=orig_ax)
+    build_central_rdf(rand, metals, nbins=nbins, pcty=pcty, ax=rand_ax)
+
+    if pcty:
         ga_ax.set_ylim(0, 1.1)
         ga_ax.set_yticklabels(['{:,.0%}'.format(x) for x in ga_ax.get_yticks()])
         ga_ax.set_ylabel('Atom Type Composition')
@@ -1866,4 +1866,4 @@ if __name__ == '__main__':
     for r in plt.rcParams:
         if plt.rcParams[r] == 'bold':
             plt.rcParams[r] = 'normal'
-    vis_FePt_results()
+    vis_FePt_results(True)
