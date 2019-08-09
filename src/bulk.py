@@ -22,9 +22,9 @@ metals = 'aucu'
 minn = 1 if shape.startswith('cub') else 2
 
 # number of shells on inside and outside to ignore in calculation
-buffer = 2
+buffer = 3
 
-for s in range(4, 11):
+for s in range(2 * buffer + 1, 11):
     if shape.startswith('cub'):
         s -= 1
     # get number of atoms
@@ -45,66 +45,80 @@ for s in range(4, 11):
     # build atomgraph object
     ag = atomgraph.AtomGraph(bonds, 'Au', 'Cu')
 
+    # get atom indices for each shell
     shells = db_inter.build_atoms_in_shell_list(shape, s)
 
-    # TODO:
+    # create a 'Test Atom' to ensure shells are being correctly counted
+    test_atom = res.build_atoms_obj()
 
-    # TEMP FIX!!!
-    # only look at CN 12 atoms
-    tokeep = np.where(ag.cns == 12)[0]
-    todrop = np.where(ag.cns != 12)[0]
-    nshellstudy = s - 1
+    # remove shells from dict not in study
+    maxshell = max(shells.keys())
+    dropcount = 0
+    for drop in range(buffer):
+        # pop inner and outer <buffer> layers
+        for d in shells.pop(drop) + shells.pop(maxshell - drop):
+            # set symbol of dropped atoms to Br
+            test_atom[d].symbol = 'Br'
 
-    """
-    z = ag.countMixing(ordering)
-    tot_bondfracs = z / z.sum()
+            # track number of atoms dropped
+            dropcount += 1
 
-    # drop <n> outer and <n> inner shell from calculations
-    nlayerdrop = 3
-    todrop = []
-    for n in range(nlayerdrop):
-        todrop += list(db_inter.build_atoms_in_shell_list(shape, s - n))
-        todrop += list(db_inter.build_atoms_in_shell_list(shape, minn + n))
-
-    # number of shells to study
-    nshellstudy = s - bool(not shape.startswith('cub')) - 2 * nlayerdrop
-
-    # list of atom indices to use in calculation
-    tokeep = [i for i in range(len(ordering)) if i not in todrop]
-    """
     # track counts
     # [Au-Au, Au-Cu, Cu-Cu]
-    counts = np.zeros((len(tokeep), 3))
+    counts = np.zeros((len(test_atom) - dropcount, 3))
 
-    test_atom = res.build_atoms_obj()
-    for i in todrop:
-        test_atom[i].symbol = 'Br'
+    # number of shells in study
+    nshellstudy = len(shells)
 
-    for i, atomi in enumerate(tokeep):
-        a1 = ordering[atomi]
-        matches = np.unique(bonds[np.where(bonds == atomi)[0]])
-        atomi2s = np.array([j for j in matches if j != atomi])
-        for atomi2 in atomi2s:
-            a2 = ordering[atomi2]
-            counts[i, a1 + a2] += 1
+    atomi = 0
+    for s in sorted(shells):
+        for i in shells[s]:
+            # base atom type (0: Au, 1: Cu)
+            a1 = ordering[i]
+            matches = np.unique(bonds[np.where(bonds == i)[0]])
+            i2s = np.array([j for j in matches if j != atomi])
+            for i2 in i2s:
+                a2 = ordering[i2]
+                counts[atomi, a1 + a2] += 1
+            atomi += 1
+
+    # get each count type
     au_counts = counts[np.where(counts[:, 2] == 0)[0]][:, :2]
     cu_counts = np.flip(counts[np.where(counts[:, 0] == 0)[0]][:, 1:], 0)
 
+    # ensure that all atoms have been correctly accounted for
+    assert len(au_counts) + len(cu_counts) == len(test_atom) - dropcount
+    assert len(au_counts) == (test_atom.numbers == 79).sum()
+    assert len(cu_counts) == (test_atom.numbers == 29).sum()
+
+    # calc count fractions
     au_fracs = au_counts.mean(0) / 12
     cu_fracs = cu_counts.mean(0) / 12
+
+    # TEMP FIX!!!
+    # only look at CN 12 atoms
+    tokeepcn = np.where(ag.cns == 12)[0]
+    todropcn = np.where(ag.cns != 12)[0]
 
     # save half of test_atom
     if nshellstudy > 0:
         test_atom.positions -= test_atom.positions.mean(0)
-        test_atom2 = test_atom[np.where(
-                        abs(test_atom.positions[:, 0]) < 0.5)[0]]
+        test_ato2 = test_atom[np.where(
+                        abs(test_atom.positions[:, 0]) < 1)[0]]
+        test_ato2.write(os.path.expanduser('~') +
+                        '\\desktop\\SAMPLES\\slice-%ishells_%s.xyz'
+                        % (nshellstudy, shape[:3]))
+
+        del test_atom[test_atom.numbers == 35]
         test_atom.write(os.path.expanduser('~') +
                         '\\desktop\\SAMPLES\\%ishells_%s.xyz'
                         % (nshellstudy, shape[:3]))
 
     print(''.center(20, '-'))
-    print(res.num_atoms)
-    print('%i atoms studied' % len(tokeep))
+    print(shape)
+    print('%i total atoms' % res.num_atoms)
+    print('%i atoms ignored' % dropcount)
+    print('%i atoms studied' % len(counts))
     print('%i shells studied' % nshellstudy)
     print('Au: -Au (%.2f), -Cu (%.2f)' % (au_fracs[0], au_fracs[1]))
     print('Cu: -Cu (%.2f), -Au (%.2f)' % (cu_fracs[0], cu_fracs[1]))
