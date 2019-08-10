@@ -1126,15 +1126,15 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
 
     Args:
     - metals (str | iterator): list of two metals used in the bimetallic NP
-    - shape (str): shape of NP that is being studied
-                   NOTE: currently supports
-                         - icosahedron
-                         - cuboctahedron
-                         - fcc-cube
-                         - elongated-trigonal-bipyramid
+    - shape (str): shape of NP
+                   NOTE: currently supported methods (found in NPBuilder)
+                   - cuboctahedron
+                   - elongated-trigonal-pyramid
+                   - fcc-cube
+                   - icosahedron
     - num_shells (int): number of shells used to generate atom size
-                      e.g. icosahedron with 3 shells makes a 55-atom object
-                      ( 1 in core + 12 in shell_1 + 42 in shell_2)
+                        e.g. icosahedron with 3 shells makes a 55-atom object
+                        (1 in core (shell_0) + 12 in shell_1 + 42 in shell_2)
 
     **Kwargs:
     - valid arguments to initialize Pop object
@@ -1143,6 +1143,7 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
     Returns:
     - (Pop): Pop instance
     """
+    assert num_shells > 0, "NP must have at least one shell"
     nanop = structure_gen.build_structure_sql(shape, num_shells,
                                               build_bonds_list=True)
 
@@ -1219,10 +1220,11 @@ def run_ga(metals, shape, save_data=True,
     metals = (metal1, metal2)
 
     # number of shells range to sim ga for each shape
-    shape2shell = {'icosahedron': [5, 6],  # [3, 14],
-                   'fcc-cube': [4, 5],  # [2, 15],
-                   'cuboctahedron': [4, 5],  # [2, 15],
-                   'elongated-pentagonal-bipyramid': [5, 6],  # [3, 12]
+    default_shell_range = [1, 11]
+    shape2shell = {'cuboctahedron': default_shell_range,
+                   'elongated-pentagonal-bipyramid': default_shell_range,
+                   'fcc-cube': default_shell_range,
+                   'icosahedron': default_shell_range
                    }
     nshell_range = shape2shell[shape]
 

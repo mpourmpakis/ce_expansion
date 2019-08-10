@@ -87,11 +87,11 @@ def build_df(datatable, lim=None, custom_filter=None, **kwargs):
     return df
 
 
-def build_atoms_in_shell_list(shape, shells):
+def build_atoms_in_shell_list(shape, num_shells):
     """
-    NOTE: <shell> does not map to shells in DB and structure_gen.py
+    creates dictionary of atom indices for each shell
 
-    CURRENT MAPPING:
+    MAPPING:
     shell 0: core atom
     shell 1: 12-atom layer
     shell 2: 42-atom layer
@@ -100,20 +100,15 @@ def build_atoms_in_shell_list(shape, shells):
     Args:
     shape (str): shape of the nanoparticle
 
-    shells (int): shells to create NP from DB
+    num_shells (int): shells to create NP from DB
 
     Returns:
     (dict): {<shell>: atom indices that are in <shell>}
     """
-    has_center = {'cuboctahedron': True,
-                  'fcc-cube': True,
-                  'icosahedron': True,
-                  'elongated-pentagonal-bipyramid': True}
-
-    assert 0 <= shells < 15
+    assert 1 <= num_shells < 15
 
     # get nanoparticle, atoms object, and bonds list
-    nanop = get_nanoparticle(shape, num_shells=shells)
+    nanop = get_nanoparticle(shape, num_shells=num_shells)
     atom = nanop.get_atoms_obj_skel()
     bonds = nanop.load_bonds_list()
 
@@ -149,7 +144,7 @@ def build_atoms_in_shell_list(shape, shells):
     found += shell1
 
     # use nearest neighbors to find next shells
-    for shell in range(2, shells + 1):
+    for shell in range(2, num_shells + 1):
         # find all atoms bonded to outer most known shell
         bondedto = bonds[np.where(
                             np.isin(bonds,
@@ -180,29 +175,35 @@ def build_shell_dist_fig(bimet, show=False):
     Returns:
     (plt.Figure)
     """
+    # get atoms object
     atoms = bimet.build_atoms_obj().copy()
 
-    # center atoms at origin (COP)
-    atoms.positions -= atoms.positions.mean(0)
+    # get metal numbers
+    m1_num = chemical_symbols.index(bimet.metal1)
+    m2_num = chemical_symbols.index(bimet.metal2)
 
-    shell_ls = []
-    tot_count = []
-    m1_count = []
-    m2_count = []
+    # build shells dictionary
+    shape = bimet.shape
+    num_shells = bimet.nanoparticle.num_shells
+    shells_dict = build_atoms_in_shell_list(shape, num_shells)
 
-    for shell in range(1, bimet.nanoparticle.num_shells + 1):
-        inshell = atoms[build_atoms_in_shell_list(bimet.shape, shell)]
-        if len(inshell) == 0:
-            continue
+    # list of all shells in NP (0 is core atom)
+    shell_ls = sorted(shells_dict)
 
-        shell_ls.append(shell)
-        tot_count.append(len(inshell))
-        m1_count.append(len([i for i in inshell if i.symbol == bimet.metal1]))
-        m2_count.append(len([i for i in inshell if i.symbol == bimet.metal2]))
+    # calc total and metal counts for each shell
+    tot_count = np.zeros(len(shell_ls))
+    m1_count = np.zeros(len(shell_ls))
+    m2_count = np.zeros(len(shell_ls))
+    for i, shell in enumerate(sorted(shells_dict)):
+        # indices of atoms in current shell
+        indices = shells_dict[shell]
 
-    tot_count = np.array(tot_count)
-    m1_count = np.array(m1_count)
-    m2_count = np.array(m2_count)
+        # total atom count of current shell
+        tot_count[i] = len(indices)
+
+        # metal type counts for current shell
+        m1_count[i] = (atoms[indices].numbers == m1_num).sum()
+        m2_count[i] = (atoms[indices].numbers == m2_num).sum()
 
     # normalize counts to concentrations
     norm_m1 = m1_count / tot_count
@@ -223,8 +224,7 @@ def build_shell_dist_fig(bimet, show=False):
 
     # set ylim to maximum number of atoms on surface
     high = int(round((tot_count[-1] + 10) * 10) / 10)
-    ax1.set_ylim(0, high)
-    # ax1.set_yticks(range(0, high + 1, 10))
+    ax1.set_ylim(-2, high)
     ax1.set_ylabel('# of Atoms')
 
     ax2.plot(shell_ls, norm_m1, 'o-', markeredgecolor='k',
@@ -232,19 +232,22 @@ def build_shell_dist_fig(bimet, show=False):
     ax2.plot(shell_ls, norm_m2, 'o-', markeredgecolor='k',
              color=m2_color, markersize=8)
     ax2.set_ylabel('Concentration')
-    ax2.set_yticks([0, 0.25, 0.5, 0.75, 1])
-    ax2.set_yticklabels(['{:,.0%}'.format(x) for x in ax2.get_yticks()])
-    ax2.set_xticks(list(range(1, bimet.nanoparticle.num_shells + 1)))
-    ax2.set_xticklabels(['Core'] +
-                        ['Shell %i' % i
-                         for i in range(2, bimet.nanoparticle.num_shells)] +
-                        ['Surface'], rotation=45)
+    yticks = [0, 0.25, 0.5, 0.75, 1]
+    ax2.set_yticks(yticks)
+    ax2.set_yticklabels(['{:,.0%}'.format(x) for x in yticks])
+    ax2.set_xticks(shell_ls)
 
-    fig.suptitle(bimet.build_chem_formula().replace('\\rm', '\\rm \\bf') + ' - %s' % shape)
+    # create xtick labels based on shell number
+    xticklabels = ['Shell %i' % i for i in shell_ls]
+    xticklabels[0] = 'Core'
+    xticklabels[-1] = 'Surface'
+    ax2.set_xticklabels(xticklabels, rotation=45)
+
+    fig.suptitle(bimet.build_chem_formula(latex=True) + ' - %s' % shape)
     fig.tight_layout(rect=(0, 0, 1, 0.9))
 
     if show:
-        fig.show()
+        plt.show()
     return fig
 
 
@@ -332,18 +335,13 @@ def build_new_structs_plot(metal_opts, shape_opts, pct=False,
         metal1, metal2 = db_utils.sort_metals(m)
         for point, shape in zip(['o', 'x', '^', 's'], shape_opts):
             # use abbreviated names for shapes
-            lbl_shape = shape \
-                .replace('icosahedron', 'Ico') \
-                .replace('cuboctahedron', 'Cuboct') \
-                .replace('fcc-cube', 'FCC-Cube') \
-                .replace('elongated-pentagonal-bipyramid', 'J16')
+            lbl_shape = shape.upper()[:3]
 
             # pd.DataFrame of bimetallic log data
             df = build_df(tbl.BimetallicLog, metals=m, shape=shape,
                           custom_filter=custom_filter)
             x = df.date.values
-            label = '%s%s: %s' % (metal1, metal2, lbl_shape)
-            # color = plt.cm.tab20c((i / float(tot_lines)) * 0.62)
+            label = '%s%s - %s' % (metal1, metal2, lbl_shape)
 
             y = df.new_min_structs.values
             if pct:
@@ -423,14 +421,14 @@ def build_srf_plot(metals, shape, T=None):
     Creates a 3D surface plot from NP SQL database
     - plots Size vs. Shape vs. Excess Energy (EE)
     - can also use configurational entropy of mixing
-      to plot Size vs. Shape vs. G = EE - T * delS(mix)
+      to plot Size vs. Shape vs. delG = EE - T * delS(mix)
 
     Args:
     - metals (string || iterable): string(s) containing two metal elements
     - shape (string): shape of the NP
 
     KArgs:
-    T (float): if temperature is given, plot G(mix)
+    T (float): if temperature is given, plot delG(mix)
                (i.e. include configurational entropy)
                (Default: None)
 
@@ -439,11 +437,13 @@ def build_srf_plot(metals, shape, T=None):
     """
     metal1, metal2 = db_utils.sort_metals(metals)
 
+    # build pd.DataFrame of all results that match criteria
     runs = session.query(tbl.BimetallicResults.diameter,
                          (tbl.BimetallicResults.n_metal2 /
                           db.cast(tbl.BimetallicResults.num_atoms,
                                   db.Float))
                          .label('comps'),
+                         tbl.BimetallicResults.num_atoms,
                          tbl.BimetallicResults.EE) \
         .filter(db.and_(tbl.BimetallicResults.metal1 == metal1,
                         tbl.BimetallicResults.metal2 == metal2,
@@ -452,7 +452,7 @@ def build_srf_plot(metals, shape, T=None):
     df = pd.read_sql(runs, session.bind)
 
     # three parameters to plot
-    size = df.diameter.values
+    size = df.num_atoms.values
     comps = df.comps.values
     ees = df.EE.values
 
@@ -473,24 +473,36 @@ def build_srf_plot(metals, shape, T=None):
     ax = fig.add_subplot(111, projection='3d')
     try:
         ax.plot_trisurf(comps, size, ees,
-                        cmap=colormap, norm=normalize)
+                        cmap=colormap, norm=normalize, alpha=0.5)
     except RuntimeError:
         # if not enough data to create surface, make a scatter plot instead
         ax.scatter3D(comps, size, ees,
                      cmap=colormap, norm=normalize)
-    ax.set_xlabel('$X_{%s}$' % metal2)
-    ax.set_ylabel('Size (nm)')
+
+    # plot mins at each step
+    add_legend = True
+    for s in np.unique(size):
+        sizes = np.where(size == s)[0]
+        mini = np.where(ees == ees[sizes].min())[0][0]
+
+        color = 'orange' if ees[sizes].min() == ees.min() else 'pink'
+
+        ax.scatter3D(comps[mini], s, ees[mini], edgecolor='k',
+                     color=color, s=50)
+
+    ax.set_xlabel('\n\n$X_{%s}$' % metal2)
+    ax.set_ylabel('\n\n$\\rm N_{atoms}$')
     if T is not None:
-        ax.set_zlabel('G (eV)')
+        ax.set_zlabel('\n\n$\\rm \\Delta$G (eV)')
         ax.set_title('%iK\n%s %s %s' % (T, metal1, metal2, shape.title()))
     else:
-        ax.set_zlabel('EE (eV)')
+        ax.set_zlabel('\n\nEE (eV)')
         ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
     return fig, ax
 
 
 def build_radial_distributions(metals=None, shape=None, num_atoms=None,
-                            n_metal1=None, lim=None, nbins = "Auto"):
+                               n_metal1=None, lim=None, nbins = "Auto"):
     """
     Sends a query to get_bimetallic_results to construct a list of NPs,
     then for each NP found, returns radial distribution functions for the
@@ -857,6 +869,8 @@ def update_bimet_result(metals, shape, num_atoms,
 
 
 # REMOVE FUNCTIONS
+
+
 def remove_entry(entry_inst):
     """
     GENERIC FUNCTION
@@ -890,6 +904,9 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
         raise db_utils.NPDatabaseError('Unable to find matching Nanoparticle')
     else:
         return remove_entry(res)
+
+
+# HELPER FUNCTIONS
 
 
 def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
@@ -947,7 +964,8 @@ def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
 
 
 if __name__ == '__main__':
-    shells = build_atoms_in_shell_list('icosahedron', 8)
+    a = build_srf_plot('auag', 'icosahedron', T=800)
+    plt.show()
     sys.exit()
 
     plt.rcParams['axes.labelpad'] = 20
