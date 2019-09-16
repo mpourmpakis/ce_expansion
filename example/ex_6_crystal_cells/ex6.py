@@ -17,8 +17,8 @@ graph = atomgraph.AtomGraph(bonds.copy(), metal1, metal2)
 
 # Genetic Algorithm
 n_atoms = len(fcc_cell)
-known_comps = [None] * 100
-for composition in range(0,100,1):
+known_comps = [None] * 101
+for composition in range(0,101,1):
     percent = composition / 100
     n_metal1 = int(percent * n_atoms)
     if n_metal1 in known_comps:
@@ -34,5 +34,5 @@ for composition in range(0,100,1):
                  shape="fcc_cell",
                  n_metal2=n_metal2,
                  atomg=graph)
-    pop.run(max_nochange=5)
-    ga.make_file(pop.atom, pop[0], f"cells/{formula}.xyz")
+    pop.run(max_nochange=1)
+    ga.make_file(pop.atom, pop[0], f"cells/{formula}.cif", filetype="cif")
