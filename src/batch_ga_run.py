@@ -29,7 +29,7 @@ min_generations = 500
 max_generations = -1
 
 max_nochange = 500
-spike = True
+spike = False
 
 # HOW MANY TIMES THE TOTAL BATCH RUN SHOULD REPEAT
 niterations = 3

@@ -150,7 +150,18 @@ def build_structure(shape: "str", num_shells: "int",
 
 
 class NPBuilder(object):
-    """Static class that contains methods to build NPs of various shapes"""
+    """
+    Static class that contains methods to build NPs of various shapes
+
+    Args:
+    num_shells (int): Number of shells in NP
+
+    KArgs:
+    kind (str): What element will be used for the monometallic NPs
+                (DEFAULT: Cu)
+
+    Returns:
+    (ase.Atoms): the NP skeleton"""
     def cuboctahedron(num_shells: "int", kind: "str" = "Cu") -> "ase.Atoms":
         """
         Creates a cuboctahedral NP.
@@ -169,7 +180,7 @@ class NPBuilder(object):
         if num_shells == 0:
             return ase.Atoms(kind)
         return ase.Atoms(ase.cluster.Octahedron(kind, 2 * num_shells + 1,
-                                                cutoff=num_shells))
+                                                cutoff=num_shells), pbc=False)
 
     def elongated_pentagonal_bipyramid(num_shells: "int",
                                        kind: "str" = "Cu") -> "ase.Atoms":
@@ -187,7 +198,9 @@ class NPBuilder(object):
         (ase.Atoms): the NP skeleton
         """
         num_shells += 1
-        return ase.Atoms(ase.cluster.Decahedron("Cu", num_shells, num_shells, 0))
+        return ase.Atoms(
+                    ase.cluster.Decahedron("Cu", num_shells, num_shells, 0),
+                    pbc=False)
 
     def fcc_cube(num_units: "int", kind: "str" = "Cu") -> "ase.Atoms":
         """
@@ -207,10 +220,11 @@ class NPBuilder(object):
         assert num_units >= 0
         if num_units == 0:
             return ase.Atoms(kind)
-        lattice = ase.lattice.cubic.FaceCenteredCubic(kind,
-                                                      size=[num_units] * 3)
-        cube = ase.Atoms(ase.build.cut(lattice, extend=1.01))
-        return cube
+        atom = ase.Atoms(ase.cluster.FaceCenteredCubic('Cu', [(1, 0, 0),
+                                                              (0, 1, 0),
+                                                              (0, 0, 1)],
+                                                       [num_units] * 3))
+        return atom
 
     def icosahedron(num_shells: "int", kind: "str" = "Cu") -> "ase.Atoms":
         """
@@ -227,7 +241,8 @@ class NPBuilder(object):
         (ase.Atoms): the NP skeleton
         """
         assert num_shells >= 0
-        return ase.Atoms(ase.cluster.Icosahedron(kind, num_shells + 1))
+        return ase.Atoms(ase.cluster.Icosahedron(kind, num_shells + 1),
+                         pbc=False)
 
 
 # WIP - sphere is not perfectly symmetric
@@ -266,16 +281,21 @@ def sphere(num_layers: "int", kind: "str" = "Cu",
 
 
 if __name__ == '__main__':
+    use_sql = False
     shapes = ['cuboctahedron', 'elongated-pentagonal-bipyramid',
               'fcc-cube', 'icosahedron']
     for shape in shapes:
         print('-' * 50)
         print(shape)
-        for num_shells in range(1, 11):
-            nanop = build_structure_sql(shape, num_shells,
-                                        build_bonds_list=True)
-            atom = nanop.get_atoms_obj_skel()
-            bonds = nanop.load_bonds_list()
+        for num_shells in range(1, 16):
+            if use_sql:
+                nanop = build_structure_sql(shape, num_shells,
+                                            build_bonds_list=True)
+                atom = nanop.get_atoms_obj_skel()
+                bonds = nanop.load_bonds_list()
+            else:
+                atom, bonds = build_structure(shape, num_shells,
+                                              return_bonds_list=True)
             atom.write('C:\\users\\yla\\desktop\\samples\\%s_%i.xyz'
                        % (shape, num_shells))
             print('%02i: %i' % (num_shells, len(atom)))

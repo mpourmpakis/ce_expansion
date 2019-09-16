@@ -87,7 +87,7 @@ def build_df(datatable, lim=None, custom_filter=None, **kwargs):
     return df
 
 
-def build_atoms_in_shell_list(shape, num_shells):
+def build_atoms_in_shell_dict(shape, num_shells):
     """
     creates dictionary of atom indices for each shell
 
@@ -104,8 +104,23 @@ def build_atoms_in_shell_list(shape, num_shells):
 
     Returns:
     (dict): {<shell>: atom indices that are in <shell>}
+
+    Raises:
+    - ValueError: num_shells must be > 0
+    - ValueError: only certain shapes supported
     """
-    assert 1 <= num_shells < 15
+    # ensure number of shells is within acceptable range
+    if num_shells <= 0:
+        raise ValueError("must have at least one shell")
+
+    # only certain shapes currently supported
+    allowed_shapes = ['cuboctahedron',
+                      'elongated-pentagonal-bipyramid',
+                      'icosahedron']
+
+    if shape not in allowed_shapes:
+        raise ValueError("Invalid shape. Must be %s"
+                         % (', '.join(allowed_shapes)))
 
     # get nanoparticle, atoms object, and bonds list
     nanop = get_nanoparticle(shape, num_shells=num_shells)
@@ -178,14 +193,10 @@ def build_shell_dist_fig(bimet, show=False):
     # get atoms object
     atoms = bimet.build_atoms_obj().copy()
 
-    # get metal numbers
-    m1_num = chemical_symbols.index(bimet.metal1)
-    m2_num = chemical_symbols.index(bimet.metal2)
-
     # build shells dictionary
     shape = bimet.shape
     num_shells = bimet.nanoparticle.num_shells
-    shells_dict = build_atoms_in_shell_list(shape, num_shells)
+    shells_dict = build_atoms_in_shell_dict(shape, num_shells)
 
     # list of all shells in NP (0 is core atom)
     shell_ls = sorted(shells_dict)
@@ -202,8 +213,8 @@ def build_shell_dist_fig(bimet, show=False):
         tot_count[i] = len(indices)
 
         # metal type counts for current shell
-        m1_count[i] = (atoms[indices].numbers == m1_num).sum()
-        m2_count[i] = (atoms[indices].numbers == m2_num).sum()
+        m1_count[i] = (atoms[indices].symbols == bimet.metal1).sum()
+        m2_count[i] = (atoms[indices].symbols == bimet.metal2).sum()
 
     # normalize counts to concentrations
     norm_m1 = m1_count / tot_count
@@ -1002,14 +1013,3 @@ if __name__ == '__main__':
     ax.legend()
     fig.tight_layout()
     plt.show()
-
-    """
-    # get all bimetallic NPs of given metals and shape
-    metals = 'agcu'
-    shape = 'icosahedron'
-    # num_shells = 8
-    # x_dope = 0.7
-
-    f, a = build_srf_plot(metals, shape)
-    plt.show()
-    """

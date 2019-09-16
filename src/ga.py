@@ -12,7 +12,6 @@ import itertools as it
 import atomgraph
 import structure_gen
 import ase.io
-from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
 import numpy as np
 import plot_defaults
@@ -1093,7 +1092,7 @@ def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
                     checkall = False
 
                 # stop looking after 'max_search' counts
-                for c in searchopts:  # it.combinations(spots, n_metal2)
+                for c in searchopts:
                     base = struct_min.copy()
                     if checkall:
                         pick = list(c)
@@ -1319,7 +1318,7 @@ def run_ga(metals, shape, save_data=True,
 
         # add core-shell structures list of comps to run
         if add_coreshell:
-            srfatoms = db_inter.build_atoms_in_shell_list(shape, nshells)
+            srfatoms = db_inter.build_atoms_in_shell_dict(shape, nshells)
             nsrf = len(srfatoms)
             ncore = num_atoms - nsrf
             n = np.unique(n.tolist() + [ncore, nsrf])
@@ -1393,38 +1392,44 @@ def check_db_values(update_db=False, metal_opts=None,
 
     """
     if metal_opts is None:
+        metal_opts = [['Ag', 'Au'],
+                      ['Ag', 'Cu'],
+                      ['Au', 'Cu']]
         ms = db_inter.build_metals_list()
         metal_opts = list([sorted(i) for i in it.combinations(ms, 2)])
-        # metal_opts = [('Ag', 'Au'),
-        #               ('Ag', 'Cu'),
-        #               ('Au', 'Cu')]
 
     if shape_opts is None:
-        shape_opts = ['icosahedron', 'cuboctahedron', 'fcc-cube',
-                      'elongated-pentagonal-bipyramid']
+        shape_opts = ['icosahedron',
+                      'cuboctahedron',
+                      'elongated-pentagonal-bipyramid',
+                      'fcc-cube']
     elif isinstance(shape_opts, str):
         shape_opts = [shape_opts]
 
     fails = []
     for shape in shape_opts:
-        for shell in range(2, 15):
+        for shell in range(2, 11):
             nanop = structure_gen.build_structure_sql(shape, shell,
                                                       build_bonds_list=True)
             for metals in metal_opts:
+                # ensure metal types are sorted
+                metals = sorted(metals)
                 try:
                     atomg = atomgraph.AtomGraph(nanop.bonds_list,
                                                 metals[0], metals[1])
                 except:
                     continue
- 
 
                 # find all bimetallic results matching shape, size, and metals
                 results = db_inter.get_bimet_result(metals, shape=shape,
                                                     num_shells=shell)
                 for res in results:
-                    ordering = np.array(list(map(int, res.ordering)))
-                    actual_ce = atomg.getTotalCE(ordering)
-                    actual_ee = atomg.getEE(ordering)
+                    try:
+                        ordering = np.array(list(map(int, res.ordering)))
+                        actual_ce = atomg.getTotalCE(ordering)
+                        actual_ee = atomg.getEE(ordering)
+                    except:
+                        pass
 
                     outp = '%s %s' % (res.shape[:3].upper(),
                                       res.build_chem_formula())
@@ -1432,6 +1437,7 @@ def check_db_values(update_db=False, metal_opts=None,
                     print(outp.rjust(20), end='')
                     if abs(actual_ce - res.CE) > 1E-10:
                         fails.append([res.CE, actual_ce, res.EE, actual_ee])
+                        print(res.num_atoms)
                         if update_db:
                             db_inter.update_bimet_result(
                                 metals=metals,
@@ -1458,7 +1464,7 @@ def check_db_values(update_db=False, metal_opts=None,
 
 
 def benchmark_plot(max_nochange=500, metals=('Ag', 'Cu'), shape='icosahedron',
-                   num_shells=10, x_metal2=0.57, spike=False, max_gens=-1,
+                   num_shells=9, x_metal2=0.57, spike=False, max_gens=-1,
                    min_gens=-1, path='', save=False, **kwargs):
     """
     Creates a plot comparing GA simulation vs. random search
@@ -1554,9 +1560,10 @@ def benchmark_plot(max_nochange=500, metals=('Ag', 'Cu'), shape='icosahedron',
 
 
 def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
-                 num_shells_range=range(2, 16), x_metal2=0.57):
+                 num_shells_range=range(2, 11), x_metal2=0.5):
     """Creates a scaling plot to test GA
        - number of atoms vs. runtime for 500 generations (in seconds)
+       Reveals that GA simulations scale by O(n) where n = num_atoms
 
     Keyword Arguments:
         metals (tuple): metal types in nanoparticle
@@ -1590,7 +1597,7 @@ def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
             ms=10, markeredgecolor='k')
 
     ax.set_xlabel('Number of Atoms')
-    ax.set_ylabel('Runtime (s) for 500 Generations')
+    ax.set_ylabel('Runtime (seconds)\nfor 500 Generations')
     fig.tight_layout()
     return fig, ax
 
@@ -1601,24 +1608,20 @@ def build_central_rdf(atoms, metals, nbins=5, pcty=False, ax=None):
 
     metal1, metal2 = metals
 
-    # atomic numbers for each metal
-    num_m1 = chemical_symbols.index(metal1)
-    num_m2 = chemical_symbols.index(metal2)
-
     # calculate distances from origin
     dists = np.linalg.norm(atoms.positions, axis=1)
 
     # calculate distances from COP for each metal type
-    dist_m1 = dists[atoms.numbers == num_m1]
-    dist_m2 = dists[atoms.numbers == num_m2]
+    dist_m1 = dists[atoms.symbols == metal1]
+    dist_m2 = dists[atoms.symbols == metal2]
 
     if ax is None:
         fig, ax = plt.subplots()
     else:
         fig = ax.figure
 
-    m1_color = jmol_colors[num_m1]
-    m2_color = jmol_colors[num_m2]
+    m1_color = jmol_colors[atoms[atoms.symbols == metal1][0].number]
+    m2_color = jmol_colors[atoms[atoms.symbols == metal2][0].number]
 
     binrange = (0, dists.max())
 
@@ -1671,11 +1674,11 @@ def vis_FePt_results(pcty=False):
     origpath = os.path.join(fept_path, 'FePt_cns.xyz')
     orig = ase.io.read(origpath)
 
-    gapath = os.path.join(fept_path, 'ga.xyz')
-    ga = ase.io.read(gapath)
+    # get GA-optimized structure
+    ga = ase.io.read(os.path.join(fept_path, 'ga.xyz'))
 
     # get random structure from benchmark plot in data\\fept_np
-    rand = ase.io.read('D:\\MCowan\\projects\\ce_expansion\\data\\fept_np\\random.xyz')
+    rand = ase.io.read(os.path.join(fept_path, 'random.xyz'))
 
     metals = ('Fe', 'Pt')
     fig, axes = plt.subplots(1, 3, sharey=True)
@@ -1725,8 +1728,8 @@ def vis_FePt_results(pcty=False):
     ag = atomgraph.AtomGraph(bonds.copy(), 'Fe', 'Pt')
 
     # get ordering
-    orig_order = (orig.numbers == 78).astype(int)
-    ga_order = (ga.numbers == 78).astype(int)
+    orig_order = (orig.symbols == 'Pt').astype(int)
+    ga_order = (ga.symbols == 'Pt').astype(int)
 
     # get bond types
     orig_mixing = ag.countMixing(orig_order)
@@ -1818,7 +1821,7 @@ def test_FePt_nanop():
     ag = atomgraph.AtomGraph(bonds.copy(), 'Fe', 'Pt')
 
     # number of Platinum (metal 2) atoms
-    n_metal2 = sum(atom.numbers == 78)
+    n_metal2 = sum(atom.symbols == 'Pt')
 
     # cannot run if GA results already exist (ensures no overwriting)
     for n in ['ga.xyz', 'random.xyz', 'gainfo.txt',
@@ -1865,7 +1868,8 @@ def test_FePt_nanop():
     return fig, ax
 
 if __name__ == '__main__':
+    check_db_values()
     for r in plt.rcParams:
         if plt.rcParams[r] == 'bold':
             plt.rcParams[r] = 'normal'
-    vis_FePt_results(True)
+    # vis_FePt_results(True)
