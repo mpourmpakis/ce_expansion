@@ -1,25 +1,24 @@
-import operator as op
-import pandas as pd
-import os
-import time
-import random
-from datetime import datetime as dt
-import pathlib
-import re
-import pickle
 import functools
 import itertools as it
-import atomgraph
-import structure_gen
+import operator as op
+import os
+import pathlib
+import pickle
+import random
+import re
+import time
+from datetime import datetime as dt
+
 import ase.io
+import matplotlib.pyplot as plt
+import numpy as np
 from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
-import numpy as np
-import plot_defaults
-import matplotlib.pyplot as plt
-import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
+
+import atomgraph
+import structure_gen
 from npdb import db_inter
+
 try:
     import ce_expansion.src.npdb.db_inter as db_inter
 except:
@@ -451,11 +450,11 @@ class Pop(object):
             # add current min CE structure if path exists not monometallic
             if self.prev_results and self.n_metal2 not in [0, self.num_atoms]:
                 self.pop += [Chromo(
-                                self.atomg,
-                                self.n_metal2,
-                                ordering=np.array(
-                                    [int(i) for i
-                                     in self.prev_results.ordering]))]
+                    self.atomg,
+                    self.n_metal2,
+                    ordering=np.array(
+                        [int(i) for i
+                         in self.prev_results.ordering]))]
 
         # create random structures for remaining popsize
         self.pop += [Chromo(self.atomg, n_metal2=self.n_metal2)
@@ -512,7 +511,7 @@ class Pop(object):
             # MUTATE - does not mutate most fit nanoparticle
             for j in range(self.n_mute):
                 self[random.randrange(1, self.popsize)
-                     ].mutate(self.n_mute_atomswaps)
+                ].mutate(self.n_mute_atomswaps)
 
         self.sort_pop()
         self.update_stats()
@@ -676,8 +675,8 @@ class Pop(object):
         self.sort_pop()
         s = np.array([i.ce for i in self.pop])
         self.stats.append([s.min(),  # minimum CE
-                          s.mean(),  # mean CE
-                          s.std()])  # STD CE
+                           s.mean(),  # mean CE
+                           s.std()])  # STD CE
         # self.min_struct_ls.append(Chromo(self.atomg, self.n_metal2,
         #                                  ordering=self[0].ordering.copy()))
 
@@ -849,9 +848,9 @@ class Pop(object):
 
         # try to find nanoparticle in DB
         nanop = db_inter.get_nanoparticle(
-                    self.shape,
-                    num_atoms=self.num_atoms,
-                    lim=1)
+            self.shape,
+            num_atoms=self.num_atoms,
+            lim=1)
 
         # if not found, add a new nanoparticle to DB
         if not nanop:
@@ -897,7 +896,7 @@ def load_pop(path):
     return pop
 
 
-def make_xyz(atom, chrom, path, verbose=False):
+def make_file(atom, chrom, path, verbose=False):
     """
     Creates an XYZ file given Atoms obj skeleton and
     GA Chrom obj for metals and ordering
@@ -1416,7 +1415,6 @@ def check_db_values(update_db=False, metal_opts=None,
                                                 metals[0], metals[1])
                 except:
                     continue
- 
 
                 # find all bimetallic results matching shape, size, and metals
                 results = db_inter.get_bimet_result(metals, shape=shape,
@@ -1512,8 +1510,8 @@ def benchmark_plot(max_nochange=500, metals=('Ag', 'Cu'), shape='icosahedron',
 
     # save best structure from GA and random search
     if save:
-        make_xyz(newp.atom, newp.pop[0], os.path.join(path, 'ga.xyz'))
-        make_xyz(randp.atom, randp.pop[0], os.path.join(path, 'random.xyz'))
+        make_file(newp.atom, newp.pop[0], os.path.join(path, 'ga.xyz'))
+        make_file(randp.atom, randp.pop[0], os.path.join(path, 'random.xyz'))
 
     # plot results
     fig, ax = newp.plot_results()
@@ -1711,7 +1709,7 @@ def vis_FePt_results(pcty=False):
             for i, line in enumerate(fid):
                 if i > 1:
                     for b in map(int, line.split('[')[-1]
-                                 .strip(']\n').split(', ')):
+                            .strip(']\n').split(', ')):
                         newbond = [i - 2, b]
                         bonds.append(newbond)
         bonds = np.array(bonds)
@@ -1804,7 +1802,7 @@ def test_FePt_nanop():
             for i, line in enumerate(fid):
                 if i > 1:
                     for b in map(int, line.split('[')[-1]
-                                 .strip(']\n').split(', ')):
+                            .strip(']\n').split(', ')):
                         newbond = [i - 2, b]
                         bonds.append(newbond)
         bonds = np.array(bonds)
@@ -1838,7 +1836,7 @@ def test_FePt_nanop():
     # pop.save(os.path.join(fept_path, 'fept_gapop.pickle'))
 
     # save best structure from GA and random search
-    make_xyz(pop.atom, pop[0], os.path.join(fept_path, 'ga.xyz'))
+    make_file(pop.atom, pop[0], os.path.join(fept_path, 'ga.xyz'))
 
     with open(os.path.join(fept_path, 'gainfo.txt'), 'w') as fid:
         fid.write('MaxNoChange: %i\n' % max_nochange)
@@ -1854,7 +1852,7 @@ def test_FePt_nanop():
                   n_metal2=n_metal2, atomg=ag, random=True)
     randpop.run(max_gens=max_gens, max_nochange=-1)
 
-    make_xyz(randpop.atom, randpop[0], os.path.join(fept_path, 'random.xyz'))
+    make_file(randpop.atom, randpop[0], os.path.join(fept_path, 'random.xyz'))
 
     # plot results
     fig, ax = pop.plot_results()
@@ -1863,6 +1861,7 @@ def test_FePt_nanop():
     fig.savefig(os.path.join(fept_path, 'results.png'))
     fig.savefig(os.path.join(fept_path, 'results.svg'))
     return fig, ax
+
 
 if __name__ == '__main__':
     for r in plt.rcParams:
