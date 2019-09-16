@@ -27,7 +27,7 @@ long int calculate_mixing(long int num_atoms, // Number of atoms in the system
       long int bond_destination = id_array[adj_table[i][1]];
 
       if (bond_source == bond_destination){
-        if (bond_source == 1){
+        if (bond_source == 0){
           // A-A Bond
           return_array[0] = return_array[0] + 1;
           #ifdef PRINT_DEBUG_INFO
