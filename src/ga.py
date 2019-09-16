@@ -896,7 +896,7 @@ def load_pop(path):
     return pop
 
 
-def make_file(atom, chrom, path, verbose=False):
+def make_file(atom, chrom, path, verbose=False, filetype="xyz"):
     """
     Creates an XYZ file given Atoms obj skeleton and
     GA Chrom obj for metals and ordering
@@ -910,6 +910,7 @@ def make_file(atom, chrom, path, verbose=False):
     - verbose (bool): if True, print save path on success
 
     Returns: None
+    :param filetype:
     """
     atom = atom.copy()
     metal1, metal2 = chrom.atomg.symbols
