@@ -904,13 +904,13 @@ def make_file(atom, chrom, path, verbose=False, filetype="xyz"):
     Args:
     - atom (ase.Atoms): Atoms obj skeleton
     - chrom (Chrom): Chrom obj from GA containing ordering and metals
-    - path (str): path to save XYZ file
+    - path (str): path to save file
+    - filetype (str): Type of file to save. Default XYZ
 
     Kargs:
     - verbose (bool): if True, print save path on success
 
     Returns: None
-    :param filetype:
     """
     atom = atom.copy()
     metal1, metal2 = chrom.atomg.symbols
@@ -919,16 +919,19 @@ def make_file(atom, chrom, path, verbose=False, filetype="xyz"):
     atom.set_tags(None)
     for i, dope in enumerate(chrom.ordering):
         atom[i].symbol = metal2 if dope else metal1
+    print(atom)
+    print(chrom.ordering)
 
     # create file name if not included in path
-    if not path.endswith('.xyz'):
+    if not path.endswith(filetype):
         n_metal2 = sum(chrom.ordering)
         n_metal1 = len(atom) - n_metal2
-        fname = '%s%i_%s%i.xyz' % (metal1, n_metal1,
-                                   metal2, n_metal2)
+        fname = '%s%i_%s%i.%s' % (metal1, n_metal1,
+                                  metal2, n_metal2,
+                                  filetype)
         path = os.path.join(path, fname)
 
-    # save xyz file to path
+    # save file to path
     ase.io.write(path, atom)
     if verbose:
         print('Saved as %s' % path)
