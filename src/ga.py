@@ -157,7 +157,7 @@ class Chromo(object):
 
     def mate(self, chromo2):
         """
-        Crossover algorithm to mix two parent chromosomes into
+        Pairwise crossover algorithm to mix two parent chromosomes into
         two new child chromosomes, taking traits from each parent
         - conserves doping concentration
         - about O(N^2) scaling
@@ -1126,15 +1126,15 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
 
     Args:
     - metals (str | iterator): list of two metals used in the bimetallic NP
-    - shape (str): shape of NP that is being studied
-                   NOTE: currently supports
-                         - icosahedron
-                         - cuboctahedron
-                         - fcc-cube
-                         - elongated-trigonal-pyramic
+    - shape (str): shape of NP
+                   NOTE: currently supported methods (found in NPBuilder)
+                   - cuboctahedron
+                   - elongated-trigonal-pyramid
+                   - fcc-cube
+                   - icosahedron
     - num_shells (int): number of shells used to generate atom size
-                      e.g. icosahedron with 3 shells makes a 55-atom object
-                      ( 1 in core + 12 in shell_1 + 42 in shell_2)
+                        e.g. icosahedron with 3 shells makes a 55-atom object
+                        (1 in core (shell_0) + 12 in shell_1 + 42 in shell_2)
 
     **Kwargs:
     - valid arguments to initialize Pop object
@@ -1143,6 +1143,7 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
     Returns:
     - (Pop): Pop instance
     """
+    assert num_shells > 0, "NP must have at least one shell"
     nanop = structure_gen.build_structure_sql(shape, num_shells,
                                               build_bonds_list=True)
 
@@ -1219,10 +1220,11 @@ def run_ga(metals, shape, save_data=True,
     metals = (metal1, metal2)
 
     # number of shells range to sim ga for each shape
-    shape2shell = {'icosahedron': [5, 6],  # [3, 14],
-                   'fcc-cube': [4, 5],  # [2, 15],
-                   'cuboctahedron': [4, 5],  # [2, 15],
-                   'elongated-pentagonal-bipyramid': [5, 6],  # [3, 12]
+    default_shell_range = [1, 11]
+    shape2shell = {'cuboctahedron': default_shell_range,
+                   'elongated-pentagonal-bipyramid': default_shell_range,
+                   'fcc-cube': default_shell_range,
+                   'icosahedron': default_shell_range
                    }
     nshell_range = shape2shell[shape]
 
@@ -1682,12 +1684,12 @@ def vis_FePt_results(pcty=False):
     # orig_ax.set_title('Experimental FePt NP')
     # rand_ax.set_title('Random FePt NP')
     nbins = 20
-    percenty = True
-    build_central_rdf(ga, metals, nbins=nbins, pcty=percenty, ax=ga_ax)
-    build_central_rdf(orig, metals, nbins=nbins, pcty=percenty, ax=orig_ax)
-    build_central_rdf(rand, metals, nbins=nbins, pcty=percenty, ax=rand_ax)
 
-    if percenty:
+    build_central_rdf(ga, metals, nbins=nbins, pcty=pcty, ax=ga_ax)
+    build_central_rdf(orig, metals, nbins=nbins, pcty=pcty, ax=orig_ax)
+    build_central_rdf(rand, metals, nbins=nbins, pcty=pcty, ax=rand_ax)
+
+    if pcty:
         ga_ax.set_ylim(0, 1.1)
         ga_ax.set_yticklabels(['{:,.0%}'.format(x) for x in ga_ax.get_yticks()])
         ga_ax.set_ylabel('Atom Type Composition')
@@ -1866,4 +1868,4 @@ if __name__ == '__main__':
     for r in plt.rcParams:
         if plt.rcParams[r] == 'bold':
             plt.rcParams[r] = 'normal'
-    vis_FePt_results()
+    vis_FePt_results(True)

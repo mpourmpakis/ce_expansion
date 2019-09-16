@@ -10,7 +10,7 @@ import os
 import numpy as np
 import ase
 from ase.data.colors import jmol_colors
-from ase.data import chemical_symbols
+from ase.data import chemical_symbols, covalent_radii
 import ase.visualize.plot
 
 
@@ -244,16 +244,22 @@ class BimetallicResults(Base):
                 # select subplot axis
                 ax = axes[i, j]
 
+                # visualize NP
                 if (i, j) == (1, 0):
-                    # ase.visualize.plot.plot_atoms(self.atoms_obj, ax=ax)
-                    path = os.path.join(tempfile.gettempdir(), 'temp.png')
-                    self.save_np(path)
-                    im = plt.imread(path)
-                    ax.imshow(im)
+                    atom = self.build_atoms_obj()
+                    for a in atom:
+                        circ = plt.Circle((a.x, a.y),
+                                          radius=covalent_radii[a.number],
+                                          facecolor=jmol_colors[a.number],
+                                          edgecolor='k',
+                                          linewidth=1,
+                                          zorder=a.z)
+                        ax.add_patch(circ)
+                    ax.autoscale()
+                    ax.set_aspect(1)
                     ax.axis('off')
-                    os.remove(path)
+                # calculate PRDF
                 else:
-                    # calculate PRDF
                     x, prdf = self.build_prdf(alpha=metals[i], beta=metals[j])
                     if max(prdf) > max_y:
                         max_y = max(prdf)
@@ -266,12 +272,8 @@ class BimetallicResults(Base):
                                  % (metals[i], metals[j]),
                                  fontsize=14)
 
-        max_y += 0.2 * max_y
-        # axes[0, 0].set_ylim(0, max_y)
-        # axes[0, 1].set_ylim(0, max_y)
-        # axes[1, 1].set_ylim(0, max_y)
         fig.suptitle('Partial Radial Distribution Functions for\n' +
-                     self.build_chem_formula() + ' ' + self.shape,
+                     self.build_chem_formula(latex=True) + ' ' + self.shape,
                      fontweight='normal')
         fig.tight_layout(rect=(0, 0, 1, 0.9))
         return fig
@@ -307,15 +309,6 @@ class BimetallicResults(Base):
 
         # get bins for ax.hist
         bins = np.linspace(0, dists.max(), nbins + 1)
-
-
-        """
-        # if pcty, normalize counts to concentrations
-        ax.hist(dist_m1, bins=bins, label=self.metal1, edgecolor='k',
-                color=m1_color, alpha=0.5)
-        ax.hist(dist_m2, bins=bins, label=self.metal2, edgecolor='k',
-                color=m2_color, alpha=0.5)
-        """
 
         x = (bin_edges[1:] + bin_edges[:-1]) / 2
         ax.plot(x, counts_m1, 'o-', markeredgecolor='k',
