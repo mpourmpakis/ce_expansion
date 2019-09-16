@@ -302,7 +302,7 @@ class AtomGraph(object):
             else:
                 # Search the NP for a 1 with heteroatomic bonds
                 for chosen_one in np.random.permutation(ones):
-                    connected_atoms = adj_list[chosen_one]
+                    connected_atoms = np.array(adj_list[chosen_one])
                     connected_zeros = np.intersect1d(connected_atoms, zeros,
                                                      assume_unique=True)
                     if connected_zeros.size != 0:
