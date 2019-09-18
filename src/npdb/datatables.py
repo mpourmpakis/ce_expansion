@@ -11,7 +11,7 @@ import numpy as np
 import ase
 from ase.data.colors import jmol_colors
 from ase.data import chemical_symbols, covalent_radii
-import ase.visualize.plot
+import ase.visualize
 
 
 class BimetallicResults(Base):
@@ -335,6 +335,12 @@ class BimetallicResults(Base):
         atom.info['EE'] = self.EE
         atom.write(path)
         return True
+
+    def show(self):
+        """
+        Shows nanoparticle using ase.visualize.view
+        """
+        ase.visualize.view(self.build_atoms_obj())
 
 
 class Nanoparticles(Base):
