@@ -47,7 +47,7 @@ def cn_dist_plot(bimet_res: "dt.BimetallicResults",
 
     # create bonds list
     # try to load it from nanoparticle object
-    if bimet_res.nanoparticle.load_bonds_list():
+    if isinstance(bimet_res.nanoparticle.load_bonds_list(), np.ndarray):
         bonds = bimet_res.nanoparticle.bonds_list
     else:
         raise ValueError("Unable to load bonds list")
@@ -111,9 +111,4 @@ if __name__ == '__main__':
     res = db_inter.get_bimet_result(metals, shape=shape, num_shells=num_shells,
                                     only_bimet=True)[4]
     fig, ax = cn_dist_plot(res, pcty=True)
-
-    # save figure to desktop
-    desk = os.path.join(os.path.expanduser('~'), 'Desktop')
-    fig.savefig(
-        os.path.join(desk, f'{res.build_chem_formula()}_cndist.png'),
-        dpi=600/9)
+    plt.show()

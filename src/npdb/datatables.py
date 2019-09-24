@@ -11,7 +11,7 @@ import numpy as np
 import ase
 from ase.data.colors import jmol_colors
 from ase.data import chemical_symbols, covalent_radii
-import ase.visualize.plot
+import ase.visualize
 
 
 class BimetallicResults(Base):
@@ -284,21 +284,18 @@ class BimetallicResults(Base):
         # center atoms at origin (COP)
         atoms.positions -= atoms.positions.mean(0)
 
-        # atomic numbers for each metal
-        num_m1 = chemical_symbols.index(self.metal1)
-        num_m2 = chemical_symbols.index(self.metal2)
-
         # calculate distances from origin
         dists = np.linalg.norm(atoms.positions, axis=1)
 
         # calculate distances from COP for each metal type
-        dist_m1 = dists[atoms.numbers == num_m1]
-        dist_m2 = dists[atoms.numbers == num_m2]
+        dist_m1 = dists[atoms.symbols == self.metal1]
+        dist_m2 = dists[atoms.symbols == self.metal2]
 
         fig, ax = plt.subplots()
 
-        m1_color = jmol_colors[num_m1]
-        m2_color = jmol_colors[num_m2]
+        # get jmol color for each metal
+        m1_color = jmol_colors[chemical_symbols.index(self.metal1)]
+        m2_color = jmol_colors[chemical_symbols.index(self.metal2)]
 
         # set nbins to num shells if not given
         if not nbins:
@@ -338,6 +335,12 @@ class BimetallicResults(Base):
         atom.info['EE'] = self.EE
         atom.write(path)
         return True
+
+    def show(self):
+        """
+        Shows nanoparticle using ase.visualize.view
+        """
+        ase.visualize.view(self.build_atoms_obj())
 
 
 class Nanoparticles(Base):

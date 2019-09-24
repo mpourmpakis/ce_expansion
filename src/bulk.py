@@ -1,9 +1,6 @@
-import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib.tri as tri
 from npdb import db_inter
 import atomgraph
 try:
@@ -46,7 +43,7 @@ for s in range(2 * buffer + 1, 11):
     ag = atomgraph.AtomGraph(bonds, 'Au', 'Cu')
 
     # get atom indices for each shell
-    shells = db_inter.build_atoms_in_shell_list(shape, s)
+    shells = db_inter.build_atoms_in_shell_dict(shape, s)
 
     # create a 'Test Atom' to ensure shells are being correctly counted
     test_atom = res.build_atoms_obj()
@@ -88,8 +85,8 @@ for s in range(2 * buffer + 1, 11):
 
     # ensure that all atoms have been correctly accounted for
     assert len(au_counts) + len(cu_counts) == len(test_atom) - dropcount
-    assert len(au_counts) == (test_atom.numbers == 79).sum()
-    assert len(cu_counts) == (test_atom.numbers == 29).sum()
+    assert len(au_counts) == (test_atom.symbols == 'Au').sum()
+    assert len(cu_counts) == (test_atom.symbols == 'Cu').sum()
 
     # calc count fractions
     au_fracs = au_counts.mean(0) / 12
@@ -109,7 +106,7 @@ for s in range(2 * buffer + 1, 11):
                         '\\desktop\\SAMPLES\\slice-%ishells_%s.xyz'
                         % (nshellstudy, shape[:3]))
 
-        del test_atom[test_atom.numbers == 35]
+        del test_atom[test_atom.symbols == 'Br']
         test_atom.write(os.path.expanduser('~') +
                         '\\desktop\\SAMPLES\\%ishells_%s.xyz'
                         % (nshellstudy, shape[:3]))
