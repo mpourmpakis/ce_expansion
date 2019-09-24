@@ -113,6 +113,7 @@ def get_best(alloy,
     for shape in shapes:
         query = npdb.db_inter.get_bimet_result(metals=alloy, shape=shape)
         for result in query:
+            print(result)
             # Calculate size
             size = result.num_atoms
             if size <= min_size or size >= max_size:
@@ -136,6 +137,7 @@ def get_best(alloy,
 
     # Choose minimum-energy objects to plot
     for result in results:
+        print(result)
         for temp in result.free_energies:
             compared = chosen_dict[temp][comps.index(result.composition)][sizes.index(result.size)]
             if compared.energy is None:
@@ -213,7 +215,7 @@ def make_unfilled(points, alloy):
         # Add points
         for composition in points[temp]:
             for point in composition:
-                if None in [point.comp, point.size, point.energy]:
+                if None in [point.comp, point.size, point.energy] or point.comp == 0 or point.comp==1:
                     pass
                 ax.scatter(point.comp, point.size, c=point.color, marker=point.symbol, s=point.symbol_size)
 
@@ -247,7 +249,7 @@ def make_filled(points, alloy, resolution=10):
         colors = []
         for composition in points[temp]:
             for point in composition:
-                if None in [point.comp, point.size]:
+                if None in [point.comp, point.size] or point.comp == 0 or point.comp == 1:
                     continue
                 sizes.add(point.size)
                 comps.add(point.comp)
@@ -286,12 +288,15 @@ def make_filled(points, alloy, resolution=10):
         custom_legend = [matplotlib.lines.Line2D([0],[0], color=cmap_bold(0), marker="o", lw=0),
                          matplotlib.lines.Line2D([0],[0], color=cmap_bold(1), marker="o", lw=0),
                          matplotlib.lines.Line2D([0],[0], color=cmap_bold(2), marker="o", lw=0)]
-        ax.legend(custom_legend, ["Ico", "EPB", "Cuboct"], fancybox=True, framealpha=0.5)
+        #ax.legend(custom_legend, ["Ico", "EPB", "Cuboct"], fancybox=True, framealpha=0.5)
         plt.tight_layout()
         plt.savefig("size_comp_" + alloy + "_" + str(temp) + "K.png")
         plt.close()
 
 alloys = ["AgAu" , "AgCu", "AuCu"]
+print("asdf")
 for alloy in alloys:
+    print(alloy)
     results = get_best(alloy, [0, 1000], [0, 1000], temperature_res=250)
+    print("asdfasdfasdf")
     make_filled(results, alloy, resolution=1000)
