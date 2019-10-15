@@ -290,6 +290,7 @@ def make_filled(points, alloy, resolution=10):
                          matplotlib.lines.Line2D([0],[0], color=cmap_bold(2), marker="o", lw=0)]
         #ax.legend(custom_legend, ["Ico", "EPB", "Cuboct"], fancybox=True, framealpha=0.5)
         plt.tight_layout()
+        plt.ylim(13,3871)
         plt.savefig("size_comp_" + alloy + "_" + str(temp) + "K.png")
         plt.close()
 
@@ -297,6 +298,6 @@ alloys = ["AgAu" , "AgCu", "AuCu"]
 print("asdf")
 for alloy in alloys:
     print(alloy)
-    results = get_best(alloy, [0, 1000], [0, 1000], temperature_res=250)
+    results = get_best(alloy, [0, 4000], [0, 1000], temperature_res=250)
     print("asdfasdfasdf")
     make_filled(results, alloy, resolution=1000)
