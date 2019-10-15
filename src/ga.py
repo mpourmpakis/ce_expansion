@@ -1,23 +1,28 @@
-import operator as op
-import pandas as pd
-import os
-import time
-import random
-from datetime import datetime as dt
-import pathlib
-import re
-import pickle
 import functools
 import itertools as it
+import operator as op
+import os
+import pathlib
+import pickle
+import random
+import re
+import time
+from datetime import datetime as dt
+
+import ase.io
+import matplotlib.pyplot as plt
+import numpy as np
+from ase.data import chemical_symbols
+from ase.data.colors import jmol_colors
+
 import atomgraph
 import structure_gen
-import ase.io
-import numpy as np
-import plot_defaults
-import matplotlib.pyplot as plt
-import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
 from npdb import db_inter
+
+try:
+    import ce_expansion.src.npdb.db_inter as db_inter
+except:
+    pass
 
 # random.seed(9876)
 
@@ -151,7 +156,7 @@ class Chromo(object):
 
     def mate(self, chromo2):
         """
-        Crossover algorithm to mix two parent chromosomes into
+        Pairwise crossover algorithm to mix two parent chromosomes into
         two new child chromosomes, taking traits from each parent
         - conserves doping concentration
         - about O(N^2) scaling
@@ -370,8 +375,8 @@ class Pop(object):
         self.atomg = self.__make_atomg__()
         for c in self.pop:
             c.atomg = self.__make_atomg__()
-        for c2 in self.min_struct_ls:
-            c2.atomg = self.__make_atomg__()
+        # for c2 in self.min_struct_ls:
+        #     c2.atomg = self.__make_atomg__()
 
     def initialize_new_run(self):
         """
@@ -395,9 +400,10 @@ class Pop(object):
 
         self.initialize_pop()
         self.sort_pop()
+        self.orig_min = self[0].ce
 
         self.stats = []
-        self.min_struct_ls = []
+        # self.min_struct_ls = []
         self.update_stats()
 
         # track runtime
@@ -444,11 +450,11 @@ class Pop(object):
             # add current min CE structure if path exists not monometallic
             if self.prev_results and self.n_metal2 not in [0, self.num_atoms]:
                 self.pop += [Chromo(
-                                self.atomg,
-                                self.n_metal2,
-                                ordering=np.array(
-                                    [int(i) for i
-                                     in self.prev_results.ordering]))]
+                    self.atomg,
+                    self.n_metal2,
+                    ordering=np.array(
+                        [int(i) for i
+                         in self.prev_results.ordering]))]
 
         # create random structures for remaining popsize
         self.pop += [Chromo(self.atomg, n_metal2=self.n_metal2)
@@ -505,7 +511,7 @@ class Pop(object):
             # MUTATE - does not mutate most fit nanoparticle
             for j in range(self.n_mute):
                 self[random.randrange(1, self.popsize)
-                     ].mutate(self.n_mute_atomswaps)
+                ].mutate(self.n_mute_atomswaps)
 
         self.sort_pop()
         self.update_stats()
@@ -669,10 +675,10 @@ class Pop(object):
         self.sort_pop()
         s = np.array([i.ce for i in self.pop])
         self.stats.append([s.min(),  # minimum CE
-                          s.mean(),  # mean CE
-                          s.std()])  # STD CE
-        self.min_struct_ls.append(Chromo(self.atomg, self.n_metal2,
-                                         ordering=self[0].ordering.copy()))
+                           s.mean(),  # mean CE
+                           s.std()])  # STD CE
+        # self.min_struct_ls.append(Chromo(self.atomg, self.n_metal2,
+        #                                  ordering=self[0].ordering.copy()))
 
     def is_new_min(self, check_db=True):
         """
@@ -683,13 +689,14 @@ class Pop(object):
         check_db (bool): if True, only compares to database min
                          else it'll compare to generation 0
         """
+        cur_min = self.get_min()
         if check_db:
             if not self.prev_results:
                 return True
             else:
-                return self.get_min() < self.prev_results.CE
+                return cur_min < self.prev_results.CE
         else:
-            return self.get_min() < self.min_struct_ls[0].ce
+            return cur_min < self.orig_min
 
     def save(self, path):
         """
@@ -705,8 +712,8 @@ class Pop(object):
         # remove AtomGraph from Chromos
         for c in self.pop:
             c.atomg = None
-        for c2 in self.min_struct_ls:
-            c2.atomg = None
+        # for c2 in self.min_struct_ls:
+        #     c2.atomg = None
 
         # if path doesn't include a filename, make one
         if not path.endswith('.pickle'):
@@ -814,7 +821,7 @@ class Pop(object):
                               '\\1_{\\2}\\3_{\\4}$',
                               self.formula)
             ax.set_title('$\\rm %s %s\n%.3f eV'
-                         % (tex_form, self.shape, low[-1]),
+                         % (tex_form, self.shape.title(), low[-1]),
                          fontdict=dict(weight='normal'))
             # ax.set_title('Min CE: %.5f' % (self.get_min()))
             fig.tight_layout()
@@ -841,9 +848,9 @@ class Pop(object):
 
         # try to find nanoparticle in DB
         nanop = db_inter.get_nanoparticle(
-                    self.shape,
-                    num_atoms=self.num_atoms,
-                    lim=1)
+            self.shape,
+            num_atoms=self.num_atoms,
+            lim=1)
 
         # if not found, add a new nanoparticle to DB
         if not nanop:
@@ -865,7 +872,8 @@ class Pop(object):
             CE=ce,
             ordering=''.join(map(str, best.ordering)),
             EE=ee,
-            nanop=nanop)
+            nanop=nanop,
+            allow_insert=False)
         print('New min NP added to database.')
 
 
@@ -888,7 +896,7 @@ def load_pop(path):
     return pop
 
 
-def make_xyz(atom, chrom, path, verbose=False):
+def make_file(atom, chrom, path, verbose=False, filetype="xyz"):
     """
     Creates an XYZ file given Atoms obj skeleton and
     GA Chrom obj for metals and ordering
@@ -896,7 +904,8 @@ def make_xyz(atom, chrom, path, verbose=False):
     Args:
     - atom (ase.Atoms): Atoms obj skeleton
     - chrom (Chrom): Chrom obj from GA containing ordering and metals
-    - path (str): path to save XYZ file
+    - path (str): path to save file
+    - filetype (str): Type of file to save. Default XYZ
 
     Kargs:
     - verbose (bool): if True, print save path on success
@@ -910,16 +919,19 @@ def make_xyz(atom, chrom, path, verbose=False):
     atom.set_tags(None)
     for i, dope in enumerate(chrom.ordering):
         atom[i].symbol = metal2 if dope else metal1
+    print(atom)
+    print(chrom.ordering)
 
     # create file name if not included in path
-    if not path.endswith('.xyz'):
+    if not path.endswith(filetype):
         n_metal2 = sum(chrom.ordering)
         n_metal1 = len(atom) - n_metal2
-        fname = '%s%i_%s%i.xyz' % (metal1, n_metal1,
-                                   metal2, n_metal2)
+        fname = '%s%i_%s%i.%s' % (metal1, n_metal1,
+                                  metal2, n_metal2,
+                                  filetype)
         path = os.path.join(path, fname)
 
-    # save xyz file to path
+    # save file to path
     ase.io.write(path, atom)
     if verbose:
         print('Saved as %s' % path)
@@ -1055,10 +1067,11 @@ def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
                 low = 0
                 low_struct = None
 
+                # check to see how many combinations exist
+                options = ncr(len(spots), n_metal2)
+
                 # return sample of 'return_n' options
                 if return_n:
-                    # check to see how many combinations exist
-                    options = ncr(len(spots), n_metal2)
                     if return_n > options:
                         raise ValueError('not enough options to '
                                          'produce desired sample size')
@@ -1083,7 +1096,7 @@ def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
                     checkall = False
 
                 # stop looking after 'max_search' counts
-                for c in searchopts:  # it.combinations(spots, n_metal2)
+                for c in searchopts:
                     base = struct_min.copy()
                     if checkall:
                         pick = list(c)
@@ -1116,15 +1129,15 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
 
     Args:
     - metals (str | iterator): list of two metals used in the bimetallic NP
-    - shape (str): shape of NP that is being studied
-                   NOTE: currently supports
-                         - icosahedron
-                         - cuboctahedron
-                         - fcc-cube
-                         - elongated-trigonal-pyramic
+    - shape (str): shape of NP
+                   NOTE: currently supported methods (found in NPBuilder)
+                   - cuboctahedron
+                   - elongated-trigonal-pyramid
+                   - fcc-cube
+                   - icosahedron
     - num_shells (int): number of shells used to generate atom size
-                      e.g. icosahedron with 3 shells makes a 55-atom object
-                      ( 1 in core + 12 in shell_1 + 42 in shell_2)
+                        e.g. icosahedron with 3 shells makes a 55-atom object
+                        (1 in core (shell_0) + 12 in shell_1 + 42 in shell_2)
 
     **Kwargs:
     - valid arguments to initialize Pop object
@@ -1133,6 +1146,7 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
     Returns:
     - (Pop): Pop instance
     """
+    assert num_shells > 0, "NP must have at least one shell"
     nanop = structure_gen.build_structure_sql(shape, num_shells,
                                               build_bonds_list=True)
 
@@ -1209,10 +1223,11 @@ def run_ga(metals, shape, save_data=True,
     metals = (metal1, metal2)
 
     # number of shells range to sim ga for each shape
-    shape2shell = {'icosahedron': [3, 14],
-                   'fcc-cube': [2, 15],
-                   'cuboctahedron': [2, 15],
-                   'elongated-pentagonal-bipyramid': [3, 12]
+    default_shell_range = [1, 11]
+    shape2shell = {'cuboctahedron': default_shell_range,
+                   'elongated-pentagonal-bipyramid': default_shell_range,
+                   'fcc-cube': default_shell_range,
+                   'icosahedron': default_shell_range
                    }
     nshell_range = shape2shell[shape]
 
@@ -1307,7 +1322,7 @@ def run_ga(metals, shape, save_data=True,
 
         # add core-shell structures list of comps to run
         if add_coreshell:
-            srfatoms = db_inter.build_atoms_in_shell_list(shape, nshells)
+            srfatoms = db_inter.build_atoms_in_shell_dict(shape, nshells)
             nsrf = len(srfatoms)
             ncore = num_atoms - nsrf
             n = np.unique(n.tolist() + [ncore, nsrf])
@@ -1381,32 +1396,44 @@ def check_db_values(update_db=False, metal_opts=None,
 
     """
     if metal_opts is None:
-        metal_opts = [('Ag', 'Au'),
-                      ('Ag', 'Cu'),
-                      ('Au', 'Cu')]
+        metal_opts = [['Ag', 'Au'],
+                      ['Ag', 'Cu'],
+                      ['Au', 'Cu']]
+        ms = db_inter.build_metals_list()
+        metal_opts = list([sorted(i) for i in it.combinations(ms, 2)])
 
     if shape_opts is None:
-        shape_opts = ['icosahedron', 'cuboctahedron', 'fcc-cube',
-                      'elongated-pentagonal-bipyramid']
+        shape_opts = ['icosahedron',
+                      'cuboctahedron',
+                      'elongated-pentagonal-bipyramid',
+                      'fcc-cube']
     elif isinstance(shape_opts, str):
         shape_opts = [shape_opts]
 
     fails = []
     for shape in shape_opts:
-        for shell in range(2, 15):
+        for shell in range(2, 11):
             nanop = structure_gen.build_structure_sql(shape, shell,
                                                       build_bonds_list=True)
             for metals in metal_opts:
-                atomg = atomgraph.AtomGraph(nanop.bonds_list,
-                                            metals[0], metals[1])
+                # ensure metal types are sorted
+                metals = sorted(metals)
+                try:
+                    atomg = atomgraph.AtomGraph(nanop.bonds_list,
+                                                metals[0], metals[1])
+                except:
+                    continue
 
                 # find all bimetallic results matching shape, size, and metals
                 results = db_inter.get_bimet_result(metals, shape=shape,
                                                     num_shells=shell)
                 for res in results:
-                    ordering = np.array(list(map(int, res.ordering)))
-                    actual_ce = atomg.getTotalCE(ordering)
-                    actual_ee = atomg.getEE(ordering)
+                    try:
+                        ordering = np.array(list(map(int, res.ordering)))
+                        actual_ce = atomg.getTotalCE(ordering)
+                        actual_ee = atomg.getEE(ordering)
+                    except:
+                        pass
 
                     outp = '%s %s' % (res.shape[:3].upper(),
                                       res.build_chem_formula())
@@ -1414,6 +1441,7 @@ def check_db_values(update_db=False, metal_opts=None,
                     print(outp.rjust(20), end='')
                     if abs(actual_ce - res.CE) > 1E-10:
                         fails.append([res.CE, actual_ce, res.EE, actual_ee])
+                        print(res.num_atoms)
                         if update_db:
                             db_inter.update_bimet_result(
                                 metals=metals,
@@ -1439,9 +1467,9 @@ def check_db_values(update_db=False, metal_opts=None,
     return fails
 
 
-def benchmark_plot(max_nochange=50, metals=('Ag', 'Cu'), shape='icosahedron',
-                   num_shells=10, x_metal2=0.57, spike=False, max_gens=-1,
-                   min_gens=-1, **kwargs):
+def benchmark_plot(max_nochange=500, metals=('Ag', 'Cu'), shape='icosahedron',
+                   num_shells=9, x_metal2=0.57, spike=False, max_gens=-1,
+                   min_gens=-1, path='', save=False, **kwargs):
     """
     Creates a plot comparing GA simulation vs. random search
 
@@ -1493,19 +1521,53 @@ def benchmark_plot(max_nochange=50, metals=('Ag', 'Cu'), shape='icosahedron',
     randp.run(newp.max_gens, max_nochange=-1)
 
     # save best structure from GA and random search
-    make_xyz(newp.atom, newp.pop[0], 'ga.xyz')
-    make_xyz(randp.atom, randp.pop[0], 'random.xyz')
+    if save:
+        make_file(newp.atom, newp.pop[0], os.path.join(path, 'ga.xyz'))
+        make_file(randp.atom, randp.pop[0], os.path.join(path, 'random.xyz'))
 
     # plot results
     fig, ax = newp.plot_results()
     randp.plot_results(ax=ax)
+
+    if save:
+        if path and not os.path.isdir(path):
+            pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+
+        # save figure as svg
+        fig.savefig(os.path.join(path, 'results.svg'))
+        fig.savefig(os.path.join(path, 'results.png'), dpi=66.6667)
+
+        # save run info to txt file
+        m1, m2 = metals
+        n = newp.num_atoms
+        n1 = newp.n_metal1
+        n2 = newp.n_metal2
+        x2 = int(round(x_metal2 * 100, 2))
+        x1 = 100 - x2
+        nscreened = newp.max_gens * newp.popsize
+        screen_per_min = nscreened / (newp.runtime / 60)
+        with open(os.path.join(path, 'benchmark_info.txt'), 'w') as fid:
+            fid.write('%i-atom %s%s %s (%s shells)\n' % (newp.num_atoms,
+                                                         m1, m2,
+                                                         shape, num_shells))
+            fid.write('%i%% %s (%i)\n' % (x1, m1, n1))
+            fid.write('%i%% %s (%i)\n' % (x2, m2, n2))
+            fid.write('\nGA PROPS\n')
+            fid.write('popsize = %i\n' % newp.popsize)
+            fid.write('max_nochange=%i\n' % max_nochange)
+            fid.write('spike=%s\n' % str(spike))
+            fid.write('runtime=%.2f seconds (%.2f minutes)\n'
+                      % (newp.runtime, newp.runtime / 60))
+            fid.write('total NPs screened = %i (%.2f NPs per min)'
+                      % (nscreened, screen_per_min))
     return fig, ax
 
 
 def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
-                 num_shells_range=range(2, 16), x_metal2=0.57):
+                 num_shells_range=range(2, 11), x_metal2=0.5):
     """Creates a scaling plot to test GA
        - number of atoms vs. runtime for 500 generations (in seconds)
+       Reveals that GA simulations scale by O(n) where n = num_atoms
 
     Keyword Arguments:
         metals (tuple): metal types in nanoparticle
@@ -1539,9 +1601,190 @@ def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
             ms=10, markeredgecolor='k')
 
     ax.set_xlabel('Number of Atoms')
-    ax.set_ylabel('Runtime (s) for 500 Generations')
+    ax.set_ylabel('Runtime (seconds)\nfor 500 Generations')
     fig.tight_layout()
     return fig, ax
+
+
+def build_central_rdf(atoms, metals, nbins=5, pcty=False, ax=None):
+    # center atoms at origin (COP)
+    atoms.positions -= atoms.positions.mean(0)
+
+    metal1, metal2 = metals
+
+    # calculate distances from origin
+    dists = np.linalg.norm(atoms.positions, axis=1)
+
+    # calculate distances from COP for each metal type
+    dist_m1 = dists[atoms.symbols == metal1]
+    dist_m2 = dists[atoms.symbols == metal2]
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
+    m1_color = jmol_colors[atoms[atoms.symbols == metal1][0].number]
+    m2_color = jmol_colors[atoms[atoms.symbols == metal2][0].number]
+
+    binrange = (0, dists.max())
+
+    counts_m1, bin_edges = np.histogram(dist_m1, bins=nbins, range=binrange)
+    counts_m2, bin_edges = np.histogram(dist_m2, bins=nbins, range=binrange)
+
+    # get bins for ax.hist
+    bins = np.linspace(0, dists.max(), nbins + 1)
+
+    if pcty:
+        counts_tot, bin_edges = np.histogram(dists, bins=nbins, range=binrange)
+        counts_m1 = counts_m1 / counts_tot
+        counts_m2 = counts_m2 / counts_tot
+
+    x = (bin_edges[1:] + bin_edges[:-1]) / 2
+    width = x[1] - x[0]
+    if not pcty:
+        ax.bar(x, counts_m1, edgecolor='k', color=m1_color,
+               width=width, label=metal1)
+        ax.bar(x, counts_m2, edgecolor='k', color=m2_color,
+               width=width, label=metal2, bottom=counts_m1)
+    else:
+        ax.bar(x, counts_m1, color=m1_color, width=width,
+               label=metal1, zorder=2)
+        ax.bar(x, counts_m2, bottom=counts_m1, color=m2_color,
+               width=width, label=metal2, zorder=0)
+
+    ax.set_xlabel('Distance from Core ($\\rm \\AA$)')
+    return fig, ax
+
+
+def vis_FePt_results(pcty=False):
+    """
+    Load in exp. FePt and GA opt FePt NPs
+    - same as cn_dist_plot, but customized for FePt comparison
+
+    KArgs:
+    - pcty (bool): if True, y-axis is normalized to show percentage
+                   of CN filled by each metal type
+                   (Default: False)
+
+    Returns:
+    - (plt.Figure), (plt.gca()): figure and axis object of plot
+    """
+    # get path to FePt_np folder in data
+    filedir = os.path.dirname(os.path.realpath(__file__))
+    fept_path = os.path.join(filedir, '..', 'data', 'fept_np')
+
+    # read in atoms object
+    origpath = os.path.join(fept_path, 'FePt_cns.xyz')
+    orig = ase.io.read(origpath)
+
+    # get GA-optimized structure
+    ga = ase.io.read(os.path.join(fept_path, 'ga.xyz'))
+
+    # get random structure from benchmark plot in data\\fept_np
+    rand = ase.io.read(os.path.join(fept_path, 'random.xyz'))
+
+    metals = ('Fe', 'Pt')
+    fig, axes = plt.subplots(1, 3, sharey=True)
+    ga_ax, orig_ax, rand_ax = axes.flatten()
+    # ga_ax.set_title('GA-Optimized FePt NP')
+    # orig_ax.set_title('Experimental FePt NP')
+    # rand_ax.set_title('Random FePt NP')
+    nbins = 20
+
+    build_central_rdf(ga, metals, nbins=nbins, pcty=pcty, ax=ga_ax)
+    build_central_rdf(orig, metals, nbins=nbins, pcty=pcty, ax=orig_ax)
+    build_central_rdf(rand, metals, nbins=nbins, pcty=pcty, ax=rand_ax)
+
+    if pcty:
+        ga_ax.set_ylim(0, 1.1)
+        ga_ax.set_yticklabels(['{:,.0%}'.format(x) for x in ga_ax.get_yticks()])
+        ga_ax.set_ylabel('Atom Type Composition')
+    else:
+        ga_ax.set_ylabel('Number of Atoms')
+    ga_ax.legend(ncol=2, frameon=False)
+    fig.tight_layout()
+    plt.show()
+    return
+
+    # get bonds from .npy file (if it exists)
+    bondpath = os.path.join(fept_path, 'fept_bonslist.npy')
+    if os.path.isfile(bondpath):
+        bonds = np.load(bondpath)
+    # else get bonds list from xyz file
+    else:
+        bonds = []
+        with open(origpath, 'r') as fid:
+            for i, line in enumerate(fid):
+                if i > 1:
+                    for b in map(int, line.split('[')[-1]
+                            .strip(']\n').split(', ')):
+                        newbond = [i - 2, b]
+                        bonds.append(newbond)
+        bonds = np.array(bonds)
+
+    # define GA properties
+    # shape is required to interface with database
+    metals = ('Fe', 'Pt')
+    shape = 'fept'
+
+    # initialize atom graph
+    ag = atomgraph.AtomGraph(bonds.copy(), 'Fe', 'Pt')
+
+    # get ordering
+    orig_order = (orig.symbols == 'Pt').astype(int)
+    ga_order = (ga.symbols == 'Pt').astype(int)
+
+    # get bond types
+    orig_mixing = ag.countMixing(orig_order)
+    ga_mixing = ag.countMixing(ga_order)
+
+    orig_cn_dist = ag.calc_cn_dist(orig_order)
+    ga_cn_dist = ag.calc_cn_dist(ga_order)
+
+    # get metal colors
+    m1_color = jmol_colors[26]
+    m2_color = jmol_colors[78]
+
+    # get x value for both plots
+    x = range(1, len(ga_cn_dist['cn_options']) + 1)
+
+    fig, axes = plt.subplots(1, 2, sharey=True, figsize=(14, 7))
+    ga_ax, orig_ax = axes
+
+    # orig plot params
+    orig_ax.set_title('Experimental FePt NP')
+    orig_ax.set_xlabel('CN')
+
+    # ga plot params
+    ga_ax.set_title('GA-Optimized FePt NP')
+    ga_ax.set_xlabel('CN')
+    ga_ax.set_ylabel('Number of Atoms')
+
+    # plot bar plots
+    for ax, dist in zip([ga_ax, orig_ax], [ga_cn_dist, orig_cn_dist]):
+        if pcty:
+            # normalize counts
+            dist['m1_counts'] = dist['m1_counts'] / dist['tot_counts']
+            dist['m2_counts'] = dist['m2_counts'] / dist['tot_counts']
+            ax.set_ylim(0, 1.2)
+            ax.set_yticklabels(['{:,.0%}'.format(x) for x in ax.get_yticks()[:-1]] + [''])
+        else:
+            ax.set_ylim(0, max(dist['tot_counts']) * 1.1)
+
+        # plot each metal type
+        ax.bar(x, dist['m1_counts'], color=m1_color, edgecolor='k',
+               label=metals[0])
+        ax.bar(x, dist['m2_counts'], bottom=dist['m1_counts'], color=m2_color,
+               edgecolor='k', label=metals[1])
+
+        # format each axis limits and tick values
+        ax.set_xticks(x)
+        ax.set_xticklabels(dist['cn_options'])
+
+    ga_ax.legend(ncol=2, loc='upper left')
+    fig.tight_layout()
+    plt.show()
 
 
 def test_FePt_nanop():
@@ -1568,7 +1811,7 @@ def test_FePt_nanop():
             for i, line in enumerate(fid):
                 if i > 1:
                     for b in map(int, line.split('[')[-1]
-                                 .strip(']\n').split(', ')):
+                            .strip(']\n').split(', ')):
                         newbond = [i - 2, b]
                         bonds.append(newbond)
         bonds = np.array(bonds)
@@ -1582,15 +1825,34 @@ def test_FePt_nanop():
     ag = atomgraph.AtomGraph(bonds.copy(), 'Fe', 'Pt')
 
     # number of Platinum (metal 2) atoms
-    n_metal2 = sum(atom.numbers == 78)
+    n_metal2 = sum(atom.symbols == 'Pt')
+
+    # cannot run if GA results already exist (ensures no overwriting)
+    for n in ['ga.xyz', 'random.xyz', 'gainfo.txt',
+              'results.png', 'results.svg']:
+        if os.path.isfile(os.path.join(fept_path, n)):
+            print('GA has already run (found ga.xyz).')
+            print('To rerun, please move previous results to new folder.')
+            return
 
     # initialize and run GA
     pop = Pop(atom, bonds.copy(), metals, shape,
               n_metal2=n_metal2, atomg=ag)
 
     # GA simulation
-    pop.run(max_nochange=500)
+    max_nochange = 500
+    pop.run(max_nochange=max_nochange)
     # pop.save(os.path.join(fept_path, 'fept_gapop.pickle'))
+
+    # save best structure from GA and random search
+    make_file(pop.atom, pop[0], os.path.join(fept_path, 'ga.xyz'))
+
+    with open(os.path.join(fept_path, 'gainfo.txt'), 'w') as fid:
+        fid.write('MaxNoChange: %i\n' % max_nochange)
+        fid.write('    Runtime: %.3f\n' % pop.runtime)
+        fid.write('     N Gens: %i\n' % pop.max_gens)
+        fid.write('         CE: %.5f\n' % pop[0].ce)
+        fid.write('         EE: %.5f' % pop.atomg.getEE(pop[0].ordering))
 
     # simulate random pop for same gens as GA
     max_gens = pop.max_gens
@@ -1599,9 +1861,7 @@ def test_FePt_nanop():
                   n_metal2=n_metal2, atomg=ag, random=True)
     randpop.run(max_gens=max_gens, max_nochange=-1)
 
-    # save best structure from GA and random search
-    make_xyz(pop.atom, pop[0], os.path.join(fept_path, 'ga.xyz'))
-    make_xyz(randpop.atom, randpop[0], os.path.join(fept_path, 'random.xyz'))
+    make_file(randpop.atom, randpop[0], os.path.join(fept_path, 'random.xyz'))
 
     # plot results
     fig, ax = pop.plot_results()
@@ -1611,7 +1871,10 @@ def test_FePt_nanop():
     fig.savefig(os.path.join(fept_path, 'results.svg'))
     return fig, ax
 
+
 if __name__ == '__main__':
-    pass
-    # fig, ax = test_FePt_nanop()
-    # plt.show()
+    check_db_values()
+    for r in plt.rcParams:
+        if plt.rcParams[r] == 'bold':
+            plt.rcParams[r] = 'normal'
+    # vis_FePt_results(True)

@@ -34,7 +34,7 @@ for alloy in alloys:
             # Make the plot
             ax.plot(cu_content, excess_energy,
                     color=coloration,
-                    label=str(size)+"_"+lbl,
+                    label=str(size) + "_" + lbl,
                     linestyle=style)
 
         dopant = alloy[2:]
@@ -46,6 +46,7 @@ for alloy in alloys:
         ax.set_position([chartbox.x0, chartbox.y0, chartbox.width * 0.6, chartbox.height])
         ax.legend(loc="upper left", fontsize=20, bbox_to_anchor=(0.98, 0.8), ncol=1)
         plt.savefig("Excess_Energies_" + alloy + "_" + lbl + ".png", dpi=DEFAULT_DPI)
+        plt.close()
 
     # Get cubes
     shape = "fcc-cube"
@@ -70,7 +71,7 @@ for alloy in alloys:
         # Make the plot
         ax.plot(cu_content, excess_energy,
                 color=coloration,
-                label=str(size)+"_"+lbl,
+                label=str(size) + "_" + lbl,
                 linestyle=style)
 
     plt.xlabel("% " + dopant)
@@ -81,3 +82,4 @@ for alloy in alloys:
     ax.set_position([chartbox.x0, chartbox.y0, chartbox.width * 0.6, chartbox.height])
     ax.legend(loc="upper left", fontsize=20, bbox_to_anchor=(0.98, 0.8), ncol=1)
     plt.savefig("Excess_Energies_" + alloy + "_" + lbl + ".png", dpi=DEFAULT_DPI)
+    plt.close

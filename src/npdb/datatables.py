@@ -10,8 +10,8 @@ import os
 import numpy as np
 import ase
 from ase.data.colors import jmol_colors
-from ase.data import chemical_symbols
-import ase.visualize.plot
+from ase.data import chemical_symbols, covalent_radii
+import ase.visualize
 
 
 class BimetallicResults(Base):
@@ -117,13 +117,13 @@ class BimetallicResults(Base):
             (ase.Atoms): NP from entry
         """
 
-        atom = self.nanoparticle.get_atoms_obj_skel()
+        atom = self.nanoparticle.get_atoms_obj_skel().copy()
         for i, a in zip(self.ordering, atom):
             a.symbol = self.metal1 if i == '0' else self.metal2
         self.atoms_obj = atom.copy()
         return atom
 
-    def build_chem_formula(self, latex=False):
+    def build_chem_formula(self, latex=False, bold=False):
         """
         Returns chemical formula of bimetallic NP
         in alphabetical order
@@ -137,8 +137,11 @@ class BimetallicResults(Base):
             (str)
         """
         if latex:
-            return '$\\rm %s_{%i}%s_{%i}$' % (self.metal1, self.n_metal1,
+            form = '$\\rm %s_{%i}%s_{%i}$' % (self.metal1, self.n_metal1,
                                               self.metal2, self.n_metal2)
+            if bold:
+                form = form.replace('\\rm', '\\rm \\bf')
+            return form
         return '%s%i_%s%i' % (self.metal1, self.n_metal1,
                               self.metal2, self.n_metal2)
 
@@ -241,16 +244,22 @@ class BimetallicResults(Base):
                 # select subplot axis
                 ax = axes[i, j]
 
+                # visualize NP
                 if (i, j) == (1, 0):
-                    # ase.visualize.plot.plot_atoms(self.atoms_obj, ax=ax)
-                    path = os.path.join(tempfile.gettempdir(), 'temp.png')
-                    self.save_np(path)
-                    im = plt.imread(path)
-                    ax.imshow(im)
+                    atom = self.build_atoms_obj()
+                    for a in atom:
+                        circ = plt.Circle((a.x, a.y),
+                                          radius=covalent_radii[a.number],
+                                          facecolor=jmol_colors[a.number],
+                                          edgecolor='k',
+                                          linewidth=1,
+                                          zorder=a.z)
+                        ax.add_patch(circ)
+                    ax.autoscale()
+                    ax.set_aspect(1)
                     ax.axis('off')
-                    os.remove(path)
+                # calculate PRDF
                 else:
-                    # calculate PRDF
                     x, prdf = self.build_prdf(alpha=metals[i], beta=metals[j])
                     if max(prdf) > max_y:
                         max_y = max(prdf)
@@ -263,17 +272,13 @@ class BimetallicResults(Base):
                                  % (metals[i], metals[j]),
                                  fontsize=14)
 
-        max_y += 0.2 * max_y
-        # axes[0, 0].set_ylim(0, max_y)
-        # axes[0, 1].set_ylim(0, max_y)
-        # axes[1, 1].set_ylim(0, max_y)
         fig.suptitle('Partial Radial Distribution Functions for\n' +
-                     self.build_chem_formula() + ' ' + self.shape,
+                     self.build_chem_formula(latex=True) + ' ' + self.shape,
                      fontweight='normal')
         fig.tight_layout(rect=(0, 0, 1, 0.9))
         return fig
 
-    def build_central_rdf(self, nbins=None):
+    def build_central_rdf(self, nbins=5, pcty=False):
         atoms = self.build_atoms_obj().copy()
 
         # center atoms at origin (COP)
@@ -282,48 +287,35 @@ class BimetallicResults(Base):
         # calculate distances from origin
         dists = np.linalg.norm(atoms.positions, axis=1)
 
-        binrange = (0, dists.max())
+        # calculate distances from COP for each metal type
+        dist_m1 = dists[atoms.symbols == self.metal1]
+        dist_m2 = dists[atoms.symbols == self.metal2]
 
-        # set bins to num shells if not given
-        if not nbins:
-            nbins = self.nanoparticle.num_shells
+        fig, ax = plt.subplots()
 
-        # organize distances by metal type
-        met1d = np.array([dists[i.index]
-                          for i in atoms if i.symbol == self.metal1])
-        met2d = np.array([dists[i.index]
-                          for i in atoms if i.symbol == self.metal2])
-
-        # calculate bin counts in each shell
-        tot_counts, bins = np.histogram(dists, bins=nbins, range=binrange)
-        met1_counts, bins = np.histogram(met1d, bins=nbins, range=binrange)
-        met2_counts, bins = np.histogram(met2d, bins=nbins, range=binrange)
-
-        print(tot_counts)
-
-        # normalize counts to concentrations
-        norm_met1_counts = met1_counts / tot_counts
-        norm_met2_counts = met2_counts / tot_counts
-
-        fig, axes = plt.subplots(2, 1, sharex=True)
-        ax1, ax2 = axes
-
+        # get jmol color for each metal
         m1_color = jmol_colors[chemical_symbols.index(self.metal1)]
         m2_color = jmol_colors[chemical_symbols.index(self.metal2)]
 
-        # x = list(range(1, self.nanoparticle.num_shells + 1))
-        x = bins[:-1]
+        # set nbins to num shells if not given
+        if not nbins:
+            nbins = self.nanoparticle.num_shells
 
-        ax1.plot(x, met1_counts, 'o-', markeredgecolor='k',
-                 color=m1_color, markersize=8)
-        ax1.plot(x, met2_counts, 'o-', markeredgecolor='k',
-                 color=m2_color, markersize=8)
+        counts_m1, bin_edges = np.histogram(dist_m1, bins=nbins)
+        counts_m2, bin_edges = np.histogram(dist_m2, bins=nbins)
 
-        ax2.plot(x, norm_met1_counts, 'o-', markeredgecolor='k',
-                 color=m1_color, markersize=8)
-        ax2.plot(x, norm_met2_counts, 'o-', markeredgecolor='k',
-                 color=m2_color, markersize=8)
+        # get bins for ax.hist
+        bins = np.linspace(0, dists.max(), nbins + 1)
 
+        x = (bin_edges[1:] + bin_edges[:-1]) / 2
+        ax.plot(x, counts_m1, 'o-', markeredgecolor='k',
+                color=m1_color, markersize=8, label=self.metal1)
+        ax.plot(x, counts_m2, 'o-', markeredgecolor='k',
+                color=m2_color, markersize=8, label=self.metal2)
+
+        ax.set_xlabel('Distance from Core ($\\rm \\AA$)')
+        ax.set_ylabel('Number of Atoms')
+        ax.legend()
         fig.tight_layout()
         plt.show()
         return fig
@@ -343,6 +335,12 @@ class BimetallicResults(Base):
         atom.info['EE'] = self.EE
         atom.write(path)
         return True
+
+    def show(self):
+        """
+        Shows nanoparticle using ase.visualize.view
+        """
+        ase.visualize.view(self.build_atoms_obj())
 
 
 class Nanoparticles(Base):
@@ -414,9 +412,9 @@ class Nanoparticles(Base):
                    self.atoms_obj.positions[:, 0].min()) / 10
 
     def load_bonds_list(self):
-        if self.bonds_list:
+        if isinstance(self.bonds_list, np.ndarray):
             self.num_bonds = len(self.bonds_list)
-            return True
+            return self.bonds_list
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             '..', '..', 'data', 'bond_lists',
@@ -425,9 +423,9 @@ class Nanoparticles(Base):
         if os.path.isfile(path):
             self.bonds_list = np.load(path)
             self.num_bonds = len(self.bonds_list)
-            return True
+            return self.bonds_list
         else:
-            return False
+            return None
 
 
 class Atoms(Base):
