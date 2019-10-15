@@ -5,8 +5,8 @@ import matplotlib.lines
 import matplotlib.pyplot as plt
 import numpy as np
 
-import atomgraph
-import npdb
+import ce_expansion.atomgraph as atomgraph
+import ce_expansion.npdb as npdb
 
 
 def _build_atomgraph(bimetallic_result):

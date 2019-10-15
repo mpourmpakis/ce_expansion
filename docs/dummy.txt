@@ -1,3 +1,0 @@
-I am a dummy file, here to ensure the creation of this directory.
-
-Now I have done my job. Hooray!

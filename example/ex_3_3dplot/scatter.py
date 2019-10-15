@@ -9,11 +9,9 @@ def build_atomgraph(bimetallic_result):
     """
     Returns an atomgraph object from the result of a bimetallic result query.
 
-    Args:
-        bimetallic_result (BimetallicResults): the result of a bimetallic result query
+    :param bimetallic_result: the result of a bimetallic result query
 
-    Returns:
-         an atomgraph object
+    :return: an atomgraph object
     """
     bondlist = bimetallic_result.nanoparticle.bonds_list
     assert bondlist is not None

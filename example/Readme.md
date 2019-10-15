@@ -9,7 +9,7 @@ This directory contains the following examples:
     * Shows how to perform database queries to search for existing particles in np.db
 3. ex_3_3dplot
     * Demonstrates a 3D plot
-    * Uses the code in /src/plot/clustering_3d.py
+    * Uses the code in /ce_expansion/plot/clustering_3d.py
     * TODO: Need to make this
 4. ex_4_phase_diagram
     * Creates a composition-temperature phase diagram for the Ag-Cu, Ag-Au, and Au-Cu systems

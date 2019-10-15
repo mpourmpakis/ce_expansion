@@ -5,13 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from npdb import db_inter
-
-try:
-    from ce_expansion.src.npdb import db_inter
-    import ce_expansion.src.plot_defaults as plot_defaults
-except:
-    pass
+from ce_expansion.npdb import db_inter
 
 palette = sns.color_palette('husl', 10)
 # sns.palplot(palette)
@@ -26,7 +20,8 @@ for option in [os.path.join(user, 'Box Sync'),
         box = option
         break
 else:
-    print('Could not find Box Sync path.')
+    if __name__ == "__main__":
+        print('Could not find Box Sync path.')
 
 plt.rcParams['axes.spines.top'] = False
 plt.rcParams['legend.fontsize'] = 12
@@ -233,6 +228,7 @@ def batch_build_figs():
 
                         plt.close('all')
 
+
 if __name__ == '__main__':
     # batch_build_figs()
 
@@ -241,7 +237,7 @@ if __name__ == '__main__':
     num_shells = 5
     pcty = False
     fig, res, min_atoms = build_nmet2_nmet2shell_plot(
-                            metals,
-                            shape,
-                            num_shells,
-                            pcty=pcty)
+        metals,
+        shape,
+        num_shells,
+        pcty=pcty)

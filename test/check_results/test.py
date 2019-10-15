@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import re
-import numpy as np
 import os
+import re
 import sys
 
-# Get path to /src/
+import numpy as np
+
+# Get path to /ce_expansion/
 path = os.path.realpath(__file__)
-srcpath = os.sep.join(path.split(os.sep)[:-3] + ["src"])
-sys.path.append(srcpath)
+ce_expansionpath = os.sep.join(path.split(os.sep)[:-3] + ["ce_expansion"])
+sys.path.append(ce_expansionpath)
 
 import atomgraph
 

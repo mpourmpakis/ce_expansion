@@ -4,17 +4,10 @@ from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
 
 import atomgraph
-import structure_gen
-from npdb import db_inter
-
-try:
-    from ce_expansion.src.npdb import db_inter
-    import ce_expansion.src.atomgraph as atomgraph
-    import ce_expansion.src.structure_gen as structure_gen
-    import ce_expansion.src.plot_defaults as plot_defaults
-    import ce_expansion.src.npdb.datatables as dt
-except:
-    pass
+from ce_expansion.atomgraph import atomgraph
+from ce_expansion.ga import structure_gen
+from ce_expansion.npdb import datatables as dt
+from ce_expansion.npdb import db_inter
 
 for rc in plt.rcParams:
     if plt.rcParams[rc] == 'bold':

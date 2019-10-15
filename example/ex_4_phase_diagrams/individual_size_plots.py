@@ -27,13 +27,11 @@ class Result(object):
         """
         Calculates Excess energies plus an entropic contribution.
 
-        Args:
-            excess_energy (list): Excess energies from DB query
-            comp (list): Compositions from DB query
-            T (int): Temperature
+        :param excess_energy: Excess energies from DB query
+        :param comp: Compositions from DB query
+        :param T: Temperature
 
-        Returns:
-            Free energy of mixing = excess energy (related to enthalpy of mixing) - entropy of mixing
+        :return: Free energy of mixing = excess energy (related to enthalpy of mixing) - entropy of mixing
         """
 
         if self.composition == 1 or self.composition == 0:
@@ -71,12 +69,10 @@ def get_data(alloy,
     """
     Gets data for phase diagram
 
-    Args:
-        alloy (str): Alloy of interest
-        size (int): Size to consider
-        temperature (float): Temperature to use
-    Returns:
-        A results object.
+    :param alloy: Alloy of interest
+    :param size: Size to consider
+    :param temperature: Temperature to use
+    :return: results object.
     """
 
     # Book-keeping and initialization
@@ -100,13 +96,10 @@ def make_plot(results, axis, size):
     """
     Plots some results, y'know?
 
-    Args:
-        results (list): A list of Results objects containing the shape, composition, and free energy of mixing
-        title (str): Title of the graph
-        axis (axes): Pyplot axis to plot to
-        size (int): size
-    Returns:
-        None. Drops the plot in the working directory.
+    :param results: A list of Results objects containing the shape, composition, and free energy of mixing
+    :param axis: Pyplot axis to plot to
+    :param size: size
+    :return: None. Drops the plot in the working directory.
     """
     # Split into 3 lists, for icosahedrons, cubs, and epbs
     # Each list is of the format (composition, free energy of mixing)

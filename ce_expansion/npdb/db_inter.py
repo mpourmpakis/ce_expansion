@@ -3,6 +3,7 @@ import os
 import pickle
 import sys
 
+import ase
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker
@@ -17,9 +18,9 @@ if __name__ == "__main__":
     import base
     import datatables as tbl
 else:
-    from npdb import db_utils
-    import npdb.base as base
-    import npdb.datatables as tbl
+    from ce_expansion.npdb import db_utils
+    import ce_expansion.npdb.base as base
+    import ce_expansion.npdb.datatables as tbl
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -548,7 +549,6 @@ def build_radial_distributions(metals=None, shape=None, num_atoms=None,
         atoms = np.atoms_obj
 
         # Todo: Figure out why atoms is an ase.Atoms object in console, but is NoneType when running the script
-        import ase
         assert type(atoms) == ase.Atoms
         center = np.mean(atoms.positions, axis=0)
 

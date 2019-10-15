@@ -15,7 +15,7 @@ To install this program, make sure you've fulfilled the following requirements:
 * Python 3.7 or greater is installed  
 * Numpy and ASE are both present with your Python installation (or environment)
 
-Simply download this repository, and run `src/ga.py` to begin searching potential NPs.
+Simply download this repository, and run `ce_expansion/ga.py` to begin searching potential NPs.
 
 ### Overview
 
@@ -37,9 +37,9 @@ Hence, for a particular nanoparticle size and shape, we now have a vector that r
 
 ### The Atomgraph
 
-A nanoparticle can be thought of as a graph, with each atom as a vertex and each bond as an edge. In the file `src/adjacency.py`, we include tools to generate an adjacency list, an adjacency matrix, and an edge list (a bond list) for an arbitrary nanoparticle. Because of its ease of use and popularity, we've written these functions to take ASE<sup>2</sup> atoms objects as their arguments.
+A nanoparticle can be thought of as a graph, with each atom as a vertex and each bond as an edge. In the file `ce_expansion/adjacency.py`, we include tools to generate an adjacency list, an adjacency matrix, and an edge list (a bond list) for an arbitrary nanoparticle. Because of its ease of use and popularity, we've written these functions to take ASE<sup>2</sup> atoms objects as their arguments.
 
-In the file `src/atomgraph.py` is the AtomGraph class. It takes in a bond list, and information on what a 1 or 0 means (e.g. what element is a 1, what element is a 0, etc), and then exists as a calculator. If the method CalculateTotalCE is called with a chemical ordering, it will then calculate the total CE using the Yan<sup>1</sup> model. In order to speed up the calculation, we wrote a C library (`src/lib.c`) to implement this model, along with a python interface (`src/interface.py`) which gets called by the AtomGraph. We have libraries compiled already for Linux (.so) and Windows (.dll) in the `bin` directory. We've also included a `makefile` for Linux users.
+In the file `ce_expansion/atomgraph.py` is the AtomGraph class. It takes in a bond list, and information on what a 1 or 0 means (e.g. what element is a 1, what element is a 0, etc), and then exists as a calculator. If the method CalculateTotalCE is called with a chemical ordering, it will then calculate the total CE using the Yan<sup>1</sup> model. In order to speed up the calculation, we wrote a C library (`ce_expansion/lib.c`) to implement this model, along with a python interface (`ce_expansion/interface.py`) which gets called by the AtomGraph. We have libraries compiled already for Linux (.so) and Windows (.dll) in the `bin` directory. We've also included a `makefile` for Linux users.
 
 ### The Genetic Algorithm
 Todo: Write this section

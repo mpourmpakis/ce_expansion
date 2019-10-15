@@ -7,8 +7,8 @@ import ase.cluster
 import ase.lattice
 import numpy as np
 
-from atomgraph import adjacency
-from npdb import db_inter
+from ce_expansion.atomgraph import adjacency
+from ce_expansion.npdb import db_inter
 
 # build paths
 datapath = os.path.join(os.path.dirname(os.path.abspath(__file__)),

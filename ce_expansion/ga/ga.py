@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ase.data.colors import jmol_colors
 
-import structure_gen
-from atomgraph import atomgraph
-from npdb import db_inter
+from ce_expansion.atomgraph import atomgraph
+from ce_expansion.ga import structure_gen
+from ce_expansion.npdb import db_inter
 
 # random.seed(9876)
 

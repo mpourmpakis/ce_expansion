@@ -1,4 +1,3 @@
-import sqlalchemy as db
 import traceback
 
 """

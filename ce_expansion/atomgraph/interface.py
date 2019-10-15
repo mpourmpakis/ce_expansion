@@ -16,7 +16,7 @@ DEFAULT_MAX_COORDINATION = 12  # Maximum possible coordination number
 #   Project
 #   |---bin
 #       |---lib.dll
-#   |---src
+#   |---ce_expansion
 #       |---atomgraph
 #           |----interface.py
 path = os.path.realpath(__file__)

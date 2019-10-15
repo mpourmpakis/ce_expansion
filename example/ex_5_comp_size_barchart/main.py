@@ -33,11 +33,9 @@ def get_best(alloy,
     """
     Produces a phase diagram
 
-    Args:
-        alloy (str): Alloy of interest
-        size_range (list): Range of sizes to consider, in atoms, inclusive
-    Returns:
-        None. Drops a plot of the alloy into the working directory.
+    :param alloy: Alloy of interest
+    :param size_range: Range of sizes to consider, in atoms, inclusive
+    :return: None. Drops a plot of the alloy into the working directory.
     """
 
     # Book-keeping and initialization
@@ -97,7 +95,7 @@ def get_best(alloy,
 
 def magic_number(start=0):
     """
-    Uses formula from the Online Encyclopedia of Integer Sequences, Sequence#A005902
+    NP magic numbers. Uses formula from the Online Encyclopedia of Integer Sequences, Sequence#A005902
     :return: Next number in sequence.
     """
     n = start
@@ -111,12 +109,10 @@ def make_bar(results, alloy):
     """
     Does the plotting and makes the phase diagram
 
-    Args:
-        results (list): The results to plot.
-        alloy (str): The alloy.
+    :param results: The results to plot.
+    :param alloy: The alloy.
 
-    Returns:
-        Nothing
+    :return: Nothing
     """
     points = []
     colors = []

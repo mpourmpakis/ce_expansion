@@ -4,16 +4,8 @@ import ctypes
 
 import numpy as np
 
-from npdb import db_inter
-
-if __name__ == "__main__":
-    import interface
-    import adjacency
-    import ase.cluster
-    import matplotlib.pyplot as plt
-else:
-    from atomgraph import interface
-
+from ce_expansion.atomgraph import interface
+from ce_expansion.npdb import db_inter
 
 
 class AtomGraph(object):
@@ -341,6 +333,9 @@ class AtomGraph(object):
 
 
 if __name__ == '__main__':
+    from ce_expansion.atomgraph import adjacency
+    import ase.cluster
+    import matplotlib.pyplot as plt
     # Create a nanoparticle and its graph object
     nanoparticle = ase.cluster.Icosahedron('Cu', 3)
     bond_list = adjacency.buildBondsList(nanoparticle)

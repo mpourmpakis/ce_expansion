@@ -4,8 +4,8 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 
-from atomgraph import atomgraph
-from npdb import db_inter
+import ce_expansion.atomgraph as atomgraph
+from ce_expansion.npdb import db_inter
 
 # GLOBAL fontsize of axis labels and text
 FS = 40

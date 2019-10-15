@@ -1,17 +1,18 @@
-try:
+if __name__ == "__main__":
     from base import Base
-except:
-    from npdb.base import Base
-import sqlalchemy as db
-from datetime import datetime
-import tempfile
-import matplotlib.pyplot as plt
+else:
+    from ce_expansion.npdb.base import Base
+
 import os
-import numpy as np
+from datetime import datetime
+
 import ase
-from ase.data.colors import jmol_colors
-from ase.data import chemical_symbols, covalent_radii
 import ase.visualize
+import matplotlib.pyplot as plt
+import numpy as np
+import sqlalchemy as db
+from ase.data import chemical_symbols, covalent_radii
+from ase.data.colors import jmol_colors
 
 
 class BimetallicResults(Base):

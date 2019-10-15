@@ -75,7 +75,7 @@ def buildAdjacencyList(atoms_object,
     #   Project
     #   |---bin
     #       |---lib.dll
-    #   |---src
+    #   |---ce_expansion
     #       |---atomgraph
     #           |----interface.py
 

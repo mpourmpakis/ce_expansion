@@ -8,7 +8,7 @@ import numpy as np
 
 from atomgraph import atomgraph, adjacency
 
-# Tell the program where /src/ and /data/ can be found
+# Tell the program where /ce_expansion/ and /data/ can be found
 data = os.path.join(os.path.realpath(__file__), '..', '..', '..', 'data', 'larson_et_al')
 sys.path.append(data)
 

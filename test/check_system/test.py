@@ -8,10 +8,10 @@ import ase.cluster
 import ase.io
 import numpy as np
 
-# Set up the path to src so we can import the relevant files
+# Set up the path to ce_expansion so we can import the relevant files
 path = os.path.realpath(__file__)
-srcpath = os.sep.join(path.split(os.sep)[:-3] + ["src"])
-sys.path.append(srcpath)
+ce_expansionpath = os.sep.join(path.split(os.sep)[:-3] + ["ce_expansion"])
+sys.path.append(ce_expansionpath)
 
 import atomgraph
 from atomgraph import adjacency
