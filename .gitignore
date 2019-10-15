@@ -2,5 +2,5 @@
 __pycache__/
 *.py[cod]
 /data/adjacency_lists
-/data/atom_objects/
+/data/atom_objects
 .iml
