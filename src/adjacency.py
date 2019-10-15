@@ -3,11 +3,11 @@
 # Library for buiding bonding lists/tables/matrices
 # James Dean, 2019
 
-import pickle
 import os
+import pathlib
+
 import ase.neighborlist
 import numpy as np
-import pathlib
 
 # Set up globals for defaults
 DEFAULT_ELEMENTS = ("Cu", "Cu")
@@ -15,8 +15,8 @@ DEFAULT_RADIUS = 2.8
 
 
 # Functions below
-def buildBondsList(atoms_object: "ase.Atoms",
-                   radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
+def buildBondsList(atoms_object,
+                   radius_dictionary = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
     """
     2D bonds list from an ASE atoms object.
 
@@ -32,8 +32,8 @@ def buildBondsList(atoms_object: "ase.Atoms",
     return np.column_stack((sources, destinations))
 
 
-def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
-                         radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
+def buildAdjacencyMatrix(atoms_object,
+                         radius_dictionary = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
     """
     Sparse matrix representation from an ase atoms object.
 
@@ -55,9 +55,9 @@ def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
     return adjacency_matrix
 
 
-def buildAdjacencyList(atoms_object: "ase.Atoms",
-                       atom_name: "str" = None,
-                       radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "list":
+def buildAdjacencyList(atoms_object,
+                       atom_name = None,
+                       radius_dictionary = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
     """
       Adjacency list representation for an ase atoms object.
 

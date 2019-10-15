@@ -41,8 +41,8 @@ class AtomGraph(object):
     mono_ce1 (float): CE value for monometallic NP of "kind1"
     """
 
-    def __init__(self, bond_list: "np.array", kind0: "str", kind1: "str",
-                 coeffs: "dict" = None):
+    def __init__(self, bond_list, kind0, kind1,
+                 coeffs = None):
 
         self._bond_list = bond_list.astype(ctypes.c_long)
         self._num_bonds = len(bond_list)
@@ -89,7 +89,7 @@ class AtomGraph(object):
         """AtomGraph returns CN of given atom index"""
         return self.cns[i]
 
-    def set_composition(self, kind0: "str", kind1: "str") -> "None":
+    def set_composition(self, kind0, kind1):
         """
         Sets the bond energies to be passed to the C library. Energies come
         from the coeffs attribute.
@@ -112,7 +112,7 @@ class AtomGraph(object):
         self._p_bond_energies = self._bond_energies.ctypes.data_as(
                                         ctypes.POINTER(ctypes.c_double))
 
-    def calc_cn_dist(self, ordering: "np.array") -> "dict":
+    def calc_cn_dist(self, ordering):
         """
         Gets CN distribution of each atom type
         - can be used to create bar plots of CN distribution
@@ -144,8 +144,8 @@ class AtomGraph(object):
                     m2_counts=m2_counts,
                     tot_counts=tot_counts)
 
-    def countMixing(self, ordering: "np.array",
-                    holder_array: "np.array" = None) -> "np.array":
+    def countMixing(self, ordering,
+                    holder_array = None):
         """
         Determines the number of homo/hetero-atomic bonds in the system.
 
@@ -176,8 +176,8 @@ class AtomGraph(object):
 
         return holder_array
 
-    def calcMixing(self, ordering: "np.array",
-                   holder_array: "np.array" = None) -> "np.array":
+    def calcMixing(self, ordering,
+                   holder_array = None):
         """
         Calculates the mixing parameter. From Batista et al. Adsorption of CO, NO, and H2 on the
         PdnAu55-n nanoclusters: A Density Functional Theory Investigation within the van der
@@ -209,7 +209,7 @@ class AtomGraph(object):
 
         return mixing_parameter
 
-    def getTotalCE(self, ordering: "np.array") -> "float":
+    def getTotalCE(self, ordering):
         """
         Calculates the cohesive energy of the NP using the BC model,
         as implemented in interface.py and lib.c
@@ -227,7 +227,7 @@ class AtomGraph(object):
                                                   self._p_bond_list,
                                                   p_ordering)
 
-    def getEE(self, ordering: "np.array") -> "float":
+    def getEE(self, ordering):
         """
         Calculates the excess energy in eV / atom of a given ordering
 
