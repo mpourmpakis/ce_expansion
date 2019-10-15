@@ -4,3 +4,4 @@ __pycache__/
 /data/adjacency_lists
 /data/atom_objects
 .iml
+/ce_expansion.egg-info
