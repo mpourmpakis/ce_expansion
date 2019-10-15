@@ -1,0 +1,1116 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ce_expansion.npdb.db_inter &#8212; ce_expansion 1.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ce_expansion.npdb.db_inter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">ase</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.ticker</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">sqlalchemy</span> <span class="k">as</span> <span class="nn">db</span>
+<span class="kn">from</span> <span class="nn">ase.data</span> <span class="k">import</span> <span class="n">chemical_symbols</span>
+<span class="kn">from</span> <span class="nn">ase.data.colors</span> <span class="k">import</span> <span class="n">jmol_colors</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">db_utils</span>
+    <span class="kn">import</span> <span class="nn">base</span>
+    <span class="kn">import</span> <span class="nn">datatables</span> <span class="k">as</span> <span class="nn">tbl</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ce_expansion.npdb</span> <span class="k">import</span> <span class="n">db_utils</span>
+    <span class="kn">import</span> <span class="nn">ce_expansion.npdb.base</span> <span class="k">as</span> <span class="nn">base</span>
+    <span class="kn">import</span> <span class="nn">ce_expansion.npdb.datatables</span> <span class="k">as</span> <span class="nn">tbl</span>
+
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;..&#39;</span><span class="p">))</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Functions to interface with NP GA Database</span>
+<span class="sd">    - all methods follow a specific prefix form</span>
+
+<span class="sd">    Function Types:</span>
+<span class="sd">       get_: retrieves data from DB</span>
+<span class="sd">             - does NOT edit DB entries</span>
+<span class="sd">             - NOTE: returns Datatable objects</span>
+
+<span class="sd">     build_: uses data from DB to build desired object(s)</span>
+<span class="sd">             - does NOT edit DB entries</span>
+<span class="sd">             - NOTE: returns data in other forms besides Datatable objects</span>
+<span class="sd">                     - e.g. pd.DataFrame, plt.Figure, np.array, etc.</span>
+
+<span class="sd">    insert_: adds new data to DB</span>
+<span class="sd">             - does NOT edit current DB entries</span>
+<span class="sd">             - adds new rows to DB</span>
+
+<span class="sd">    update_: updates data in existing entries</span>
+<span class="sd">             - does edit current DB entries</span>
+<span class="sd">             - if no current entry matches criteria, a new</span>
+<span class="sd">               entry will be made if allow_entry=True</span>
+
+<span class="sd">    remove_: removes an entry/entries from DB</span>
+<span class="sd">             - does edit current DB entries</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># global session</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="n">autoflush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># create all datatables if not present in DB</span>
+<span class="n">base</span><span class="o">.</span><span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span>
+
+
+<span class="c1"># BUILD FUNCTIONS</span>
+
+
+<div class="viewcode-block" id="build_df"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_df">[docs]</a><span class="k">def</span> <span class="nf">build_df</span><span class="p">(</span><span class="n">datatable</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    GENERIC FUNCTION</span>
+<span class="sd">    Returns pandas dataframe of entries in &lt;datatable&gt;</span>
+<span class="sd">    that match criteria in &lt;**kwargs&gt;</span>
+<span class="sd">    - NOTE: changes &#39;shape&#39; column name to &#39;np_shape&#39;!</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - datatable (Datatable class): datatable to query</span>
+
+<span class="sd">    KArgs:</span>
+<span class="sd">    - lim (int): max number of entries returned</span>
+<span class="sd">                 (default: None = no limit)</span>
+<span class="sd">    - **kwargs: arguments whose name(s) matches a column in the datatable</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (pd.DataFrame): df of results</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># convert sql query results into pd.DataFrame</span>
+    <span class="n">qry</span> <span class="o">=</span> <span class="n">get_entry</span><span class="p">(</span><span class="n">datatable</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="n">lim</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="n">custom_filter</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">return_query</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">statement</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">qry</span><span class="p">,</span> <span class="n">session</span><span class="o">.</span><span class="n">bind</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">if</span> <span class="n">col</span> <span class="o">!=</span> <span class="s1">&#39;shape&#39;</span> <span class="k">else</span> <span class="s1">&#39;np_shape&#39;</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="build_atoms_in_shell_dict"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_atoms_in_shell_dict">[docs]</a><span class="k">def</span> <span class="nf">build_atoms_in_shell_dict</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    creates dictionary of atom indices for each shell</span>
+
+<span class="sd">    MAPPING:</span>
+<span class="sd">    shell 0: core atom</span>
+<span class="sd">    shell 1: 12-atom layer</span>
+<span class="sd">    shell 2: 42-atom layer</span>
+<span class="sd">    etc.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    shape (str): shape of the nanoparticle</span>
+
+<span class="sd">    num_shells (int): shells to create NP from DB</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    (dict): {&lt;shell&gt;: atom indices that are in &lt;shell&gt;}</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">    - ValueError: num_shells must be &gt; 0</span>
+<span class="sd">    - ValueError: only certain shapes supported</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># ensure number of shells is within acceptable range</span>
+    <span class="k">if</span> <span class="n">num_shells</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;must have at least one shell&quot;</span><span class="p">)</span>
+
+    <span class="c1"># only certain shapes currently supported</span>
+    <span class="n">allowed_shapes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;cuboctahedron&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;elongated-pentagonal-bipyramid&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;icosahedron&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">shape</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_shapes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid shape. Must be </span><span class="si">%s</span><span class="s2">&quot;</span>
+                         <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">allowed_shapes</span><span class="p">)))</span>
+
+    <span class="c1"># get nanoparticle, atoms object, and bonds list</span>
+    <span class="n">nanop</span> <span class="o">=</span> <span class="n">get_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="n">num_shells</span><span class="p">)</span>
+    <span class="n">atom</span> <span class="o">=</span> <span class="n">nanop</span><span class="o">.</span><span class="n">get_atoms_obj_skel</span><span class="p">()</span>
+    <span class="n">bonds</span> <span class="o">=</span> <span class="n">nanop</span><span class="o">.</span><span class="n">load_bonds_list</span><span class="p">()</span>
+
+    <span class="c1"># indices dictionary {shell #: indices of atoms in shell}</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># track atoms already accounted for</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># center atom</span>
+    <span class="n">atom</span><span class="o">.</span><span class="n">positions</span> <span class="o">-=</span> <span class="n">atom</span><span class="o">.</span><span class="n">positions</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># get all atom&#39;s distance to origin</span>
+    <span class="n">dist2origin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">positions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># find core atom</span>
+    <span class="n">coreatom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">dist2origin</span> <span class="o">==</span> <span class="n">dist2origin</span><span class="o">.</span><span class="n">min</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">coreatom</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">coreatom</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="c1"># add core atom to found</span>
+    <span class="n">found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coreatom</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># find shell 1</span>
+    <span class="n">orderdist</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dist2origin</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">shell1</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">dist2origin</span> <span class="o">==</span> <span class="n">orderdist</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">shell1</span> <span class="o">+=</span> <span class="n">temp</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="n">shell1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">shell1</span><span class="p">))</span>
+    <span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">shell1</span>
+    <span class="n">found</span> <span class="o">+=</span> <span class="n">shell1</span>
+
+    <span class="c1"># use nearest neighbors to find next shells</span>
+    <span class="k">for</span> <span class="n">shell</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_shells</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># find all atoms bonded to outer most known shell</span>
+        <span class="n">bondedto</span> <span class="o">=</span> <span class="n">bonds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                            <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">bonds</span><span class="p">,</span>
+                                    <span class="n">indices</span><span class="p">[</span><span class="n">shell</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="c1"># get the indices of atoms not currently found (i.e. in new shell)</span>
+        <span class="n">nextatoms</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">bondedto</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">found</span><span class="p">]))</span>
+
+        <span class="c1"># add new shell to dictionary and to found list</span>
+        <span class="n">indices</span><span class="p">[</span><span class="n">shell</span><span class="p">]</span> <span class="o">=</span> <span class="n">nextatoms</span>
+        <span class="n">found</span> <span class="o">+=</span> <span class="n">nextatoms</span>
+
+        <span class="c1"># break loop if all atoms are found</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom</span><span class="p">):</span>
+            <span class="k">break</span>
+
+    <span class="c1"># return shell indices dictionary</span>
+    <span class="k">return</span> <span class="n">indices</span></div>
+
+
+<div class="viewcode-block" id="build_shell_dist_fig"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_shell_dist_fig">[docs]</a><span class="k">def</span> <span class="nf">build_shell_dist_fig</span><span class="p">(</span><span class="n">bimet</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates shell distribution figure of</span>
+<span class="sd">    BimetallicResult</span>
+
+<span class="sd">    Args:</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    (plt.Figure)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get atoms object</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="n">bimet</span><span class="o">.</span><span class="n">build_atoms_obj</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># build shells dictionary</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">bimet</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">num_shells</span> <span class="o">=</span> <span class="n">bimet</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">num_shells</span>
+    <span class="n">shells_dict</span> <span class="o">=</span> <span class="n">build_atoms_in_shell_dict</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">)</span>
+
+    <span class="c1"># list of all shells in NP (0 is core atom)</span>
+    <span class="n">shell_ls</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">shells_dict</span><span class="p">)</span>
+
+    <span class="c1"># calc total and metal counts for each shell</span>
+    <span class="n">tot_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shell_ls</span><span class="p">))</span>
+    <span class="n">m1_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shell_ls</span><span class="p">))</span>
+    <span class="n">m2_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shell_ls</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">shell</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">shells_dict</span><span class="p">)):</span>
+        <span class="c1"># indices of atoms in current shell</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">shells_dict</span><span class="p">[</span><span class="n">shell</span><span class="p">]</span>
+
+        <span class="c1"># total atom count of current shell</span>
+        <span class="n">tot_count</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+
+        <span class="c1"># metal type counts for current shell</span>
+        <span class="n">m1_count</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">atoms</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="n">bimet</span><span class="o">.</span><span class="n">metal1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">m2_count</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">atoms</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="n">bimet</span><span class="o">.</span><span class="n">metal2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># normalize counts to concentrations</span>
+    <span class="n">norm_m1</span> <span class="o">=</span> <span class="n">m1_count</span> <span class="o">/</span> <span class="n">tot_count</span>
+    <span class="n">norm_m2</span> <span class="o">=</span> <span class="n">m2_count</span> <span class="o">/</span> <span class="n">tot_count</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span> <span class="o">=</span> <span class="n">axes</span>
+
+    <span class="n">m1_color</span> <span class="o">=</span> <span class="n">jmol_colors</span><span class="p">[</span><span class="n">chemical_symbols</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bimet</span><span class="o">.</span><span class="n">metal1</span><span class="p">)]</span>
+    <span class="n">m2_color</span> <span class="o">=</span> <span class="n">jmol_colors</span><span class="p">[</span><span class="n">chemical_symbols</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bimet</span><span class="o">.</span><span class="n">metal2</span><span class="p">)]</span>
+
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">shell_ls</span><span class="p">,</span> <span class="n">m1_count</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+             <span class="n">color</span><span class="o">=</span><span class="n">m1_color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">bimet</span><span class="o">.</span><span class="n">metal1</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">shell_ls</span><span class="p">,</span> <span class="n">m2_count</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+             <span class="n">color</span><span class="o">=</span><span class="n">m2_color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">bimet</span><span class="o">.</span><span class="n">metal2</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">bimet</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">num_shells</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+
+    <span class="c1"># set ylim to maximum number of atoms on surface</span>
+    <span class="n">high</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">tot_count</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">10</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;# of Atoms&#39;</span><span class="p">)</span>
+
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">shell_ls</span><span class="p">,</span> <span class="n">norm_m1</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+             <span class="n">color</span><span class="o">=</span><span class="n">m1_color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">shell_ls</span><span class="p">,</span> <span class="n">norm_m2</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+             <span class="n">color</span><span class="o">=</span><span class="n">m2_color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Concentration&#39;</span><span class="p">)</span>
+    <span class="n">yticks</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">yticks</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{:,.0%}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">yticks</span><span class="p">])</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">shell_ls</span><span class="p">)</span>
+
+    <span class="c1"># create xtick labels based on shell number</span>
+    <span class="n">xticklabels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Shell </span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">shell_ls</span><span class="p">]</span>
+    <span class="n">xticklabels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Core&#39;</span>
+    <span class="n">xticklabels</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Surface&#39;</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">xticklabels</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">bimet</span><span class="o">.</span><span class="n">build_chem_formula</span><span class="p">(</span><span class="n">latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; - </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">shape</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">(</span><span class="n">rect</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="build_coefficient_dict"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_coefficient_dict">[docs]</a><span class="k">def</span> <span class="nf">build_coefficient_dict</span><span class="p">(</span><span class="n">metals</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates coefficient dictionary used to calc CE</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - metals (string || iterable): string(s) containing two metal elements</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (dict): coefficient dictionary for GA sim</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span> <span class="o">=</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">sort_metals</span><span class="p">(</span><span class="n">metals</span><span class="p">)</span>
+
+    <span class="c1"># homoatomic half bond energies</span>
+    <span class="n">res_aa</span> <span class="o">=</span> <span class="n">get_model_coefficient</span><span class="p">(</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal1</span><span class="p">)</span>
+    <span class="n">res_bb</span> <span class="o">=</span> <span class="n">get_model_coefficient</span><span class="p">(</span><span class="n">metal2</span><span class="p">,</span> <span class="n">metal2</span><span class="p">)</span>
+
+    <span class="c1"># heteroatomic half bond energies</span>
+    <span class="n">res_ab</span> <span class="o">=</span> <span class="n">get_model_coefficient</span><span class="p">(</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">)</span>
+    <span class="n">res_ba</span> <span class="o">=</span> <span class="n">get_model_coefficient</span><span class="p">(</span><span class="n">metal2</span><span class="p">,</span> <span class="n">metal1</span><span class="p">)</span>
+
+    <span class="c1"># raise error if coefficients are not found</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">res</span><span class="p">,</span> <span class="n">ms</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="n">res_aa</span><span class="p">,</span> <span class="n">res_bb</span><span class="p">,</span> <span class="n">res_ab</span><span class="p">,</span> <span class="n">res_bb</span><span class="p">],</span>
+                       <span class="p">((</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal1</span><span class="p">),</span> <span class="p">(</span><span class="n">metal2</span><span class="p">,</span> <span class="n">metal2</span><span class="p">),</span>
+                        <span class="p">(</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">),</span> <span class="p">(</span><span class="n">metal2</span><span class="p">,</span> <span class="n">metal1</span><span class="p">))):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;no info for </span><span class="si">%s</span><span class="s2"> - </span><span class="si">%s</span><span class="s2"> coefficients&quot;</span> <span class="o">%</span> <span class="n">ms</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">NPDatabaseError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errors</span><span class="p">))</span>
+
+    <span class="c1"># return back coefficients as dictionary of dictionaries</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">metal1</span><span class="p">:</span> <span class="p">{</span><span class="n">metal1</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">bond_energy</span><span class="p">,</span> <span class="n">res_aa</span><span class="p">)),</span>
+                     <span class="n">metal2</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">bond_energy</span><span class="p">,</span> <span class="n">res_ab</span><span class="p">))},</span>
+            <span class="n">metal2</span><span class="p">:</span> <span class="p">{</span><span class="n">metal2</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">j</span><span class="p">:</span> <span class="n">j</span><span class="o">.</span><span class="n">bond_energy</span><span class="p">,</span> <span class="n">res_bb</span><span class="p">)),</span>
+                     <span class="n">metal1</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">j</span><span class="p">:</span> <span class="n">j</span><span class="o">.</span><span class="n">bond_energy</span><span class="p">,</span> <span class="n">res_ba</span><span class="p">))}}</span></div>
+
+
+<div class="viewcode-block" id="build_metals_list"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_metals_list">[docs]</a><span class="k">def</span> <span class="nf">build_metals_list</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns list of possible metal combinations for GA sims</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">ModelCoefficients</span><span class="o">.</span><span class="n">element1</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">distinct</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">ModelCoefficients</span><span class="o">.</span><span class="n">element1</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()]</span></div>
+
+
+<div class="viewcode-block" id="build_new_structs_plot"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_new_structs_plot">[docs]</a><span class="k">def</span> <span class="nf">build_new_structs_plot</span><span class="p">(</span><span class="n">metal_opts</span><span class="p">,</span> <span class="n">shape_opts</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">cutoff_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses BimetallicLog to create 2D line plot of</span>
+<span class="sd">    new structures found vs. datetime</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - metal_opts (list): list of metal options</span>
+<span class="sd">    - shape_opts (list): list of shape options</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - pct (bool): if True, y-axis = % new structures</span>
+<span class="sd">                  else, y-axis = number of new structures</span>
+<span class="sd">    - cutoff_date (Datetime.Datetime): if given, will filter out runs</span>
+<span class="sd">                                       older than &lt;cutoff_date&gt;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (plt.Figure): 2D line plot object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metal_opts</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">metal_opts</span> <span class="o">=</span> <span class="p">[</span><span class="n">metal_opts</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape_opts</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">shape_opts</span> <span class="o">=</span> <span class="p">[</span><span class="n">shape_opts</span><span class="p">]</span>
+
+    <span class="c1"># if cutoff_date, create custom_filter</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cutoff_date</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+        <span class="n">custom_filter</span> <span class="o">=</span> <span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicLog</span><span class="o">.</span><span class="n">date</span> <span class="o">&gt;=</span> <span class="n">cutoff_date</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">custom_filter</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;#1f77b4&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff7f0e&#39;</span><span class="p">,</span> <span class="s1">&#39;#2ca02c&#39;</span><span class="p">,</span> <span class="s1">&#39;#d62728&#39;</span><span class="p">,</span> <span class="s1">&#39;#9467bd&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;#8c564b&#39;</span><span class="p">,</span> <span class="s1">&#39;#e377c2&#39;</span><span class="p">,</span> <span class="s1">&#39;#7f7f7f&#39;</span><span class="p">,</span> <span class="s1">&#39;#bcbd22&#39;</span><span class="p">,</span> <span class="s1">&#39;#17becf&#39;</span><span class="p">]</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tot_lines</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">metal_opts</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape_opts</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">metal_opts</span><span class="p">):</span>
+        <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span> <span class="o">=</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">sort_metals</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">point</span><span class="p">,</span> <span class="n">shape</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;^&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">],</span> <span class="n">shape_opts</span><span class="p">):</span>
+            <span class="c1"># use abbreviated names for shapes</span>
+            <span class="n">lbl_shape</span> <span class="o">=</span> <span class="n">shape</span><span class="o">.</span><span class="n">upper</span><span class="p">()[:</span><span class="mi">3</span><span class="p">]</span>
+
+            <span class="c1"># pd.DataFrame of bimetallic log data</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">build_df</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicLog</span><span class="p">,</span> <span class="n">metals</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                          <span class="n">custom_filter</span><span class="o">=</span><span class="n">custom_filter</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s%s</span><span class="s1"> - </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">lbl_shape</span><span class="p">)</span>
+
+            <span class="n">y</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">new_min_structs</span><span class="o">.</span><span class="n">values</span>
+            <span class="k">if</span> <span class="n">pct</span><span class="p">:</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">/</span> <span class="n">df</span><span class="o">.</span><span class="n">tot_structs</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-&#39;</span> <span class="o">%</span> <span class="n">point</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">pct</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span>
+            <span class="n">matplotlib</span><span class="o">.</span><span class="n">ticker</span><span class="o">.</span><span class="n">FuncFormatter</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0:.0%}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Percent Count&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Total Count&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">ncol</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">metal_opts</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;New Minimum Structures Found&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Batch Run Date&#39;</span><span class="p">)</span>
+
+    <span class="c1"># (month/day) x axis tick labels</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="build_prdf_shapes_comparison"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_prdf_shapes_comparison">[docs]</a><span class="k">def</span> <span class="nf">build_prdf_shapes_comparison</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">,</span> <span class="n">x_dope</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates list of figures, each containing partial radial distribution</span>
+<span class="sd">        functions (PRDFs) of a given shape</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - metals (str || iterable): two metal elements</span>
+<span class="sd">    - num_shells (int): number of shells (i.e. layers) of atoms used to make NP</span>
+<span class="sd">    - x_dope (float): percentage of metal2 in NPs</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - list of plt.Figure elements containing PRDFs and an image of the NPs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x_metal1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x_dope</span>
+    <span class="n">figs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">build_shapes_list</span><span class="p">():</span>
+        <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">get_shell2num</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">)</span>
+        <span class="n">n_metal1</span> <span class="o">=</span> <span class="n">num_atoms</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">x_metal1</span> <span class="o">*</span> <span class="n">num_atoms</span><span class="p">)</span>
+        <span class="n">bi</span> <span class="o">=</span> <span class="n">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="n">metals</span><span class="p">,</span>
+                              <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                              <span class="n">num_atoms</span><span class="o">=</span><span class="n">num_atoms</span><span class="p">,</span>
+                              <span class="n">n_metal1</span><span class="o">=</span><span class="n">n_metal1</span><span class="p">)</span>
+
+        <span class="n">figs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bi</span><span class="o">.</span><span class="n">build_prdf_plot</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">figs</span></div>
+
+
+<div class="viewcode-block" id="build_shell2num_dict"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_shell2num_dict">[docs]</a><span class="k">def</span> <span class="nf">build_shell2num_dict</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a number of shells --&gt; number of atoms dict</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - shape (str): shape of NP</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - dict: shell2num_dict[shape][num_shell] = num_atoms</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">nanops</span> <span class="o">=</span> <span class="n">get_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">nanop</span> <span class="ow">in</span> <span class="n">nanops</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">nanop</span><span class="o">.</span><span class="n">shape</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">nanop</span><span class="o">.</span><span class="n">shape</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">nanop</span><span class="o">.</span><span class="n">num_shells</span><span class="p">:</span> <span class="n">nanop</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">nanop</span><span class="o">.</span><span class="n">shape</span><span class="p">][</span><span class="n">nanop</span><span class="o">.</span><span class="n">num_shells</span><span class="p">]</span> <span class="o">=</span> <span class="n">nanop</span><span class="o">.</span><span class="n">num_atoms</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="build_srf_plot"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_srf_plot">[docs]</a><span class="k">def</span> <span class="nf">build_srf_plot</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a 3D surface plot from NP SQL database</span>
+<span class="sd">    - plots Size vs. Shape vs. Excess Energy (EE)</span>
+<span class="sd">    - can also use configurational entropy of mixing</span>
+<span class="sd">      to plot Size vs. Shape vs. delG = EE - T * delS(mix)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - metals (string || iterable): string(s) containing two metal elements</span>
+<span class="sd">    - shape (string): shape of the NP</span>
+
+<span class="sd">    KArgs:</span>
+<span class="sd">    T (float): if temperature is given, plot delG(mix)</span>
+<span class="sd">               (i.e. include configurational entropy)</span>
+<span class="sd">               (Default: None)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (plt.figure): figure of 3D surface plot</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span> <span class="o">=</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">sort_metals</span><span class="p">(</span><span class="n">metals</span><span class="p">)</span>
+
+    <span class="c1"># build pd.DataFrame of all results that match criteria</span>
+    <span class="n">runs</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">diameter</span><span class="p">,</span>
+                         <span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">n_metal2</span> <span class="o">/</span>
+                          <span class="n">db</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">,</span>
+                                  <span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">))</span>
+                         <span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s1">&#39;comps&#39;</span><span class="p">),</span>
+                         <span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">,</span>
+                         <span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">EE</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">metal1</span> <span class="o">==</span> <span class="n">metal1</span><span class="p">,</span>
+                        <span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">metal2</span> <span class="o">==</span> <span class="n">metal2</span><span class="p">,</span>
+                        <span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">shape</span><span class="p">))</span> \
+        <span class="o">.</span><span class="n">statement</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span> <span class="n">session</span><span class="o">.</span><span class="n">bind</span><span class="p">)</span>
+
+    <span class="c1"># three parameters to plot</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">num_atoms</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">comps</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">comps</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">ees</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">EE</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">if</span> <span class="n">T</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># k_b T [eV] = (25.7 mEV at 298 K)</span>
+        <span class="n">kt</span> <span class="o">=</span> <span class="mf">25.7E-3</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span> <span class="o">/</span> <span class="mf">298.</span><span class="p">)</span>
+        <span class="n">del_s</span> <span class="o">=</span> <span class="n">comps</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">comps</span><span class="p">)</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">comps</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">comps</span><span class="p">)</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">del_s</span> <span class="o">*=</span> <span class="o">-</span><span class="n">kt</span>
+
+        <span class="n">ees</span> <span class="o">-=</span> <span class="n">del_s</span>
+
+    <span class="c1"># plots surface as heat map with warmer colors for larger EEs</span>
+    <span class="n">colormap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s1">&#39;coolwarm&#39;</span><span class="p">)</span>
+    <span class="n">normalize</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">ees</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">vmax</span><span class="o">=-</span><span class="n">ees</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot_trisurf</span><span class="p">(</span><span class="n">comps</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">ees</span><span class="p">,</span>
+                        <span class="n">cmap</span><span class="o">=</span><span class="n">colormap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+        <span class="c1"># if not enough data to create surface, make a scatter plot instead</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter3D</span><span class="p">(</span><span class="n">comps</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">ees</span><span class="p">,</span>
+                     <span class="n">cmap</span><span class="o">=</span><span class="n">colormap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">normalize</span><span class="p">)</span>
+
+    <span class="c1"># plot mins at each step</span>
+    <span class="n">add_legend</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">size</span> <span class="o">==</span> <span class="n">s</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mini</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ees</span> <span class="o">==</span> <span class="n">ees</span><span class="p">[</span><span class="n">sizes</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;orange&#39;</span> <span class="k">if</span> <span class="n">ees</span><span class="p">[</span><span class="n">sizes</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">==</span> <span class="n">ees</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;pink&#39;</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter3D</span><span class="p">(</span><span class="n">comps</span><span class="p">[</span><span class="n">mini</span><span class="p">],</span> <span class="n">s</span><span class="p">,</span> <span class="n">ees</span><span class="p">[</span><span class="n">mini</span><span class="p">],</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+                     <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">$X_{</span><span class="si">%s</span><span class="s1">}$&#39;</span> <span class="o">%</span> <span class="n">metal2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">$</span><span class="se">\\</span><span class="s1">rm N_</span><span class="si">{atoms}</span><span class="s1">$&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">T</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">$</span><span class="se">\\</span><span class="s1">rm </span><span class="se">\\</span><span class="s1">Delta$G (eV)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%i</span><span class="s1">K</span><span class="se">\n</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">shape</span><span class="o">.</span><span class="n">title</span><span class="p">()))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">EE (eV)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">shape</span><span class="o">.</span><span class="n">title</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
+
+
+<div class="viewcode-block" id="build_radial_distributions"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_radial_distributions">[docs]</a><span class="k">def</span> <span class="nf">build_radial_distributions</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">n_metal1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nbins</span> <span class="o">=</span> <span class="s2">&quot;Auto&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sends a query to get_bimetallic_results to construct a list of NPs,</span>
+<span class="sd">    then for each NP found, returns radial distribution functions for the</span>
+<span class="sd">    two elements.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    metals (str || iterable): two metal elements</span>
+<span class="sd">    shape (str): shape of NP</span>
+<span class="sd">    num_atoms (int): number of atoms in NP</span>
+<span class="sd">    n_metal1 (int): number of metal1 atoms in NP</span>
+<span class="sd">    lim (int): max number of entries returned</span>
+<span class="sd">               (default: None = no limit)</span>
+<span class="sd">    bins (int || str) : Number of bins to use for the radial distribution.</span>
+<span class="sd">                If set to &quot;Auto&quot;, uses num_atoms / 10, rounded up</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of N radial distribution functions as dicts. First element gives the</span>
+<span class="sd">        atom type. Second element gives the dimension. Third element is the value at</span>
+<span class="sd">        that dimension. For example, returned_value[&quot;Cu&quot;][&quot;distance&quot;][3] equaling 3.4</span>
+<span class="sd">        indicates that whatever returned_value[&quot;Cu&quot;][&quot;density&quot;][3] equals is at distance 3.4</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Do the query</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="n">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">n_metal1</span><span class="p">,</span> <span class="n">lim</span><span class="p">,</span> <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="p">[</span><span class="n">query</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">system</span> <span class="ow">in</span> <span class="n">query</span><span class="p">:</span>
+        <span class="n">element1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">metal1</span>
+        <span class="n">element2</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">metal2</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">diameter</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">np</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">nanoparticle</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atoms_obj</span>
+
+        <span class="c1"># Todo: Figure out why atoms is an ase.Atoms object in console, but is NoneType when running the script</span>
+        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span> <span class="o">==</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">element_1_distances</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">element_2_distances</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">element1</span><span class="p">:</span>
+                <span class="n">element_1_distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">position</span> <span class="o">-</span> <span class="n">center</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">element2</span><span class="p">:</span>
+                <span class="n">element_2_distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">normm</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">position</span> <span class="o">-</span> <span class="n">center</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">nbins</span> <span class="o">==</span> <span class="s2">&quot;Auto&quot;</span><span class="p">:</span>
+            <span class="n">nbins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span><span class="p">))</span>
+
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">nbins</span><span class="p">)</span>
+
+        <span class="n">element_1_histogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">element_1_distances</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+        <span class="n">element_2_histogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">element_2_distances</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">element_1_histogram</span><span class="p">,</span> <span class="n">element_2_histogram</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="build_shapes_list"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_shapes_list">[docs]</a><span class="k">def</span> <span class="nf">build_shapes_list</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns all shapes found in Nanoparticles Datatable as list of str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">Nanoparticles</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">distinct</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()])</span></div>
+
+
+<span class="c1"># GET FUNCTIONS</span>
+
+
+<div class="viewcode-block" id="get_entry"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_entry">[docs]</a><span class="k">def</span> <span class="nf">get_entry</span><span class="p">(</span><span class="n">datatable</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    GENERIC FUNCTION</span>
+<span class="sd">    Returns entry/entries from table if criteria is matched</span>
+<span class="sd">    - if no criteria given, all data (up to &lt;lim&gt; amount)</span>
+<span class="sd">      returned</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - datatable (Datatable class): datatable to query</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - lim (int): max number of entries returned</span>
+<span class="sd">                 (default: None = no limit)</span>
+<span class="sd">    - custom_filter (sqlalchemy.sql.elements.BinaryExpression):</span>
+<span class="sd">                    custom sqlalchemy filter that will be applied</span>
+<span class="sd">                    (default: None = no added filter)</span>
+<span class="sd">    - return_query (bool): if True, return query and</span>
+<span class="sd">                           not results</span>
+<span class="sd">    - **kwargs: arguments whose name(s) matches a column in the datatable</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (Datatable instance(s)) if match is found else (None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">match_ls</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s1">&#39;metals&#39;</span><span class="p">:</span>
+                <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span> <span class="o">=</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">sort_metals</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">attr</span><span class="p">])</span>
+                <span class="n">match_ls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datatable</span><span class="o">.</span><span class="n">metal1</span> <span class="o">==</span> <span class="n">metal1</span><span class="p">)</span>
+                <span class="n">match_ls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datatable</span><span class="o">.</span><span class="n">metal2</span> <span class="o">==</span> <span class="n">metal2</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">match_ls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">datatable</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="o">==</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">attr</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">custom_filter</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">match_ls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">custom_filter</span><span class="p">)</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span><span class="o">*</span><span class="n">match_ls</span><span class="p">)</span>
+    <span class="n">qry</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">datatable</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">match</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">lim</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">return_query</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">qry</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">qry</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">res</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_bimet_log"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_bimet_log">[docs]</a><span class="k">def</span> <span class="nf">get_bimet_log</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns BimetallicLog entry that matches criteria</span>
+<span class="sd">    - if no criteria given, all data (up to &lt;lim&gt; amount)</span>
+<span class="sd">      returned</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - metals (str || iterable): two metal elements</span>
+<span class="sd">    - shape (str): shape of NP</span>
+<span class="sd">    - date (datetime.datetime): GA batch run completion time</span>
+<span class="sd">    - lim (int): max number of entries returned</span>
+<span class="sd">                 (default: None = no limit)</span>
+<span class="sd">    - return_query (bool): if True, return query and</span>
+<span class="sd">                           not results</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (BimetallicResults)(s) if match is found else (None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_entry</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicLog</span><span class="p">,</span> <span class="o">**</span><span class="nb">locals</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="get_bimet_result"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_bimet_result">[docs]</a><span class="k">def</span> <span class="nf">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">n_metal1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">only_bimet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns BimetallicResults entry that matches criteria</span>
+<span class="sd">    - if no criteria given, all data (up to &lt;lim&gt; amount)</span>
+<span class="sd">      returned</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - metals (str || iterable): two metal elements</span>
+<span class="sd">    - shape (str): shape of NP</span>
+<span class="sd">    - num_atoms (int): number of atoms in NP</span>
+<span class="sd">    - n_metal1 (int): number of metal1 atoms in NP</span>
+<span class="sd">    - lim (int): max number of entries returned</span>
+<span class="sd">                 (default: None = no limit)</span>
+<span class="sd">    - return_query (bool): if True, return query and</span>
+<span class="sd">                           not results</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (BimetallicResults)(s) if match is found else (None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">num_atoms</span> <span class="ow">and</span> <span class="p">(</span><span class="n">num_shells</span> <span class="ow">and</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">get_shell2num</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">only_bimet</span><span class="p">:</span>
+        <span class="n">only_bimet</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">n_metal1</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span>
+                             <span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">n_metal2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">custom_filter</span> <span class="o">=</span> <span class="n">only_bimet</span>
+
+    <span class="k">return</span> <span class="n">get_entry</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="p">,</span> <span class="n">metals</span><span class="o">=</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                     <span class="n">num_atoms</span><span class="o">=</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">n_metal1</span><span class="o">=</span><span class="n">n_metal1</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="n">lim</span><span class="p">,</span>
+                     <span class="n">return_query</span><span class="o">=</span><span class="n">return_query</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="n">custom_filter</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_model_coefficient"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_model_coefficient">[docs]</a><span class="k">def</span> <span class="nf">get_model_coefficient</span><span class="p">(</span><span class="n">element1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">element2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns tbl.ModelCoefficients entries that match criteria</span>
+<span class="sd">    - if no criteria given, all data (up to &lt;lim&gt; amount)</span>
+<span class="sd">      returned</span>
+<span class="sd">    - query is always ordered by cn</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - element1 (str): first element</span>
+<span class="sd">    - element2 (str): second element</span>
+<span class="sd">    - cn (int): coordination number of element 1</span>
+<span class="sd">    - lim (int): max number of entries returned</span>
+<span class="sd">                 (default: None = no limit)</span>
+<span class="sd">    - return_query (bool): if True, returns just the query</span>
+<span class="sd">                           and not the results</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (tbl.ModelCoefficients)(s) if match else (None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_entry</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">ModelCoefficients</span><span class="p">,</span> <span class="o">**</span><span class="nb">locals</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="get_nanoparticle"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">get_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns tbl.Nanoparticles entries that match criteria</span>
+<span class="sd">    - if no criteria given, all data (up to &lt;lim&gt; amount)</span>
+<span class="sd">      returned</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - shape (str): shape of NP</span>
+<span class="sd">    - num_atoms (int): number of atoms in NP</span>
+<span class="sd">    - num_shells (int): number of shells used to build NP</span>
+<span class="sd">                        from structure_gen module</span>
+<span class="sd">    - lim (int): max number of entries returned</span>
+<span class="sd">                 (default: None = no limit)</span>
+<span class="sd">    - return_query (bool): if True, returns just the query</span>
+<span class="sd">                           and not the results</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (tbl.Nanoparticles)(s) if match else (None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_entry</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">Nanoparticles</span><span class="p">,</span> <span class="o">**</span><span class="nb">locals</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="get_shell2num"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_shell2num">[docs]</a><span class="k">def</span> <span class="nf">get_shell2num</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the number of atoms of an NP</span>
+<span class="sd">    given shape and number of shells</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - shape (str): shape of NP</span>
+<span class="sd">    - num_shells (int): number of shells used to build NP</span>
+<span class="sd">                        from structure_gen module</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nanop</span> <span class="o">=</span> <span class="n">get_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="n">num_shells</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nanop</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nanop</span><span class="o">.</span><span class="n">num_atoms</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<span class="c1"># INSERT FUNCTIONS</span>
+
+
+<div class="viewcode-block" id="insert_model_coefficients"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.insert_model_coefficients">[docs]</a><span class="k">def</span> <span class="nf">insert_model_coefficients</span><span class="p">(</span><span class="n">coeffs_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inserts model coefficients into ModelCoefficients</span>
+<span class="sd">    - checks DB to ensure entry does not already exist</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - coeffs_dict (dict): dictionary of coefficients</span>
+<span class="sd">                          if None, read in from data directory</span>
+<span class="sd">                          (default: None)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (bool): True if successful insertion else False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">coeffs_dict</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span>
+                            <span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;coefs_set.pickle&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fid</span><span class="p">:</span>
+            <span class="n">coeffs_dict</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fid</span><span class="p">)</span>
+
+    <span class="c1"># dict(element1=dict(element2=[bond_energies where index = cn]))</span>
+    <span class="k">for</span> <span class="n">e1</span> <span class="ow">in</span> <span class="n">coeffs_dict</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">e2</span> <span class="ow">in</span> <span class="n">coeffs_dict</span><span class="p">[</span><span class="n">e1</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coeffs_dict</span><span class="p">[</span><span class="n">e1</span><span class="p">][</span><span class="n">e2</span><span class="p">])):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">get_model_coefficient</span><span class="p">(</span><span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">,</span> <span class="n">cn</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">ModelCoefficients</span><span class="p">(</span><span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">,</span> <span class="n">cn</span><span class="p">,</span>
+                                                      <span class="n">coeffs_dict</span><span class="p">[</span><span class="n">e1</span><span class="p">][</span><span class="n">e2</span><span class="p">][</span><span class="n">cn</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="insert_nanoparticle"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.insert_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">insert_nanoparticle</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inserts NP and their appropriate atoms into DB</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - atom (ase.Atoms): atoms object of NP skeleton</span>
+<span class="sd">    - shape (string): common name for shape of NP</span>
+<span class="sd">                      - e.g. icosahedron</span>
+<span class="sd">                      - always lower case</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - num_shells (int): number of shells used to build NP</span>
+<span class="sd">                        from structure_gen module</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (Nanoparticle): tbl.Nanoparticles object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">np</span> <span class="o">=</span> <span class="n">tbl</span><span class="o">.</span><span class="n">Nanoparticles</span><span class="p">(</span><span class="n">shape</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom</span><span class="p">),</span> <span class="n">num_shells</span><span class="o">=</span><span class="n">num_shells</span><span class="p">)</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">np</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atom</span><span class="p">):</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">Atoms</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">np</span><span class="p">))</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">raise_exception</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span></div>
+
+
+<div class="viewcode-block" id="insert_bimetallic_log"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.insert_bimetallic_log">[docs]</a><span class="k">def</span> <span class="nf">insert_bimetallic_log</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span>
+                          <span class="n">ga_generations</span><span class="p">,</span> <span class="n">shell_range</span><span class="p">,</span> <span class="n">new_min_structs</span><span class="p">,</span>
+                          <span class="n">tot_structs</span><span class="p">,</span> <span class="n">batch_run_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicLog</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span>
+                                  <span class="n">ga_generations</span><span class="p">,</span> <span class="n">shell_range</span><span class="p">,</span> <span class="n">new_min_structs</span><span class="p">,</span>
+                                  <span class="n">tot_structs</span><span class="p">,</span> <span class="n">batch_run_num</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">)</span></div>
+
+
+<span class="c1"># UPDATE FUNCTIONS</span>
+
+
+<div class="viewcode-block" id="update_entry"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.update_entry">[docs]</a><span class="k">def</span> <span class="nf">update_entry</span><span class="p">(</span><span class="n">entry_inst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    GENERIC METHOD</span>
+<span class="sd">    Updates datarow object</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - entry_inst (DataTable): DataTable object where changes have been made</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - (bool): True if successful</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">entry_inst</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="update_bimet_result"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.update_bimet_result">[docs]</a><span class="k">def</span> <span class="nf">update_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span>
+                        <span class="n">diameter</span><span class="p">,</span> <span class="n">n_metal1</span><span class="p">,</span>
+                        <span class="n">CE</span><span class="p">,</span> <span class="n">ordering</span><span class="p">,</span> <span class="n">EE</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nanop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">allow_insert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ensure_ce_min</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes raw data and inserts the BimetallicResults datatable</span>
+<span class="sd">    - will update CE, EE, and ordering of an entry if necessary</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - BimetallicResults entry after successfully updating</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="n">metals</span><span class="p">,</span>
+                           <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                           <span class="n">num_atoms</span><span class="o">=</span><span class="n">num_atoms</span><span class="p">,</span>
+                           <span class="n">n_metal1</span><span class="o">=</span><span class="n">n_metal1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+        <span class="c1"># if ensure_ce_min, do not overwrite a minimum CE structure</span>
+        <span class="c1"># with new data</span>
+        <span class="k">if</span> <span class="n">ensure_ce_min</span> <span class="ow">and</span> <span class="n">res</span><span class="o">.</span><span class="n">CE</span> <span class="o">&lt;</span> <span class="n">CE</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">CE</span> <span class="o">=</span> <span class="n">CE</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">ordering</span> <span class="o">=</span> <span class="n">ordering</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">EE</span> <span class="o">=</span> <span class="n">EE</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">allow_insert</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span> <span class="o">=</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">sort_metals</span><span class="p">(</span><span class="n">metals</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="p">(</span>
+            <span class="n">metal1</span><span class="o">=</span><span class="n">metal1</span><span class="p">,</span>
+            <span class="n">metal2</span><span class="o">=</span><span class="n">metal2</span><span class="p">,</span>
+            <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+            <span class="n">num_atoms</span><span class="o">=</span><span class="n">num_atoms</span><span class="p">,</span>
+            <span class="n">diameter</span><span class="o">=</span><span class="n">diameter</span><span class="p">,</span>
+            <span class="n">n_metal1</span><span class="o">=</span><span class="n">n_metal1</span><span class="p">,</span>
+            <span class="n">n_metal2</span><span class="o">=</span><span class="n">num_atoms</span> <span class="o">-</span> <span class="n">n_metal1</span><span class="p">,</span>
+            <span class="n">CE</span><span class="o">=</span><span class="n">CE</span><span class="p">,</span>
+            <span class="n">ordering</span><span class="o">=</span><span class="n">ordering</span><span class="p">,</span>
+            <span class="n">EE</span><span class="o">=</span><span class="n">EE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nanop</span><span class="p">:</span>
+            <span class="n">nanop</span><span class="o">.</span><span class="n">bimetallic_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">nanop</span><span class="p">)</span>
+
+    <span class="c1"># commit changes</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">raise_exception</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<span class="c1"># REMOVE FUNCTIONS</span>
+
+
+<div class="viewcode-block" id="remove_entry"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.remove_entry">[docs]</a><span class="k">def</span> <span class="nf">remove_entry</span><span class="p">(</span><span class="n">entry_inst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    GENERIC FUNCTION</span>
+<span class="sd">    Deletes entry (and its children if applicable) from DB</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    - entry_inst (DataTable instance): datarow to be deleted</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">entry_inst</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="remove_nanoparticle"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.remove_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">remove_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Removes a single NP and its corresponding atoms</span>
+<span class="sd">    - only commits if a single np is queried to be removed</span>
+
+<span class="sd">    Kargs:</span>
+<span class="sd">    - shape (str): shape of NP</span>
+<span class="sd">    - num_atoms (int): number of atoms in NP</span>
+<span class="sd">    - num_shells (int): number of shells used to build NP</span>
+<span class="sd">                        from structure_gen module</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - True if successful</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">get_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">NPDatabaseError</span><span class="p">(</span><span class="s1">&#39;Can only remove one Nanoparticle&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">NPDatabaseError</span><span class="p">(</span><span class="s1">&#39;Unable to find matching Nanoparticle&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">remove_entry</span><span class="p">(</span><span class="n">res</span><span class="p">)</span></div>
+
+
+<span class="c1"># HELPER FUNCTIONS</span>
+
+
+<div class="viewcode-block" id="gen_coeffs_dict_from_raw"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.gen_coeffs_dict_from_raw">[docs]</a><span class="k">def</span> <span class="nf">gen_coeffs_dict_from_raw</span><span class="p">(</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">bulkce_m1</span><span class="p">,</span> <span class="n">bulkce_m2</span><span class="p">,</span>
+                             <span class="n">homo_bde_m1</span><span class="p">,</span> <span class="n">homo_bde_m2</span><span class="p">,</span> <span class="n">hetero_bde</span><span class="p">,</span> <span class="n">cnmax</span><span class="o">=</span><span class="mi">12</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates the Bond-Centric half bond energy terms for a bimetallic</span>
+<span class="sd">        pair AB. Coordination number 0 is given the value None. Dictionary is</span>
+<span class="sd">        used with AtomGraph to calculate total CE of bimetallic nanoparticles.</span>
+<span class="sd">        Relies on raw data arguments to create dictionary.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        - metal1 (str): atomic symbol of metal 1</span>
+<span class="sd">        - metal2 (str): atomic symbol of metal 2</span>
+<span class="sd">        - bulkce_m1 (float): bulk cohesive energy (in eV / atom) of metal1</span>
+<span class="sd">        - bulkce_m2 (float): bulk cohesive energy (in eV / atom) of metal2</span>
+<span class="sd">        - homo_bde_m1 (float): m1-m1 (homoatomic) bond dissociation energy</span>
+<span class="sd">        - homo_bde_m2 (float): m2-m2 (homoatomic) bond dissociation energy</span>
+<span class="sd">        - hetero_bde (float): m1-m2 (heteroatomic) bond dissociation energy</span>
+
+<span class="sd">        KArgs:</span>
+<span class="sd">        - cnmax: maximum bulk coordination number (CN) of metals</span>
+<span class="sd">                 (Default: 12)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        - (dict): form dict[m1][m2][CN] = half bond energy term</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">metals</span> <span class="o">=</span> <span class="p">[</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">]</span>
+
+    <span class="c1"># calculate gammas</span>
+    <span class="n">gamma_m1</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">hetero_bde</span> <span class="o">-</span> <span class="n">homo_bde_m2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">homo_bde_m1</span> <span class="o">-</span> <span class="n">homo_bde_m2</span><span class="p">)</span>
+    <span class="n">gamma_m2</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">gamma_m1</span>
+
+    <span class="c1"># create bulkce and gamma dictionaries</span>
+    <span class="n">bulkce</span> <span class="o">=</span> <span class="p">{</span><span class="n">metal1</span><span class="p">:</span> <span class="n">bulkce_m1</span><span class="p">,</span>
+              <span class="n">metal2</span><span class="p">:</span> <span class="n">bulkce_m2</span><span class="p">}</span>
+    <span class="n">gammas</span> <span class="o">=</span> <span class="p">{</span><span class="n">metal1</span><span class="p">:</span> <span class="p">{</span><span class="n">metal1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">:</span> <span class="n">gamma_m1</span><span class="p">},</span>
+              <span class="n">metal2</span><span class="p">:</span> <span class="p">{</span><span class="n">metal2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">metal1</span><span class="p">:</span> <span class="n">gamma_m2</span><span class="p">}}</span>
+
+    <span class="c1"># calculate &quot;total gamma&quot; params (part of BC model that is independent of</span>
+    <span class="c1"># current atomic CN)</span>
+    <span class="n">totgamma</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metals</span><span class="p">:</span>
+        <span class="n">totgamma</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">m2</span> <span class="ow">in</span> <span class="n">metals</span><span class="p">:</span>
+            <span class="n">totgamma</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">m2</span><span class="p">]</span> <span class="o">=</span> <span class="n">gammas</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">m2</span><span class="p">]</span> <span class="o">*</span> <span class="n">bulkce</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cnmax</span><span class="p">)</span>
+
+    <span class="c1"># create coefficient dictionary</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metals</span><span class="p">:</span>
+        <span class="n">coeffs</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">m2</span> <span class="ow">in</span> <span class="n">metals</span><span class="p">:</span>
+            <span class="n">coeffs</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">m2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">if</span> <span class="n">cn</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">totgamma</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">m2</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cn</span><span class="p">)</span>
+                             <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cnmax</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">coeffs</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">build_srf_plot</span><span class="p">(</span><span class="s1">&#39;auag&#39;</span><span class="p">,</span> <span class="s1">&#39;icosahedron&#39;</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.labelpad&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">metals</span> <span class="o">=</span> <span class="s1">&#39;agcu&#39;</span>
+    <span class="n">shapes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;icosahedron&#39;</span><span class="p">:</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;cuboctahedron&#39;</span><span class="p">:</span> <span class="s1">&#39;blue&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;elongated-pentagonal-bipyramid&#39;</span><span class="p">:</span> <span class="s1">&#39;gold&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;fcc-cube&#39;</span><span class="p">:</span> <span class="s1">&#39;violet&#39;</span><span class="p">}</span>
+    <span class="n">posee</span> <span class="o">=</span> <span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicResults</span><span class="o">.</span><span class="n">EE</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="n">posee</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">Smix</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Entropy of mixing (eV / atom K) for binary system&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mf">8.617333262145E-5</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">))</span>
+
+    <span class="c1"># create 3D scatter plot</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm N_</span><span class="si">{Atoms}</span><span class="s1">$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm X_</span><span class="si">{Cu}</span><span class="s1">$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm T_</span><span class="si">{mix}</span><span class="s1">$&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shapes</span><span class="p">:</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">s</span><span class="p">]</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">num_atoms</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">temp</span><span class="p">]</span>
+        <span class="n">conc</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">n_metal2</span> <span class="o">/</span> <span class="n">t</span><span class="o">.</span><span class="n">num_atoms</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">temp</span><span class="p">]</span>
+        <span class="n">Ts</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">EE</span> <span class="o">/</span> <span class="n">Smix</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">n_metal2</span> <span class="o">/</span> <span class="n">t</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">temp</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="n">conc</span><span class="p">,</span> <span class="n">Ts</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">shapes</span><span class="p">[</span><span class="n">s</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">upper</span><span class="p">()[:</span><span class="mi">3</span><span class="p">],</span>
+                   <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm AgCu</span><span class="se">\\</span><span class="s1"> NPs$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ce_expansion</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, CANELa.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

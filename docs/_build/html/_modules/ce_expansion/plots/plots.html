@@ -1,0 +1,347 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ce_expansion.plots.plots &#8212; ce_expansion 1.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ce_expansion.plots.plots</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.lines</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">ce_expansion.atomgraph</span> <span class="k">as</span> <span class="nn">atomgraph</span>
+<span class="kn">import</span> <span class="nn">ce_expansion.npdb</span> <span class="k">as</span> <span class="nn">npdb</span>
+
+
+<span class="k">def</span> <span class="nf">_build_atomgraph</span><span class="p">(</span><span class="n">bimetallic_result</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns an atomgraph object from the result of a bimetallic result query.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bimetallic_result (BimetallicResults): the result of a bimetallic result query</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">         an atomgraph object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bondlist</span> <span class="o">=</span> <span class="n">bimetallic_result</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">bonds_list</span>
+    <span class="k">assert</span> <span class="n">bondlist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">atomgraph</span><span class="o">.</span><span class="n">AtomGraph</span><span class="p">(</span><span class="n">bondlist</span><span class="p">,</span> <span class="n">kind0</span><span class="o">=</span><span class="n">bimetallic_result</span><span class="o">.</span><span class="n">metal1</span><span class="p">,</span> <span class="n">kind1</span><span class="o">=</span><span class="n">bimetallic_result</span><span class="o">.</span><span class="n">metal2</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_verbose_printer</span><span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a drop-in replacement for the print() function that only prints if the variable &quot;verbose&quot; is true</span>
+<span class="sd">    Args:</span>
+<span class="sd">        verbose: Whether to turn on verbose printing or not</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        A function that only prints if `verbose` was set to true.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">inner</span>
+
+
+<span class="k">def</span> <span class="nf">_darken</span><span class="p">(</span><span class="n">color</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a hexidecimal color and makes it a shade darker</span>
+<span class="sd">    :param color: The hexidecimal color to darken</span>
+<span class="sd">    :return: A darkened version of the hexidecimal color</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the edge color</span>
+    <span class="n">darker</span> <span class="o">=</span> <span class="s2">&quot;#&quot;</span>
+    <span class="n">hex1</span> <span class="o">=</span> <span class="n">color</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">hex2</span> <span class="o">=</span> <span class="n">color</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+    <span class="n">hex3</span> <span class="o">=</span> <span class="n">color</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="p">[</span><span class="n">hex1</span><span class="p">,</span> <span class="n">hex2</span><span class="p">,</span> <span class="n">hex3</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="s2">&quot;00&quot;</span><span class="p">:</span>
+            <span class="n">darker</span> <span class="o">+=</span> <span class="s2">&quot;00&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">-=</span> <span class="nb">int</span><span class="p">(</span><span class="s2">&quot;11&quot;</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">x</span><span class="p">))[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">darker</span> <span class="o">+=</span> <span class="n">x</span>
+    <span class="k">return</span> <span class="n">darker</span>
+
+
+<div class="viewcode-block" id="plot_bond_types_3D"><a class="viewcode-back" href="../../../index.html#ce_expansion.plots.plots.plot_bond_types_3D">[docs]</a><span class="k">def</span> <span class="nf">plot_bond_types_3D</span><span class="p">(</span><span class="n">systems</span><span class="p">,</span> <span class="n">system_colors</span><span class="p">,</span>
+                       <span class="n">morphologies</span><span class="p">,</span> <span class="n">morphology_markers</span><span class="p">,</span>
+                       <span class="n">sizes</span><span class="p">,</span> <span class="n">point_sizes</span><span class="p">,</span>
+                       <span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots the bond types in 3D. A-B versus A-A versus B-B</span>
+
+<span class="sd">    :param systems: Systems to be investigated</span>
+<span class="sd">    :param system_colors: Corresponding list of colors for those systems</span>
+<span class="sd">    :param morphologies: Morphologies to be investigated</span>
+<span class="sd">    :param morphology_markers: Corresponding list of markers for those morphologies</span>
+<span class="sd">    :param sizes: Sizes to be investigated</span>
+<span class="sd">    :param point_sizes: Corresponding list of point sizes</span>
+<span class="sd">    :param scale: Whether to scale the 3D axes to range from 0 to 1</span>
+<span class="sd">    :param verbose: Whether to verbosely print what the system is doing.</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">_verbose_printer</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c1"># Initialize the pyplot state machine</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;A-A Bonds&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;B-B Bonds&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s2">&quot;A-B Bonds&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_series</span><span class="p">(</span><span class="n">atomgraphs</span><span class="p">,</span> <span class="n">orderings</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">marker</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">morphology</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inner function used to repeatedly add series to the Plt state machine in the below for-loop</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set up coordinates for the 3D plot</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">countMixing</span><span class="p">(</span><span class="n">j</span><span class="p">),</span> <span class="n">atomgraphs</span><span class="p">,</span> <span class="n">orderings</span><span class="p">)))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">scale</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+        <span class="c1"># Do the actual plotting</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="o">!=</span> <span class="n">maxsize</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">system</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">morphology</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">zs</span><span class="o">=</span><span class="n">z</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+    <span class="c1"># Scales point sizes</span>
+    <span class="n">maxsize</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">point_sizes</span><span class="p">)</span>
+    <span class="n">known_graphs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;icosahedron&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s2">&quot;cuboctahedron&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s2">&quot;elongated-pentagonal-bipyramid&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+    <span class="k">for</span> <span class="n">system</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">systems</span><span class="p">,</span> <span class="n">system_colors</span><span class="p">):</span>
+        <span class="n">logger</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">morph</span><span class="p">,</span> <span class="n">marker</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">morphologies</span><span class="p">,</span> <span class="n">morphology_markers</span><span class="p">):</span>
+            <span class="n">logger</span><span class="p">(</span><span class="n">morph</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">size</span><span class="p">,</span> <span class="n">pointsize</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">point_sizes</span><span class="p">):</span>
+                <span class="n">logger</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+                <span class="c1"># Database query for this alloy/morphology/size</span>
+                <span class="n">testcases</span> <span class="o">=</span> <span class="n">npdb</span><span class="o">.</span><span class="n">db_inter</span><span class="o">.</span><span class="n">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="n">system</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">morph</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">testcases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># Check that we actually returned results from the query</span>
+                    <span class="k">continue</span>
+                <span class="c1"># Construct the atomgraphs and their chemical orderings</span>
+                <span class="n">graphs</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">testcases</span><span class="p">)</span>
+                <span class="n">orderings</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">testcases</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">count</span><span class="p">,</span> <span class="n">case</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">testcases</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">bonds_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">case</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">load_bonds_list</span><span class="p">()</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">graph</span> <span class="o">=</span> <span class="n">known_graphs</span><span class="p">[</span><span class="n">morph</span><span class="p">][</span><span class="n">size</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="n">known_graphs</span><span class="p">[</span><span class="n">morph</span><span class="p">][</span><span class="n">size</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_atomgraph</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
+                        <span class="n">graph</span> <span class="o">=</span> <span class="n">known_graphs</span><span class="p">[</span><span class="n">morph</span><span class="p">][</span><span class="n">size</span><span class="p">]</span>
+                    <span class="n">graphs</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="n">graph</span>
+                    <span class="n">orderings</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">ordering</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+                <span class="c1"># Add the series to the 3D plot</span>
+                <span class="n">add_series</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">graphs</span><span class="p">),</span> <span class="n">orderings</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">marker</span><span class="p">,</span> <span class="n">pointsize</span><span class="p">,</span> <span class="n">maxsize</span><span class="p">,</span> <span class="n">morph</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="plot_bond_types_2D"><a class="viewcode-back" href="../../../index.html#ce_expansion.plots.plots.plot_bond_types_2D">[docs]</a><span class="k">def</span> <span class="nf">plot_bond_types_2D</span><span class="p">(</span><span class="n">bondcounts</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">markers</span><span class="p">,</span> <span class="n">marker_sizes</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Plots the bond types in 2D.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bondcounts (list): List of bondcounts. Each row is of the form [AA-bonds, BB-bonds, AB-bonds]</span>
+<span class="sd">        labels (list): List of labels. What shows up on the legend. Identical labels are plot in the same series.</span>
+<span class="sd">                       Recommended: SystemForm_Morphology (e.g. AgAu_Ico, CuAg_Cuboct, CuAu_EPB, etc.)</span>
+<span class="sd">        colors (list): List of colors. Any matplotlib color spec works here.</span>
+<span class="sd">        markers (list): List of markers. Matplotlib marker specs only.</span>
+<span class="sd">        marker_sizes (list): List of marker sizes, in &quot;points&quot; per matplotlib spec.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">_verbose_printer</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c1"># Figure out which axes are where</span>
+    <span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;AB&quot;</span> <span class="ow">in</span> <span class="n">projection</span> <span class="ow">or</span> <span class="s2">&quot;BA&quot;</span> <span class="ow">in</span> <span class="n">projection</span><span class="p">:</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;AB&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;AA&quot;</span> <span class="ow">in</span> <span class="n">projection</span><span class="p">:</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;AA&quot;</span>
+        <span class="k">elif</span> <span class="s2">&quot;BB&quot;</span> <span class="ow">in</span> <span class="n">projection</span><span class="p">:</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;BB&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;AA&quot;</span> <span class="ow">in</span> <span class="n">projection</span><span class="p">:</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;AA&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;BB&quot;</span> <span class="ow">in</span> <span class="n">projection</span><span class="p">:</span>
+            <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;BB&quot;</span>
+    <span class="k">assert</span> <span class="kc">None</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">axes</span>
+
+    <span class="c1"># Initialize the pyplot state machine</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; vs &quot;</span> <span class="o">+</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; Bonds&quot;</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; Bonds&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; Bonds&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_series</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inner function used to repeatedly add series to the plt state machine</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bcounts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">series</span><span class="p">])</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">marker</span> <span class="o">=</span> <span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">series</span><span class="p">])</span>
+
+        <span class="n">axis_mappings</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;AA&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                         <span class="s2">&quot;BB&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                         <span class="s2">&quot;AB&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">scale</span><span class="p">:</span>
+            <span class="n">nbonds</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">sum</span><span class="p">,</span> <span class="n">bcounts</span><span class="p">)</span>
+            <span class="n">scaled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">,</span> <span class="n">bcounts</span><span class="p">,</span> <span class="n">nbonds</span><span class="p">)))</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">scaled</span><span class="p">[:,</span> <span class="n">axis_mappings</span><span class="p">[</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]]]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">scaled</span><span class="p">[:,</span> <span class="n">axis_mappings</span><span class="p">[</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">bcounts</span><span class="p">[:,</span> <span class="n">axis_mappings</span><span class="p">[</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]]]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">bcounts</span><span class="p">[:,</span> <span class="n">axis_mappings</span><span class="p">[</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]]]</span>
+
+        <span class="c1"># Plotting</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="n">_darken</span><span class="p">(</span><span class="n">color</span><span class="p">),</span> <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">sizes</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+    <span class="c1"># Series binning</span>
+    <span class="n">unique_labels</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span>
+    <span class="n">legend_entries</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">unique_labels</span><span class="p">:</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">bondcounts</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">markers</span><span class="p">,</span> <span class="n">marker_sizes</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">label</span><span class="p">]</span>
+        <span class="n">add_series</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="c1"># Add to legend</span>
+        <span class="n">legend_entry</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">Line2D</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">_darken</span><span class="p">(</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]),</span> <span class="n">marker</span><span class="o">=</span><span class="n">series</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
+        <span class="n">legend_entries</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">legend_entry</span><span class="p">,</span> <span class="n">label</span><span class="p">])</span>
+
+    <span class="c1"># Draw hypothetical-structure lines if set to scale</span>
+    <span class="k">if</span> <span class="n">scale</span><span class="p">:</span>
+        <span class="n">legend_lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">legend_lines_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mix_color</span> <span class="o">=</span> <span class="s2">&quot;#1C2957&quot;</span>
+        <span class="n">nomix_color</span> <span class="o">=</span> <span class="s2">&quot;#CDB87D&quot;</span>
+        <span class="n">linealpha</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">linewidth</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">linestyle</span> <span class="o">=</span> <span class="s2">&quot;:&quot;</span>
+        <span class="k">if</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;AA&quot;</span> <span class="ow">and</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;BB&quot;</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">nomix_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">linealpha</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">mix_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">linealpha</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">mix_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">linealpha</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">mix_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">linealpha</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">mix_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">linealpha</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">nomix_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">linealpha</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">)</span>
+        <span class="n">legend_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">Line2D</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">nomix_color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">))</span>
+        <span class="n">legend_lines_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Hypothetical Perfect Non-Mixing&quot;</span><span class="p">)</span>
+        <span class="n">legend_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">Line2D</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">mix_color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">))</span>
+        <span class="n">legend_lines_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Hypothetical Perfect Mixing&quot;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">legend_entries</span><span class="p">],</span> <span class="p">[</span><span class="n">label</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">legend_entries</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ce_expansion</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, CANELa.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

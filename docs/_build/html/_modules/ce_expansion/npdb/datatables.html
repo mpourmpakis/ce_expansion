@@ -1,0 +1,686 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ce_expansion.npdb.datatables &#8212; ce_expansion 1.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ce_expansion.npdb.datatables</h1><div class="highlight"><pre>
+<span></span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">base</span> <span class="k">import</span> <span class="n">Base</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ce_expansion.npdb.base</span> <span class="k">import</span> <span class="n">Base</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span> <span class="nn">ase</span>
+<span class="kn">import</span> <span class="nn">ase.visualize</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">sqlalchemy</span> <span class="k">as</span> <span class="nn">db</span>
+<span class="kn">from</span> <span class="nn">ase.data</span> <span class="k">import</span> <span class="n">chemical_symbols</span><span class="p">,</span> <span class="n">covalent_radii</span>
+<span class="kn">from</span> <span class="nn">ase.data.colors</span> <span class="k">import</span> <span class="n">jmol_colors</span>
+
+
+<div class="viewcode-block" id="BimetallicResults"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.BimetallicResults">[docs]</a><span class="k">class</span> <span class="nc">BimetallicResults</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Bimetallic GA Simulation Results Datatable</span>
+<span class="sd">    - contains data for most stable structure found</span>
+<span class="sd">      (based on CE) at a given shape, size, and metal composition</span>
+<span class="sd">    - GA varies chemical ordering to find stable NP</span>
+
+<span class="sd">    Columns:</span>
+<span class="sd">    metal1 and metal2 (string(2)): metal element names that are always</span>
+<span class="sd">                                   converted to alphabetical order</span>
+<span class="sd">                                   - e.g. metal1 = Ag, metal2 = Cu</span>
+<span class="sd">    shape (string): shape of NP</span>
+<span class="sd">    num_atoms (int): number of atoms in NP</span>
+<span class="sd">    diameter (float): &quot;diameter&quot; of NP measured using (atom.cell.max() / 10)</span>
+<span class="sd">                      - units = nm</span>
+<span class="sd">                      - measured in ga.run_ga</span>
+<span class="sd">                      - NOTE: std measuring, but there might be a better way</span>
+<span class="sd">    n_metal1, n_metal2 (int): number of metal(1)(2) in NP</span>
+<span class="sd">                              - must add up to num_atoms</span>
+<span class="sd">                              - constrains composition of NP</span>
+<span class="sd">    CE (float): cohesive energy of NP (in ev / atom)</span>
+<span class="sd">    EE (float): excess energy of NP (in ev / atom)</span>
+<span class="sd">    ordering (string): string of 1&#39;s and 0&#39;s mapping atom type</span>
+<span class="sd">                       to Atoms skeleton</span>
+<span class="sd">                       - 1: metal2</span>
+<span class="sd">                       - 0: metal1</span>
+<span class="sd">                       - atoms of each NP are ordered with an index to</span>
+<span class="sd">                         ensure ordering maps correctly</span>
+
+<span class="sd">    Autofilled Columns:</span>
+<span class="sd">    id: primary key (unique)</span>
+<span class="sd">    structure_id (int): Foreign key from Nanoparticles to link GA result</span>
+<span class="sd">                        to a single NP</span>
+
+<span class="sd">    Mapped Properties:</span>
+<span class="sd">    nanoparticle: (Nanoparticle Datatable entry) links to NP skeleton used</span>
+<span class="sd">                  in GA sim (size, and shape constraints)</span>
+
+<span class="sd">    -------</span>
+<span class="sd">    METHODS</span>
+<span class="sd">    -------</span>
+<span class="sd">    build_atoms_obj: Returns atoms object of nanoparticle using ordering</span>
+
+<span class="sd">    build_chem_formula: Returns chemical formula of string e.g. &#39;Au23_Cu32&#39;</span>
+
+<span class="sd">    build_prdf: returns data of partial radial distribution function</span>
+<span class="sd">        Args:</span>
+<span class="sd">            alpha (str): reference position metal</span>
+<span class="sd">            beta (str): metal to measure distance from reference metal</span>
+<span class="sd">            dr (float): shell size to quantify counts in PRDF</span>
+
+<span class="sd">    build_prdf_plot: creates 4 subplots containing</span>
+<span class="sd">                     - metal1 : metal1 PRDF (blue)</span>
+<span class="sd">                     - metal2 : metal2 PRDF (red)</span>
+<span class="sd">                     - metal1 : metal2 PRDF (purple)</span>
+<span class="sd">                     - png image of NP</span>
+
+<span class="sd">    save_np: saves atoms object of nanoparticle</span>
+<span class="sd">        Args:</span>
+<span class="sd">            - path (str): path to save Atoms object (*.xyz, *.pdb, etc.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;bimetallic_results&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">metal1</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">metal2</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">diameter</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">n_metal1</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">n_metal2</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">CE</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">EE</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">ordering</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">50000</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">structure_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;nanoparticles.id&#39;</span><span class="p">))</span>
+    <span class="n">last_updated</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+                             <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">diameter</span><span class="p">,</span>
+                 <span class="n">n_metal1</span><span class="p">,</span> <span class="n">n_metal2</span><span class="p">,</span> <span class="n">CE</span><span class="p">,</span> <span class="n">EE</span><span class="p">,</span> <span class="n">ordering</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metal1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span> <span class="o">=</span> <span class="n">num_atoms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">=</span> <span class="n">diameter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_metal1</span> <span class="o">=</span> <span class="n">n_metal1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_metal2</span> <span class="o">=</span> <span class="n">n_metal2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CE</span> <span class="o">=</span> <span class="n">CE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EE</span> <span class="o">=</span> <span class="n">EE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ordering</span> <span class="o">=</span> <span class="n">ordering</span>
+
+        <span class="c1"># attribute to store atoms object once it has been built</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="BimetallicResults.build_atoms_obj"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.BimetallicResults.build_atoms_obj">[docs]</a>    <span class="k">def</span> <span class="nf">build_atoms_obj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns ase.Atoms object of stable NP found</span>
+<span class="sd">        - NP built with Nanoparticle.get_atoms_obj_skel</span>
+<span class="sd">          and atom type added in using self.ordering</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (ase.Atoms): NP from entry</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">get_atoms_obj_skel</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ordering</span><span class="p">,</span> <span class="n">atom</span><span class="p">):</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">symbol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metal1</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">atom</span></div>
+
+<div class="viewcode-block" id="BimetallicResults.build_chem_formula"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.BimetallicResults.build_chem_formula">[docs]</a>    <span class="k">def</span> <span class="nf">build_chem_formula</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns chemical formula of bimetallic NP</span>
+<span class="sd">        in alphabetical order</span>
+<span class="sd">        - e.g. Ag6_Au7</span>
+
+<span class="sd">        KArgs:</span>
+<span class="sd">        latex (bool): if True, chemical formula is returned in Latex Math form</span>
+<span class="sd">                      (Default: False)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (str)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">latex</span><span class="p">:</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm </span><span class="si">%s</span><span class="s1">_{</span><span class="si">%i</span><span class="s1">}</span><span class="si">%s</span><span class="s1">_{</span><span class="si">%i</span><span class="s1">}$&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metal1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metal1</span><span class="p">,</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metal2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bold</span><span class="p">:</span>
+                <span class="n">form</span> <span class="o">=</span> <span class="n">form</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">rm&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">rm </span><span class="se">\\</span><span class="s1">bf&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">form</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s%i</span><span class="s1">_</span><span class="si">%s%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metal1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metal1</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metal2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BimetallicResults.build_prdf"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.BimetallicResults.build_prdf">[docs]</a>    <span class="k">def</span> <span class="nf">build_prdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates partial radial distribution functions</span>
+<span class="sd">        of metal &lt;alpha&gt; vs. metal &lt;beta&gt;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            alpha (str):</span>
+<span class="sd">            beta (str):</span>
+<span class="sd">            dr (float):</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Histogram data of each metal in the shells</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># cutoff = diameter in angstrom</span>
+        <span class="n">cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diameter</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="n">atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_atoms_obj</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">alpha</span> <span class="ow">or</span> <span class="n">beta</span><span class="p">):</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metal1</span>
+            <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span>
+
+        <span class="c1"># booleans to determine if RDF is comparing all atoms,</span>
+        <span class="c1"># same type of atoms, or two different atom types</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">beta</span><span class="p">:</span>
+            <span class="n">bet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">position</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">atoms</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">beta</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bet</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> not present in system&#39;</span> <span class="o">%</span> <span class="n">beta</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">alpha</span><span class="p">:</span>
+            <span class="n">alp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">position</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">atoms</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">alpha</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">alpha</span> <span class="o">==</span> <span class="n">beta</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">beta</span><span class="p">:</span>
+                <span class="n">atoms</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">atoms</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">alpha</span><span class="p">])</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">positions</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">positions</span>
+
+        <span class="n">vol</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">cutoff</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">))</span>
+            <span class="n">rho</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">/</span> <span class="n">vol</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alp</span><span class="p">))</span>
+            <span class="n">rho</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bet</span><span class="p">)</span> <span class="o">/</span> <span class="n">vol</span>
+
+        <span class="k">def</span> <span class="nf">hist</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">dr</span><span class="o">=</span><span class="n">dr</span><span class="p">,</span> <span class="n">max_d</span><span class="o">=</span><span class="n">cutoff</span><span class="p">):</span>
+            <span class="n">half_dr</span> <span class="o">=</span> <span class="n">dr</span> <span class="o">/</span> <span class="mf">2.</span>
+            <span class="n">high</span> <span class="o">=</span> <span class="n">max_d</span> <span class="o">+</span> <span class="p">(</span><span class="n">dr</span> <span class="o">-</span> <span class="n">max_d</span> <span class="o">%</span> <span class="n">dr</span><span class="p">)</span>
+            <span class="n">bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">high</span> <span class="o">/</span> <span class="n">dr</span><span class="p">)</span>
+            <span class="n">gr</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span>
+                                 <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="p">))</span>
+            <span class="n">gr</span> <span class="o">=</span> <span class="n">gr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">gr</span><span class="p">,</span> <span class="n">x</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">gr</span>
+
+        <span class="n">counts</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">hist</span><span class="p">([])</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># if all atoms or same type of atoms</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)):</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">temp</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">counts</span> <span class="o">+=</span> <span class="n">hist</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span>
+
+        <span class="c1"># if two different types of atoms</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">alp</span><span class="p">:</span>
+                <span class="n">dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">bet</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">counts</span> <span class="o">+=</span> <span class="n">hist</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span>
+        <span class="n">gr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dr</span> <span class="o">*</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">N</span><span class="p">),</span>
+                       <span class="n">out</span><span class="o">=</span><span class="n">counts</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="p">(</span><span class="n">x</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">dr</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">gr</span></div>
+
+<div class="viewcode-block" id="BimetallicResults.build_prdf_plot"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.BimetallicResults.build_prdf_plot">[docs]</a>    <span class="k">def</span> <span class="nf">build_prdf_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds a plt.Figure with PRDF subplots:</span>
+<span class="sd">        M1 vs M1, M1 vs M2</span>
+<span class="sd">        M2 vs M1, M2 vs M2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#        red        purple         blue</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;#1f77b4&#39;</span><span class="p">,</span> <span class="s1">&#39;#9467bd&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;#d62728&#39;</span><span class="p">]</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+
+        <span class="n">metals</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">metal1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span><span class="p">]</span>
+        <span class="n">max_y</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                <span class="c1"># select subplot axis</span>
+                <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+
+                <span class="c1"># visualize NP</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_atoms_obj</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">atom</span><span class="p">:</span>
+                        <span class="n">circ</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">((</span><span class="n">a</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                                          <span class="n">radius</span><span class="o">=</span><span class="n">covalent_radii</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">number</span><span class="p">],</span>
+                                          <span class="n">facecolor</span><span class="o">=</span><span class="n">jmol_colors</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">number</span><span class="p">],</span>
+                                          <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+                                          <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                          <span class="n">zorder</span><span class="o">=</span><span class="n">a</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                        <span class="n">ax</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">circ</span><span class="p">)</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">autoscale</span><span class="p">()</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+                <span class="c1"># calculate PRDF</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">x</span><span class="p">,</span> <span class="n">prdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_prdf</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">metals</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">beta</span><span class="o">=</span><span class="n">metals</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">prdf</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_y</span><span class="p">:</span>
+                        <span class="n">max_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">prdf</span><span class="p">)</span>
+
+                    <span class="c1"># plot PRDF</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">prdf</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cols</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">])</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;r ($</span><span class="se">\\</span><span class="s1">rm </span><span class="se">\\</span><span class="s1">AA$)&#39;</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;normal&#39;</span><span class="p">,</span>
+                                  <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm g_{</span><span class="si">%s</span><span class="s1">, </span><span class="si">%s</span><span class="s1">}(r)$&#39;</span>
+                                 <span class="o">%</span> <span class="p">(</span><span class="n">metals</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">metals</span><span class="p">[</span><span class="n">j</span><span class="p">]),</span>
+                                 <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Partial Radial Distribution Functions for</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">build_chem_formula</span><span class="p">(</span><span class="n">latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                     <span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;normal&#39;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">(</span><span class="n">rect</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+    <span class="k">def</span> <span class="nf">build_central_rdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">pcty</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_atoms_obj</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># center atoms at origin (COP)</span>
+        <span class="n">atoms</span><span class="o">.</span><span class="n">positions</span> <span class="o">-=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">positions</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># calculate distances from origin</span>
+        <span class="n">dists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># calculate distances from COP for each metal type</span>
+        <span class="n">dist_m1</span> <span class="o">=</span> <span class="n">dists</span><span class="p">[</span><span class="n">atoms</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">metal1</span><span class="p">]</span>
+        <span class="n">dist_m2</span> <span class="o">=</span> <span class="n">dists</span><span class="p">[</span><span class="n">atoms</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span><span class="p">]</span>
+
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+        <span class="c1"># get jmol color for each metal</span>
+        <span class="n">m1_color</span> <span class="o">=</span> <span class="n">jmol_colors</span><span class="p">[</span><span class="n">chemical_symbols</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metal1</span><span class="p">)]</span>
+        <span class="n">m2_color</span> <span class="o">=</span> <span class="n">jmol_colors</span><span class="p">[</span><span class="n">chemical_symbols</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metal2</span><span class="p">)]</span>
+
+        <span class="c1"># set nbins to num shells if not given</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">nbins</span><span class="p">:</span>
+            <span class="n">nbins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">num_shells</span>
+
+        <span class="n">counts_m1</span><span class="p">,</span> <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">dist_m1</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">nbins</span><span class="p">)</span>
+        <span class="n">counts_m2</span><span class="p">,</span> <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">dist_m2</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">nbins</span><span class="p">)</span>
+
+        <span class="c1"># get bins for ax.hist</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dists</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">nbins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">bin_edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">counts_m1</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">m1_color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metal1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">counts_m2</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">m2_color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">metal2</span><span class="p">)</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Distance from Core ($</span><span class="se">\\</span><span class="s1">rm </span><span class="se">\\</span><span class="s1">AA$)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Number of Atoms&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">fig</span>
+
+<div class="viewcode-block" id="BimetallicResults.save_np"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.BimetallicResults.save_np">[docs]</a>    <span class="k">def</span> <span class="nf">save_np</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves stable NP to desired path</span>
+<span class="sd">        - uses ase to save</span>
+<span class="sd">        - supports all ase save types</span>
+<span class="sd">          e.g. xyz, pdb, png, etc.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if saved successfully</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">atom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_atoms_obj</span><span class="p">()</span>
+        <span class="n">atom</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;CE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CE</span>
+        <span class="n">atom</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;EE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">EE</span>
+        <span class="n">atom</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="BimetallicResults.show"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.BimetallicResults.show">[docs]</a>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shows nanoparticle using ase.visualize.view</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ase</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">build_atoms_obj</span><span class="p">())</span></div></div>
+
+
+<div class="viewcode-block" id="Nanoparticles"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.Nanoparticles">[docs]</a><span class="k">class</span> <span class="nc">Nanoparticles</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Nanoparticles (NP) Skeleton Datatable</span>
+<span class="sd">    - contains header info for NP skeletons used in GA sims</span>
+
+<span class="sd">    Columns:</span>
+<span class="sd">    shape (string): shape of NP</span>
+<span class="sd">    num_atoms (int): number of atoms in NP</span>
+<span class="sd">    num_shells (int): number of shells used to build NP</span>
+<span class="sd">                      from structure_gen module</span>
+<span class="sd">                      - not required in initial entry</span>
+
+<span class="sd">    Autofilled Columns:</span>
+<span class="sd">    id: primary key (unique)</span>
+<span class="sd">    bimetallic_results (one-to-many): links to entries in BimetallicResults</span>
+<span class="sd">                                      that used this NP skeleton</span>
+<span class="sd">                                      - new BimetallicResults entries require</span>
+<span class="sd">                                        a NP to be entered</span>
+<span class="sd">                                      - one NP can have many BimetallicResults</span>
+
+<span class="sd">    Other Attributes:</span>
+<span class="sd">    bonds_list (np.array): used to carry bonds_list for GA sims</span>
+<span class="sd">    atoms_obj (ase.Atoms): stores an ase.Atoms skeleton after being built with</span>
+<span class="sd">                           get_atoms_obj_skel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;nanoparticles&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">num_shells</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">orm</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Atoms&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete&#39;</span><span class="p">,</span>
+                                <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;nanoparticle&#39;</span><span class="p">)</span>
+    <span class="n">bimetallic_results</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">orm</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;BimetallicResults&#39;</span><span class="p">,</span>
+                                             <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;nanoparticle&#39;</span><span class="p">)</span>
+
+    <span class="c1"># used to attach bond_list to data entry</span>
+    <span class="c1"># does not store bond_list in DB</span>
+    <span class="n">bonds_list</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">num_bonds</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">atoms_obj</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span> <span class="o">=</span> <span class="n">num_atoms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_shells</span> <span class="o">=</span> <span class="n">num_shells</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span>
+
+<div class="viewcode-block" id="Nanoparticles.get_atoms_obj_skel"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.Nanoparticles.get_atoms_obj_skel">[docs]</a>    <span class="k">def</span> <span class="nf">get_atoms_obj_skel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds NP in the form of a Cu NP ase.Atoms object</span>
+<span class="sd">        - stores under self.atoms_obj property</span>
+<span class="sd">        - returns atoms_obj</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span><span class="p">([</span><span class="n">ase</span><span class="o">.</span><span class="n">Atom</span><span class="p">(</span><span class="s1">&#39;Cu&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">i</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+                                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span></div>
+
+<div class="viewcode-block" id="Nanoparticles.get_diameter"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.Nanoparticles.get_diameter">[docs]</a>    <span class="k">def</span> <span class="nf">get_diameter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_atoms_obj_skel</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span><span class="o">.</span><span class="n">positions</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span>
+                   <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span><span class="o">.</span><span class="n">positions</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="mi">10</span></div>
+
+    <span class="k">def</span> <span class="nf">load_bonds_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_bonds</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span>
+                            <span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;bond_lists&#39;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">.npy&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_shells</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_bonds</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Atoms"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.Atoms">[docs]</a><span class="k">class</span> <span class="nc">Atoms</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Atom coordinates that link to a Nanoparticles skeleton</span>
+<span class="sd">    - no atom type needed since these only correspond to a skeleton</span>
+<span class="sd">    - BimetallicResults holds atom type info</span>
+
+<span class="sd">    Columns:</span>
+<span class="sd">    index (int): atom index to ensure atom types from</span>
+<span class="sd">                 BimetallicResults.ordering can be correctly mapped</span>
+<span class="sd">    x, y, z (float): coordinates of atom</span>
+<span class="sd">    nanoparticle (many-to-one): Nanoparticles entry that atom belongs to</span>
+<span class="sd">                                - atom must belong to one NP</span>
+
+<span class="sd">    Autofilled Columns:</span>
+<span class="sd">    id (int): primary key (unique)</span>
+<span class="sd">    structure_id (int): Foreign key from Nanoparticles to link atom</span>
+<span class="sd">                        to a single NP</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;atoms&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">structure_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span>
+                             <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;nanoparticles.id&#39;</span><span class="p">,</span>
+                                           <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;CASCADE&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">nanoparticle</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nanoparticle</span> <span class="o">=</span> <span class="n">nanoparticle</span></div>
+
+
+<div class="viewcode-block" id="ModelCoefficients"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.ModelCoefficients">[docs]</a><span class="k">class</span> <span class="nc">ModelCoefficients</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bond-Centric Model Coefficients (gamma) precalculated</span>
+<span class="sd">        based on atom types and coordination number</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;model_coefficients&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">element1</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">element2</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">cn</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">bond_energy</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element1</span><span class="p">,</span> <span class="n">element2</span><span class="p">,</span> <span class="n">cn</span><span class="p">,</span> <span class="n">bond_energy</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element1</span> <span class="o">=</span> <span class="n">element1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element2</span> <span class="o">=</span> <span class="n">element2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cn</span> <span class="o">=</span> <span class="n">cn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_energy</span> <span class="o">=</span> <span class="n">bond_energy</span></div>
+
+
+<div class="viewcode-block" id="BimetallicLog"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.BimetallicLog">[docs]</a><span class="k">class</span> <span class="nc">BimetallicLog</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Table to log batch GA sims</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;bimetallic_log&#39;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">runtime</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Interval</span><span class="p">)</span>
+    <span class="n">metal1</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">metal2</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">)</span>
+    <span class="n">ga_generations</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">shell_range</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">)</span>
+    <span class="n">new_min_structs</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">tot_structs</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">batch_run_num</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">ga_generations</span><span class="p">,</span>
+                 <span class="n">shell_range</span><span class="p">,</span> <span class="n">new_min_structs</span><span class="p">,</span> <span class="n">tot_structs</span><span class="p">,</span>
+                 <span class="n">batch_run_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runtime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metal1</span> <span class="o">=</span> <span class="n">metal1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span> <span class="o">=</span> <span class="n">metal2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ga_generations</span> <span class="o">=</span> <span class="n">ga_generations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell_range</span> <span class="o">=</span> <span class="n">shell_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_min_structs</span> <span class="o">=</span> <span class="n">new_min_structs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tot_structs</span> <span class="o">=</span> <span class="n">tot_structs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_run_num</span> <span class="o">=</span> <span class="n">batch_run_num</span></div>
+
+
+<div class="viewcode-block" id="PartialRadialDists"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.PartialRadialDists">[docs]</a><span class="k">class</span> <span class="nc">PartialRadialDists</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Holds partial radial distribution functions.</span>
+
+<span class="sd">    Columns:</span>
+<span class="sd">        prdf_type (str) : The type of PRDF being calculated here (atom or NP centered)</span>
+<span class="sd">                          The type can be one of the two following values:</span>
+<span class="sd">                                Atom_Centered</span>
+<span class="sd">                                NP_Centered</span>
+<span class="sd">                          and will raise a ValueError if one of these two values is not used.</span>
+<span class="sd">        element_center (str[2]) : The element at the center of the distribution (if atomic prdf being used)</span>
+<span class="sd">                                  If this is supplied for an NP-centered PRDF, the program will raise a ValueError.</span>
+<span class="sd">        element_tracked (str[2]) : The element whose radial distribution we are following</span>
+<span class="sd">        distance (float) : How far away from the center of the distribution we are</span>
+<span class="sd">        frequency (float) : Frequency of element_tracked found at that particular distance</span>
+<span class="sd">        np_id (int) : The NP this radial distribution function corresponds to</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;PartialRadialDists&quot;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">prdf_type</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">element_center</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">element_tracked</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">frequency</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">np_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">np_id</span><span class="p">,</span> <span class="n">prdf_type</span><span class="p">,</span> <span class="n">element_tracked</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">element_center</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">prdf_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Atom_Centered&quot;</span><span class="p">,</span> <span class="s2">&quot;NP_Centered&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prdf_type</span> <span class="o">=</span> <span class="n">prdf_type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected either Atom_Centered or NP_Centered for prdf_type&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element_tracked</span> <span class="o">=</span> <span class="n">element_tracked</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="n">distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">frequency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">np_id</span> <span class="o">=</span> <span class="n">np_id</span>
+        <span class="k">if</span> <span class="n">element_center</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">prdf_type</span> <span class="o">==</span> <span class="s2">&quot;Atom_Centered&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">element_center</span> <span class="o">=</span> <span class="n">element_center</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Element_center only makes sense for atom-centered PRDFs.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PostProcessing"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.datatables.PostProcessing">[docs]</a><span class="k">class</span> <span class="nc">PostProcessing</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Logs post-processed data for a NP.</span>
+
+<span class="sd">    Currently we have:</span>
+<span class="sd">        - Chemical Ordering Parameter</span>
+<span class="sd">        - Partial Radial Distribution Function (atom-centric)</span>
+<span class="sd">        - Partial Radial Distribution Function (NP-centric)</span>
+
+<span class="sd">    Colunns:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;PostProcessing&quot;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">chemical_ordering_parameter</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">atomic_prdf_pointer</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">np_prdf_pointer</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">np_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># Corresponds to the Nanoparticle Class&#39;s ID</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chemical_ordering_parameter</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">atomic_prdf_pointer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">np_prdf_pointer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">np_id</span> <span class="o">=</span> <span class="n">np_id</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ce_expansion</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, CANELa.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

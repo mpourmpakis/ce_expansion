@@ -1,13 +1,8 @@
-.. ce_expansion documentation master file, created by
-   sphinx-quickstart on Tue Oct 15 17:40:00 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to ce_expansion's documentation!
 ========================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
 
@@ -18,3 +13,50 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+ce_expansion.atomgraph
+==============
+.. automodule:: ce_expansion.atomgraph.atomgraph
+    :members:
+
+.. automodule:: ce_expansion.atomgraph.adjacency
+    :members:
+
+.. automodule:: ce_expansion.atomgraph.interface
+    :members:
+
+ce_expansion.npdb
+=================
+.. automodule:: ce_expansion.npdb.base
+    :members:
+
+.. automodule:: ce_expansion.npdb.datatables
+    :members:
+
+.. automodule:: ce_expansion.npdb.db_inter
+    :members:
+
+.. automodule:: ce_expansion.npdb.db_utils
+    :members:
+
+ce_expansion.ga
+===============
+.. automodule:: ce_expansion.ga.ga
+    :members:
+.. automodule:: ce_expansion.ga.structure_gen
+    :members:
+.. automodule:: ce_expansion.ga.batch_ga_run
+    :members:
+
+ce_expansion.plots
+==================
+.. automodule:: ce_expansion.plots.plot_defaults
+    :members:
+.. automodule:: ce_expansion.plots.plots
+    :members:
+.. automodule:: ce_expansion.plots.triplot
+    :members:
+.. automodule:: ce_expansion.plots.shell_vs_tot
+    :members:
+.. automodule:: ce_expansion.plots.cn_dist_plot
+    :members:
