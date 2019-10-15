@@ -11,9 +11,16 @@ DEBUG_MODE = False
 DEFAULT_NUM_ELEMENTS = 2  # Polymetallicity of the system; 2=bimetallic. Only works for bimetallics at the moment.
 DEFAULT_MAX_COORDINATION = 12  # Maximum possible coordination number
 
-# Figure out where we are on the system, and make the bin directory
+# Figure out where we are on the system, and make it to the bin directory
+# Current structure is:
+#   Project
+#   |---bin
+#       |---lib.dll
+#   |---src
+#       |---atomgraph
+#           |----interface.py
 path = os.path.realpath(__file__)
-bin_directory = os.sep.join(path.split(os.sep)[:-2] + ["bin"])
+bin_directory = os.sep.join(path.split(os.sep)[:-3] + ["bin"])
 
 # Set the correct library for the given platform
 if DEBUG_MODE:

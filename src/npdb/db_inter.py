@@ -1,27 +1,28 @@
-import sqlalchemy as db
-import numpy as np
-import pickle
-import os
 import datetime
+import os
+import pickle
+import sys
 
-try:
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.ticker
+import numpy as np
+import pandas as pd
+import sqlalchemy as db
+from ase.data import chemical_symbols
+from ase.data.colors import jmol_colors
+
+if __name__ == "__main__":
     import db_utils
     import base
     import datatables as tbl
-except:
+else:
     from npdb import db_utils
     import npdb.base as base
     import npdb.datatables as tbl
-import pandas as pd
-import matplotlib
-import matplotlib.ticker
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import sys
-from ase.data.colors import jmol_colors
-from ase.data import chemical_symbols
+
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import plot_defaults
 
 """
     Functions to interface with NP GA Database

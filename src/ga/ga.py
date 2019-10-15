@@ -12,17 +12,11 @@ from datetime import datetime as dt
 import ase.io
 import matplotlib.pyplot as plt
 import numpy as np
-from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
 
-import atomgraph
 import structure_gen
+from atomgraph import atomgraph
 from npdb import db_inter
-
-try:
-    import ce_expansion.src.npdb.db_inter as db_inter
-except:
-    pass
 
 # random.seed(9876)
 
@@ -1794,7 +1788,7 @@ def test_FePt_nanop():
     """
     # get path to FePt_np folder in data
     filedir = os.path.dirname(os.path.realpath(__file__))
-    fept_path = os.path.join(filedir, '..', 'data', 'fept_np')
+    fept_path = os.path.join(filedir, '..', '..', 'data', 'fept_np')
 
     # read in atoms object
     atompath = os.path.join(fept_path, 'FePt_cns.xyz')

@@ -3,11 +3,11 @@
 # Library for buiding bonding lists/tables/matrices
 # James Dean, 2019
 
-import pickle
 import os
+import pathlib
+
 import ase.neighborlist
 import numpy as np
-import pathlib
 
 # Set up globals for defaults
 DEFAULT_ELEMENTS = ("Cu", "Cu")
@@ -15,8 +15,8 @@ DEFAULT_RADIUS = 2.8
 
 
 # Functions below
-def buildBondsList(atoms_object: "ase.Atoms",
-                   radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
+def buildBondsList(atoms_object,
+                   radius_dictionary={DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
     """
     2D bonds list from an ASE atoms object.
 
@@ -32,8 +32,8 @@ def buildBondsList(atoms_object: "ase.Atoms",
     return np.column_stack((sources, destinations))
 
 
-def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
-                         radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "np.ndarray":
+def buildAdjacencyMatrix(atoms_object,
+                         radius_dictionary={DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
     """
     Sparse matrix representation from an ase atoms object.
 
@@ -55,9 +55,9 @@ def buildAdjacencyMatrix(atoms_object: "ase.Atoms",
     return adjacency_matrix
 
 
-def buildAdjacencyList(atoms_object: "ase.Atoms",
-                       atom_name: "str" = None,
-                       radius_dictionary: "dict" = {DEFAULT_ELEMENTS: DEFAULT_RADIUS}) -> "list":
+def buildAdjacencyList(atoms_object,
+                       atom_name=None,
+                       radius_dictionary={DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
     """
       Adjacency list representation for an ase atoms object.
 
@@ -71,9 +71,19 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
 
     """
     # Check to see if adjacency list has already been generated
-    # NOTE: based on data file paths, not ideal but functional for the moment
-    pathlib.Path('../data/adjacency_lists/').mkdir(parents=True, exist_ok=True)
-    fpath = '../data/adjacency_lists/%s.npy' % atom_name
+    # Current folder structure:
+    #   Project
+    #   |---bin
+    #       |---lib.dll
+    #   |---src
+    #       |---atomgraph
+    #           |----interface.py
+
+    path = os.path.realpath(__file__)
+    data_directory = os.sep.join(path.split(os.sep)[:-3] + ["data"])
+
+    pathlib.Path(os.sep.join([data_directory, 'adjacency_lists'])).mkdir(parents=True, exist_ok=True)
+    fpath = os.sep.join([data_directory, '%s.npy']) % atom_name
     if os.path.isfile(fpath) and 0:
         adj = np.load(fpath)
         return [[i for i in a] for a in adj]
@@ -103,7 +113,7 @@ def buildAdjacencyList(atoms_object: "ase.Atoms",
     else:
         result = np.delete(adjacency_list, -1)
         if atom_name:
-            np.save('../data/adjacency_lists/%s.npy' % atom_name, result)
+            np.save(os.sep.join([data_directory, '%s.npy']) % atom_name, result)
         return [[i for i in a] for a in result]
 
 
@@ -116,4 +126,3 @@ if __name__ == '__main__':
     bonds_list = buildBondsList(nanoparticle)
 
     print(adjacency_list, adjacency_matrix, bonds_list)
-

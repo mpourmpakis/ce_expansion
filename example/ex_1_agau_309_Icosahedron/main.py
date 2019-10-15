@@ -6,8 +6,7 @@ import sys
 import ase.io
 import numpy as np
 
-import adjacency
-import atomgraph
+from atomgraph import atomgraph, adjacency
 
 # Tell the program where /src/ and /data/ can be found
 data = os.path.join(os.path.realpath(__file__), '..', '..', '..', 'data', 'larson_et_al')

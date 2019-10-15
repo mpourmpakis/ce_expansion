@@ -1,8 +1,8 @@
 import numpy as np
 
-import atomgraph
 import npdb.db_inter
 import plots
+from atomgraph import atomgraph
 
 
 def build_atomgraph(bimetallic_result):

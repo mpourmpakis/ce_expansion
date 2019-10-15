@@ -1,13 +1,13 @@
-import ga
 import os
-import time
-import itertools
-from datetime import datetime
-import numpy as np
-import matplotlib.pyplot as plt
 import sys
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+import time
+from datetime import datetime
+
+import ga
 from npdb import db_inter
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
 
 """
        Main script to run a batch submission job for GA sims

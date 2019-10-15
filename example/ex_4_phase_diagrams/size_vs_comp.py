@@ -295,9 +295,7 @@ def make_filled(points, alloy, resolution=10):
         plt.close()
 
 alloys = ["AgAu" , "AgCu", "AuCu"]
-print("asdf")
 for alloy in alloys:
     print(alloy)
     results = get_best(alloy, [0, 4000], [0, 1000], temperature_res=250)
-    print("asdfasdfasdf")
     make_filled(results, alloy, resolution=1000)
