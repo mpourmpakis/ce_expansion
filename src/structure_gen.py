@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import os
-import ase.cluster
-import ase.lattice
 import pathlib
 import pickle
+
+import ase.cluster
+import ase.lattice
 import numpy as np
-import adjacency
+
+from atomgraph import adjacency
 from npdb import db_inter
 
 # build paths
@@ -15,8 +17,8 @@ atompath = os.path.join(datapath, 'atom_objects')
 bondpath = os.path.join(datapath, 'bond_lists')
 
 
-def build_structure_sql(shape: "str", num_shells: "int",
-                        build_bonds_list: "bool" =True):
+def build_structure_sql(shape, num_shells,
+                        build_bonds_list =True):
     """
     Creates NP of specified shape and size (based on num_shells)
 
@@ -77,8 +79,8 @@ def build_structure_sql(shape: "str", num_shells: "int",
     return nanop
 
 
-def build_structure(shape: "str", num_shells: "int",
-                    return_bonds_list: "bool" = True):
+def build_structure(shape, num_shells,
+                    return_bonds_list = True):
     """
     Creates NP of specified shape and size (based on num_shells)
 
@@ -162,7 +164,7 @@ class NPBuilder(object):
 
     Returns:
     (ase.Atoms): the NP skeleton"""
-    def cuboctahedron(num_shells: "int", kind: "str" = "Cu") -> "ase.Atoms":
+    def cuboctahedron(num_shells, kind = "Cu"):
         """
         Creates a cuboctahedral NP.
 
@@ -182,8 +184,8 @@ class NPBuilder(object):
         return ase.Atoms(ase.cluster.Octahedron(kind, 2 * num_shells + 1,
                                                 cutoff=num_shells), pbc=False)
 
-    def elongated_pentagonal_bipyramid(num_shells: "int",
-                                       kind: "str" = "Cu") -> "ase.Atoms":
+    def elongated_pentagonal_bipyramid(num_shells,
+                                       kind = "Cu"):
         """
         Creates an elongated-pentagonal-bipyramidal NP.
 
@@ -202,7 +204,7 @@ class NPBuilder(object):
                     ase.cluster.Decahedron("Cu", num_shells, num_shells, 0),
                     pbc=False)
 
-    def fcc_cube(num_units: "int", kind: "str" = "Cu") -> "ase.Atoms":
+    def fcc_cube(num_units, kind = "Cu"):
         """
         Creates an FCC-cube with faces on the {100} family of planes.
 
@@ -226,7 +228,7 @@ class NPBuilder(object):
                                                        [num_units] * 3))
         return atom
 
-    def icosahedron(num_shells: "int", kind: "str" = "Cu") -> "ase.Atoms":
+    def icosahedron(num_shells, kind = "Cu"):
         """
         Creates an icosahedral NP.
 
@@ -246,8 +248,8 @@ class NPBuilder(object):
 
 
 # WIP - sphere is not perfectly symmetric
-def sphere(num_layers: "int", kind: "str" = "Cu",
-           unit_cell_length: "float" = 3.61) -> "ase.Atoms":
+def sphere(num_layers, kind = "Cu",
+           unit_cell_length = 3.61):
     """
     Inscribes a sphere inside a cube and makes it a nanoparticle.
     NOTE: Perfect symmetry not guaranteed.
