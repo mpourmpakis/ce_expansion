@@ -1,10 +1,12 @@
 import os
 import pathlib
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
+
 from npdb import db_inter
-import plot_defaults
+
 try:
     from ce_expansion.src.npdb import db_inter
     import ce_expansion.src.plot_defaults as plot_defaults

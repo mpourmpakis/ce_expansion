@@ -1,12 +1,12 @@
-import os
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
-from npdb import db_inter
+
 import atomgraph
 import structure_gen
-import plot_defaults
+from npdb import db_inter
+
 try:
     from ce_expansion.src.npdb import db_inter
     import ce_expansion.src.atomgraph as atomgraph

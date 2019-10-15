@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+import ctypes
 import os
 import sys
-import ctypes
+
 import ase.cluster
 import ase.io
 import numpy as np
@@ -13,7 +14,8 @@ srcpath = os.sep.join(path.split(os.sep)[:-3] + ["src"])
 sys.path.append(srcpath)
 
 import atomgraph
-import adjacency
+from atomgraph import adjacency
+
 
 def deterministic_sequence(length):
   """

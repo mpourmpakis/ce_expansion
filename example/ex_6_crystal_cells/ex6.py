@@ -5,9 +5,8 @@ import os
 import ase.lattice.cubic
 import ase.neighborlist
 
-import adjacency
-import atomgraph
-import ga
+from atomgraph import adjacency, atomgraph
+from ga import ga
 
 # Make a generic FCC cell
 for cell_size in range(5,10):
@@ -15,7 +14,6 @@ for cell_size in range(5,10):
     fcc_cell = ase.lattice.cubic.FaceCenteredCubic(symbol="Cu", size=[cell_size, cell_size, cell_size])
     bonds = adjacency.buildBondsList(fcc_cell)
     for pair in pairs:
-        try:
             metal1 = pair[0]
             metal2 = pair[1]
             graph = atomgraph.AtomGraph(bonds.copy(), metal1, metal2)
@@ -43,5 +41,3 @@ for cell_size in range(5,10):
                              atomg=graph)
                 pop.run(max_nochange=2000)
                 ga.make_file(pop.atom, pop[0], f"cells/{formula}.cif", filetype="cif")
-        except:
-            pass

@@ -1,16 +1,13 @@
 import os
-import sys
-import matplotlib.pyplot as plt
-import numpy as np
+
 import ase.cluster
 import ase.io
 import ase.optimize
+import matplotlib.pyplot as plt
+import numpy as np
 from ase.calculators import emt
+
 from npdb import db_inter
-try:
-    from ce_expansion.src.npdb import db_inter
-except:
-    pass
 
 np_ga = os.path.join('D:\\MCowan', 'Box Sync', 'Michael_Cowan_PhD_research',
                      'np_ga', 'larson_comparison')

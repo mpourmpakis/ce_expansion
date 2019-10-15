@@ -1,13 +1,9 @@
 import os
+
 import numpy as np
-import matplotlib.pyplot as plt
+
+from atomgraph import atomgraph
 from npdb import db_inter
-import atomgraph
-try:
-    from ce_expansion.src.npdb import db_inter
-    import ce_expansion.src.atomgraph as atomgraph
-except:
-    pass
 
 # GLOBAL fontsize of axis labels and text
 FS = 40

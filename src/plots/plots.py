@@ -23,6 +23,7 @@ def _build_atomgraph(bimetallic_result):
     assert bondlist is not None
     return atomgraph.AtomGraph(bondlist, kind0=bimetallic_result.metal1, kind1=bimetallic_result.metal2)
 
+
 def _verbose_printer(verbose):
     """
     Creates a drop-in replacement for the print() function that only prints if the variable "verbose" is true
@@ -114,8 +115,8 @@ def plot_bond_types_3D(systems, system_colors,
     # Scales point sizes
     maxsize = max(point_sizes)
     known_graphs = {"icosahedron": {},
-              "cuboctahedron": {},
-              "elongated-pentagonal-bipyramid": {}}
+                    "cuboctahedron": {},
+                    "elongated-pentagonal-bipyramid": {}}
     for system, color in zip(systems, system_colors):
         logger(system)
         for morph, marker in zip(morphologies, morphology_markers):
@@ -148,7 +149,8 @@ def plot_bond_types_3D(systems, system_colors,
     plt.close()
 
 
-def plot_bond_types_2D(bondcounts, labels, colors, markers, marker_sizes, projection=[None, None], verbose=False, scale=False):
+def plot_bond_types_2D(bondcounts, labels, colors, markers, marker_sizes, projection=[None, None], verbose=False,
+                       scale=False):
     """
 
     Plots the bond types in 2D.
@@ -243,4 +245,3 @@ def plot_bond_types_2D(bondcounts, labels, colors, markers, marker_sizes, projec
 
     plt.legend([entry[0] for entry in legend_entries], [label[1] for label in legend_entries])
     plt.show()
-
