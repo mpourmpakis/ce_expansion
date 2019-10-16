@@ -1,0 +1,38 @@
+ce\_expansion.ga package
+========================
+
+Submodules
+----------
+
+ce\_expansion.ga.batch\_ga\_run module
+--------------------------------------
+
+.. automodule:: ce_expansion.ga.batch_ga_run
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ce\_expansion.ga.ga module
+--------------------------
+
+.. automodule:: ce_expansion.ga.ga
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ce\_expansion.ga.structure\_gen module
+--------------------------------------
+
+.. automodule:: ce_expansion.ga.structure_gen
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: ce_expansion.ga
+    :members:
+    :undoc-members:
+    :show-inheritance:

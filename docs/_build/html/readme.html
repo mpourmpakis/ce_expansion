@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>1. CE Expansion &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="2. License" href="license.html" />
+    <link rel="prev" title="Welcome to CE Expansion’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">1. CE Expansion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">1.1. Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overview">1.2. Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-atomgraph">1.3. The Atomgraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-genetic-algorithm">1.4. The Genetic Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">1.5. References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">2. License</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>1. CE Expansion</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/readme.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <a class="reference external image-reference" href="/images/logo.png"><img alt="CE Expansion Logo" src="_images/logo.png" /></a>
+<div class="section" id="ce-expansion">
+<h1>1. CE Expansion<a class="headerlink" href="#ce-expansion" title="Permalink to this headline">¶</a></h1>
+<p>James Dean, Michael Cowan, Jonathan Estes, Mahmoud Ramadan, Giannis Mpourmpakis</p>
+<p>Explore bimetallic nanoparticles with our program, which implements the bond-centric model of Yan<span class="raw-html-m2r"><sup>1</sup></span> in conjunction with a genetic algorithm.</p>
+<p>© 2019 <a class="reference external" href="https://mpourmpakis.com/">CANELa Lab</a>, University of Pittsburgh</p>
+<div class="section" id="installation">
+<h2>1.1. Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>To install this program, make sure you’ve fulfilled the following requirements:</p>
+<ul class="simple">
+<li>Python 3.7 or greater is installed</li>
+<li>Numpy and ASE are both present with your Python installation (or environment)</li>
+</ul>
+<p>Simply download this repository, and run <code class="docutils literal notranslate"><span class="pre">ce_expansion/ga.py</span></code> to begin searching potential NPs.</p>
+</div>
+<div class="section" id="overview">
+<h2>1.2. Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>This repository contains a variety of files to facilitate the exploration of the morphological space a nanoparticle can exist in. We utilize the Bond-Centric Model of Yan Et al<span class="raw-html-m2r"><sup>1</sup></span> to rapidly calculate the cohesive energy of a nanoparticle, which can then be used to determine its excess energy.</p>
+<p>Nanoparticles can be described in terms of their size (how many atoms there are), shape (where the atoms are), and chemical ordering (what the chemical identity of each atom is). This is a fairly large search space. Even if we hold size and shape constant, and only look at bimetallic systems, the number of possible NPs grows exponentially: ignoring symmetry, the number of possible chemical orderings for an arbitrary NP is 2<span class="raw-html-m2r"><sup>N</sup></span>. For a 55-atom nanoparticle with some arbitrary shape, that’s over 36 quadrillion possible chemical orderings for just one bimetallic pair. Even if we restrict ourselves to the d-block metals, if we want to investigate that same 55-atom nanoparticle, that’s 3.6E16 orderings/pair times (40 * 40 / 2) pairs, which is over 2.8 <a href="#id1"><span class="problematic" id="id2">*</span></a>quin*tillion possible NPs. If we want to explore even a fraction of that search space, we need a fast algorithm to estimate CE.</p>
+<p>But finding a fast algorithm is only one part of the problem. Even if we calculate one nanoparticle per CPU-nanosecond, exploring this space would still require over 900 CPU-years of computing time. Although this is still feasible with current supercomputers, that’s just one possible NP morphology andone possible NP size. NPs come in a variety of sizes and shapes, and polymetallic systems are also of interest, hence a brute-force search of the chemical space is simply not possible with current technology. Instead of a brute-force search, we resort to a genetic algorithm-based approach.</p>
+<p>In our genetic algorithm, the “DNA” of the NP is represented as a string of 1’s and 0’s representing its chemical ordering. For example, if we had a 13-atom NP containing 6 copper atoms and 6 silver atoms, here are a few possible chemical orderings:</p>
+<ul class="simple">
+<li>111111000000</li>
+<li>111010001100</li>
+<li>101010101010</li>
+</ul>
+<p>Essentially what we’re doing here, is we’re taking each atom in the NP, and arbitrarily assigning it an index. It doesn’t matter how that index is assigned, as long as every index is sequential, and is consistently assigned. See the section titled “The AtomGraph” for more detailed information on exactly how it’s assigned. This method is particularly convenient, because it can easily be extended to ternary or even polymetallic systems.</p>
+<p>Hence, for a particular nanoparticle size and shape, we now have a vector that represents the identity of each atom. This strand of “DNA” can then be mutated and bred within a genetic algorithm to try and find a minimum-energy chemical ordering for the NP’s morphology. This converges quite rapidly with our code, and as a result we can very quickly find the lowest-energy chemical ordering for an arbitrary NP composition.</p>
+</div>
+<div class="section" id="the-atomgraph">
+<h2>1.3. The Atomgraph<a class="headerlink" href="#the-atomgraph" title="Permalink to this headline">¶</a></h2>
+<p>A nanoparticle can be thought of as a graph, with each atom as a vertex and each bond as an edge. In the file <code class="docutils literal notranslate"><span class="pre">ce_expansion/adjacency.py</span></code>, we include tools to generate an adjacency list, an adjacency matrix, and an edge list (a bond list) for an arbitrary nanoparticle. Because of its ease of use and popularity, we’ve written these functions to take ASE<span class="raw-html-m2r"><sup>2</sup></span> atoms objects as their arguments.</p>
+<p>In the file <code class="docutils literal notranslate"><span class="pre">ce_expansion/atomgraph.py</span></code> is the AtomGraph class. It takes in a bond list, and information on what a 1 or 0 means (e.g. what element is a 1, what element is a 0, etc), and then exists as a calculator. If the method CalculateTotalCE is called with a chemical ordering, it will then calculate the total CE using the Yan<span class="raw-html-m2r"><sup>1</sup></span> model. In order to speed up the calculation, we wrote a C library (<code class="docutils literal notranslate"><span class="pre">ce_expansion/lib.c</span></code>) to implement this model, along with a python interface (<code class="docutils literal notranslate"><span class="pre">ce_expansion/interface.py</span></code>) which gets called by the AtomGraph. We have libraries compiled already for Linux (.so) and Windows (.dll) in the <code class="docutils literal notranslate"><span class="pre">bin</span></code> directory. We’ve also included a <code class="docutils literal notranslate"><span class="pre">makefile</span></code> for Linux users.</p>
+</div>
+<div class="section" id="the-genetic-algorithm">
+<h2>1.4. The Genetic Algorithm<a class="headerlink" href="#the-genetic-algorithm" title="Permalink to this headline">¶</a></h2>
+<p>Todo: Write this section</p>
+</div>
+<div class="section" id="references">
+<h2>1.5. References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li>Yan, Z.; Taylor, M. G.; Mascareno, A.; Mpourmpakis, G. Size-, Shape-, and Composition-Dependent Model for Metla Nanoparticle Stability Prediction.  Nano Lett. 2018. 18, 4, 2696-2704. DOI: <a class="reference external" href="https://doi.org/10.1021/acs.nanolett.8b00670">https://doi.org/10.1021/acs.nanolett.8b00670</a></li>
+<li>Larson, A. H.; Mortensen, J. J.; Blomqvist, J.; Castelli, I. E.; Christensen, R.; Dulak, M.; Friis, J.; Groves, M. N.; Hammer, B.; Hargus, J. The atomic simulation environment - a Python library for working with atoms. J. Phys. Condens. Matter 2017. 29, 273002. DOI: <a class="reference external" href="https://doi.org/10.1088/1361-648X/aa680e">https://doi.org/10.1088/1361-648X/aa680e</a> , Github repository: <a class="reference external" href="https://github.com/rosswhitfield/ase">https://github.com/rosswhitfield/ase</a></li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="license.html" class="btn btn-neutral float-right" title="2. License" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to CE Expansion’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

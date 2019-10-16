@@ -1,0 +1,38 @@
+ce\_expansion.atomgraph package
+===============================
+
+Submodules
+----------
+
+ce\_expansion.atomgraph.adjacency module
+----------------------------------------
+
+.. automodule:: ce_expansion.atomgraph.adjacency
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ce\_expansion.atomgraph.atomgraph module
+----------------------------------------
+
+.. automodule:: ce_expansion.atomgraph.atomgraph
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ce\_expansion.atomgraph.interface module
+----------------------------------------
+
+.. automodule:: ce_expansion.atomgraph.interface
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: ce_expansion.atomgraph
+    :members:
+    :undoc-members:
+    :show-inheritance:

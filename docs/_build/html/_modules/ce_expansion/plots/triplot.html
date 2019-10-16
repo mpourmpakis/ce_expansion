@@ -1,0 +1,370 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ce_expansion.plots.triplot &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">1. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">2. License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. CE Expansion</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>ce_expansion.plots.triplot</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ce_expansion.plots.triplot</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.cm</span> <span class="k">as</span> <span class="nn">cm</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">ce_expansion.atomgraph</span> <span class="k">as</span> <span class="nn">atomgraph</span>
+<span class="kn">from</span> <span class="nn">ce_expansion.npdb</span> <span class="k">import</span> <span class="n">db_inter</span>
+
+<span class="c1"># GLOBAL fontsize of axis labels and text</span>
+<span class="n">FS</span> <span class="o">=</span> <span class="mi">40</span>
+
+
+<div class="viewcode-block" id="get_fracs"><a class="viewcode-back" href="../../../source/ce_expansion.plots.html#ce_expansion.plots.triplot.get_fracs">[docs]</a><span class="k">def</span> <span class="nf">get_fracs</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_ee</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+              <span class="n">x_metal1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">db_inter</span><span class="o">.</span><span class="n">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                                    <span class="n">num_shells</span><span class="o">=</span><span class="n">num_shells</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="c1"># limit by composition</span>
+    <span class="k">if</span> <span class="n">x_metal1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">n_metal1</span> <span class="o">/</span>
+                                   <span class="n">r</span><span class="o">.</span><span class="n">num_atoms</span> <span class="o">-</span> <span class="n">x_metal1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">0.05</span><span class="p">,</span>
+                     <span class="n">res</span><span class="p">)</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">])</span>
+
+    <span class="n">fracs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">ee</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+
+    <span class="c1"># track shape and size so if they don&#39;t change, you don&#39;t reload atomgraph</span>
+    <span class="n">prevsize</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">num_atoms</span>
+    <span class="n">prevshape</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># load the first atomgraph</span>
+    <span class="n">bonds</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">load_bonds_list</span><span class="p">()</span>
+    <span class="n">ag</span> <span class="o">=</span> <span class="n">atomgraph</span><span class="o">.</span><span class="n">AtomGraph</span><span class="p">(</span><span class="n">bonds</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">metal1</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">metal2</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
+        <span class="c1"># only create new atomgraph for new size and/or shape</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">num_atoms</span> <span class="o">!=</span> <span class="n">prevsize</span> <span class="ow">or</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">prevshape</span><span class="p">:</span>
+            <span class="n">bonds</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">nanoparticle</span><span class="o">.</span><span class="n">load_bonds_list</span><span class="p">()</span>
+            <span class="n">ag</span> <span class="o">=</span> <span class="n">atomgraph</span><span class="o">.</span><span class="n">AtomGraph</span><span class="p">(</span><span class="n">bonds</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">metal1</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">metal2</span><span class="p">)</span>
+
+            <span class="c1"># update previous size and shape</span>
+            <span class="n">prevsize</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">num_atoms</span>
+            <span class="n">prevshape</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="c1"># get bond type counts</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">ag</span><span class="o">.</span><span class="n">countMixing</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">a</span><span class="o">.</span><span class="n">ordering</span><span class="p">]))</span>
+
+        <span class="c1"># normalize bond counts to get bond fractions</span>
+        <span class="n">fracs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">ee</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">EE</span>
+
+    <span class="c1"># return bond fraction for metal1-metal1 (aa) and metal2-metal2 (bb)</span>
+    <span class="n">aa</span> <span class="o">=</span> <span class="n">fracs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="n">fracs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># option to return excess energy with bond fractions</span>
+    <span class="k">if</span> <span class="n">return_ee</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">ee</span>
+
+    <span class="k">return</span> <span class="n">aa</span><span class="p">,</span> <span class="n">bb</span></div>
+
+
+<div class="viewcode-block" id="tri_plot"><a class="viewcode-back" href="../../../source/ce_expansion.plots.html#ce_expansion.plots.triplot.tri_plot">[docs]</a><span class="k">def</span> <span class="nf">tri_plot</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">z</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">xlab</span><span class="o">=</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm F_</span><span class="si">{AA}</span><span class="s1">$&#39;</span><span class="p">,</span> <span class="n">ylab</span><span class="o">=</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm F_</span><span class="si">{BB}</span><span class="s1">$&#39;</span><span class="p">):</span>
+    <span class="c1"># time plot making</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">aa</span><span class="p">)</span>
+
+    <span class="c1"># remove top and right axis lines</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.spines.top&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.spines.right&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># set borderwidth of triangle</span>
+    <span class="n">borderwidth</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.linewidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">borderwidth</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;xtick.major.width&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">borderwidth</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;ytick.major.width&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">borderwidth</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># initialize figure and axis object</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+        <span class="c1"># plot bottom of triangle</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;_nolabel_&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">borderwidth</span><span class="p">,</span>
+                <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># plot grid lines</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span> <span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;lightgray&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="s1">&#39;_nolabel_&#39;</span><span class="p">)</span>
+
+        <span class="c1"># fraction limits should be [0, 1]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># set and rotate labels</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlab</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylab</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+
+        <span class="c1"># rotate tick labels</span>
+        <span class="k">for</span> <span class="n">xtick</span><span class="p">,</span> <span class="n">ytick</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_yticklabels</span><span class="p">()):</span>
+            <span class="n">xtick</span><span class="o">.</span><span class="n">set_rotation</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>
+            <span class="n">ytick</span><span class="o">.</span><span class="n">set_rotation</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>
+
+        <span class="c1"># set aspect ratio to 1:1</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">figure</span>
+
+    <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;_nolabel_&#39;</span>
+
+    <span class="c1"># plot data</span>
+    <span class="n">linewidth</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+               <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">)</span>
+
+    <span class="n">scatter</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">label</span><span class="o">=</span><span class="s1">&#39;_nolabel_&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
+                         <span class="n">vmin</span><span class="o">=</span><span class="n">zmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">zmax</span><span class="p">,</span> <span class="n">clip_on</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span>
+                         <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+
+    <span class="c1"># add legend</span>
+    <span class="k">if</span> <span class="n">legend</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">columnspacing</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                  <span class="n">handletextpad</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Time to create plot: </span><span class="si">%0.2f</span><span class="s1"> s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">scatter</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># PLOT DATA PARAMS</span>
+    <span class="n">metals_ls</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;Ag&#39;</span><span class="p">,</span> <span class="s1">&#39;Au&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Ag&#39;</span><span class="p">,</span> <span class="s1">&#39;Cu&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Au&#39;</span><span class="p">,</span> <span class="s1">&#39;Cu&#39;</span><span class="p">)]</span>
+    <span class="n">metals</span> <span class="o">=</span> <span class="n">metals_ls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">shapes</span> <span class="o">=</span> <span class="s1">&#39;icosahedron&#39;</span><span class="p">,</span> <span class="s1">&#39;cuboctahedron&#39;</span><span class="p">,</span> <span class="s1">&#39;elongated-pentagonal-bipyramid&#39;</span>
+    <span class="n">shell_sizes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">11</span><span class="p">))</span>
+
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;lime&#39;</span><span class="p">,</span> <span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="s1">&#39;royalblue&#39;</span><span class="p">]</span>
+    <span class="n">markers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="s1">&#39;^&#39;</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">309</span>
+
+    <span class="n">min_n</span> <span class="o">=</span> <span class="n">db_inter</span><span class="o">.</span><span class="n">get_shell2num</span><span class="p">(</span><span class="n">shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shell_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">max_n</span> <span class="o">=</span> <span class="n">db_inter</span><span class="o">.</span><span class="n">get_shell2num</span><span class="p">(</span><span class="n">shapes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shell_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">metals</span> <span class="ow">in</span> <span class="n">metals_ls</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">shell</span> <span class="ow">in</span> <span class="n">shell_sizes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">shape</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">shapes</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">shape</span> <span class="o">==</span> <span class="s1">&#39;cuboctahedron&#39;</span> <span class="ow">and</span> <span class="n">shell</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">db_inter</span><span class="o">.</span><span class="n">get_shell2num</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">shell</span><span class="p">)</span>
+                <span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">ee</span> <span class="o">=</span> <span class="n">get_fracs</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="n">metals</span><span class="p">,</span>
+                                       <span class="n">return_ee</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                                       <span class="n">num_atoms</span><span class="o">=</span><span class="n">num_atoms</span><span class="p">)</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="p">[</span><span class="n">num_atoms</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">aa</span><span class="p">)</span>
+                <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">tri_plot</span><span class="p">(</span>
+                    <span class="n">bb</span><span class="p">,</span> <span class="n">aa</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                    <span class="n">xlab</span><span class="o">=</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm F_{</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">}$&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">metals</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">metals</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                    <span class="n">ylab</span><span class="o">=</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm F_{</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">}$&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">metals</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">metals</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">,</span> <span class="n">zmin</span><span class="o">=</span><span class="n">min_n</span><span class="p">,</span> <span class="n">zmax</span><span class="o">=</span><span class="n">max_n</span><span class="p">,</span>
+                    <span class="n">marker</span><span class="o">=</span><span class="n">markers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s1">&#39;rainbow&#39;</span><span class="p">))</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">metals</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">FS</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">135</span><span class="p">,</span>
+                <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm N_</span><span class="si">{Atoms}</span><span class="s1">$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">FS</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                     <span class="n">ticks</span><span class="o">=</span><span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">2500</span><span class="p">,</span> <span class="mi">2869</span><span class="p">])</span>
+
+        <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="c1"># fig.savefig(&#39;C:\\users\\yla\\desktop\\%s_colorbar.svg&#39;</span>
+        <span class="c1">#             % &#39;&#39;.join(metals))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
