@@ -1,10 +1,16 @@
-Welcome to ce_expansion's documentation!
-========================================
+Welcome to CE Expansion!
+========================
+
+.. image:: images/logo.png
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents:
+   :numbered:
+   :maxdepth: 2
+   :caption: Table of Contents:
 
+   readme
+   license
+   source/modules
 
 
 Indices and tables
@@ -13,50 +19,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-ce_expansion.atomgraph
-==============
-.. automodule:: ce_expansion.atomgraph.atomgraph
-    :members:
-
-.. automodule:: ce_expansion.atomgraph.adjacency
-    :members:
-
-.. automodule:: ce_expansion.atomgraph.interface
-    :members:
-
-ce_expansion.npdb
-=================
-.. automodule:: ce_expansion.npdb.base
-    :members:
-
-.. automodule:: ce_expansion.npdb.datatables
-    :members:
-
-.. automodule:: ce_expansion.npdb.db_inter
-    :members:
-
-.. automodule:: ce_expansion.npdb.db_utils
-    :members:
-
-ce_expansion.ga
-===============
-.. automodule:: ce_expansion.ga.ga
-    :members:
-.. automodule:: ce_expansion.ga.structure_gen
-    :members:
-.. automodule:: ce_expansion.ga.batch_ga_run
-    :members:
-
-ce_expansion.plots
-==================
-.. automodule:: ce_expansion.plots.plot_defaults
-    :members:
-.. automodule:: ce_expansion.plots.plots
-    :members:
-.. automodule:: ce_expansion.plots.triplot
-    :members:
-.. automodule:: ce_expansion.plots.shell_vs_tot
-    :members:
-.. automodule:: ce_expansion.plots.cn_dist_plot
-    :members:

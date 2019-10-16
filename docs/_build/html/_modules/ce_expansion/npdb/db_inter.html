@@ -1,35 +1,148 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>ce_expansion.npdb.db_inter &#8212; ce_expansion 1.0 documentation</title>
-    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ce_expansion.npdb.db_inter &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
    
-  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
           
 
-          <div class="body" role="main">
+          
+            <a href="../../../index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">1. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">2. License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. CE Expansion</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>ce_expansion.npdb.db_inter</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <h1>Source code for ce_expansion.npdb.db_inter</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">datetime</span>
@@ -96,7 +209,7 @@
 <span class="c1"># BUILD FUNCTIONS</span>
 
 
-<div class="viewcode-block" id="build_df"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_df">[docs]</a><span class="k">def</span> <span class="nf">build_df</span><span class="p">(</span><span class="n">datatable</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="build_df"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_df">[docs]</a><span class="k">def</span> <span class="nf">build_df</span><span class="p">(</span><span class="n">datatable</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    GENERIC FUNCTION</span>
 <span class="sd">    Returns pandas dataframe of entries in &lt;datatable&gt;</span>
@@ -123,7 +236,7 @@
     <span class="k">return</span> <span class="n">df</span></div>
 
 
-<div class="viewcode-block" id="build_atoms_in_shell_dict"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_atoms_in_shell_dict">[docs]</a><span class="k">def</span> <span class="nf">build_atoms_in_shell_dict</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">):</span>
+<div class="viewcode-block" id="build_atoms_in_shell_dict"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_atoms_in_shell_dict">[docs]</a><span class="k">def</span> <span class="nf">build_atoms_in_shell_dict</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    creates dictionary of atom indices for each shell</span>
 
@@ -216,7 +329,7 @@
     <span class="k">return</span> <span class="n">indices</span></div>
 
 
-<div class="viewcode-block" id="build_shell_dist_fig"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_shell_dist_fig">[docs]</a><span class="k">def</span> <span class="nf">build_shell_dist_fig</span><span class="p">(</span><span class="n">bimet</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="build_shell_dist_fig"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_shell_dist_fig">[docs]</a><span class="k">def</span> <span class="nf">build_shell_dist_fig</span><span class="p">(</span><span class="n">bimet</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates shell distribution figure of</span>
 <span class="sd">    BimetallicResult</span>
@@ -298,7 +411,7 @@
     <span class="k">return</span> <span class="n">fig</span></div>
 
 
-<div class="viewcode-block" id="build_coefficient_dict"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_coefficient_dict">[docs]</a><span class="k">def</span> <span class="nf">build_coefficient_dict</span><span class="p">(</span><span class="n">metals</span><span class="p">):</span>
+<div class="viewcode-block" id="build_coefficient_dict"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_coefficient_dict">[docs]</a><span class="k">def</span> <span class="nf">build_coefficient_dict</span><span class="p">(</span><span class="n">metals</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates coefficient dictionary used to calc CE</span>
 
@@ -335,7 +448,7 @@
                      <span class="n">metal1</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">j</span><span class="p">:</span> <span class="n">j</span><span class="o">.</span><span class="n">bond_energy</span><span class="p">,</span> <span class="n">res_ba</span><span class="p">))}}</span></div>
 
 
-<div class="viewcode-block" id="build_metals_list"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_metals_list">[docs]</a><span class="k">def</span> <span class="nf">build_metals_list</span><span class="p">():</span>
+<div class="viewcode-block" id="build_metals_list"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_metals_list">[docs]</a><span class="k">def</span> <span class="nf">build_metals_list</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns list of possible metal combinations for GA sims</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -343,7 +456,7 @@
             <span class="o">.</span><span class="n">distinct</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">ModelCoefficients</span><span class="o">.</span><span class="n">element1</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()]</span></div>
 
 
-<div class="viewcode-block" id="build_new_structs_plot"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_new_structs_plot">[docs]</a><span class="k">def</span> <span class="nf">build_new_structs_plot</span><span class="p">(</span><span class="n">metal_opts</span><span class="p">,</span> <span class="n">shape_opts</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<div class="viewcode-block" id="build_new_structs_plot"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_new_structs_plot">[docs]</a><span class="k">def</span> <span class="nf">build_new_structs_plot</span><span class="p">(</span><span class="n">metal_opts</span><span class="p">,</span> <span class="n">shape_opts</span><span class="p">,</span> <span class="n">pct</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                            <span class="n">cutoff_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Uses BimetallicLog to create 2D line plot of</span>
@@ -415,7 +528,7 @@
     <span class="k">return</span> <span class="n">fig</span></div>
 
 
-<div class="viewcode-block" id="build_prdf_shapes_comparison"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_prdf_shapes_comparison">[docs]</a><span class="k">def</span> <span class="nf">build_prdf_shapes_comparison</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">,</span> <span class="n">x_dope</span><span class="p">):</span>
+<div class="viewcode-block" id="build_prdf_shapes_comparison"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_prdf_shapes_comparison">[docs]</a><span class="k">def</span> <span class="nf">build_prdf_shapes_comparison</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">,</span> <span class="n">x_dope</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates list of figures, each containing partial radial distribution</span>
 <span class="sd">        functions (PRDFs) of a given shape</span>
@@ -442,7 +555,7 @@
     <span class="k">return</span> <span class="n">figs</span></div>
 
 
-<div class="viewcode-block" id="build_shell2num_dict"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_shell2num_dict">[docs]</a><span class="k">def</span> <span class="nf">build_shell2num_dict</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="build_shell2num_dict"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_shell2num_dict">[docs]</a><span class="k">def</span> <span class="nf">build_shell2num_dict</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Builds a number of shells --&gt; number of atoms dict</span>
 
@@ -463,7 +576,7 @@
     <span class="k">return</span> <span class="n">result</span></div>
 
 
-<div class="viewcode-block" id="build_srf_plot"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_srf_plot">[docs]</a><span class="k">def</span> <span class="nf">build_srf_plot</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="build_srf_plot"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_srf_plot">[docs]</a><span class="k">def</span> <span class="nf">build_srf_plot</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates a 3D surface plot from NP SQL database</span>
 <span class="sd">    - plots Size vs. Shape vs. Excess Energy (EE)</span>
@@ -548,7 +661,7 @@
     <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
 
 
-<div class="viewcode-block" id="build_radial_distributions"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_radial_distributions">[docs]</a><span class="k">def</span> <span class="nf">build_radial_distributions</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="build_radial_distributions"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_radial_distributions">[docs]</a><span class="k">def</span> <span class="nf">build_radial_distributions</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                <span class="n">n_metal1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nbins</span> <span class="o">=</span> <span class="s2">&quot;Auto&quot;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sends a query to get_bimetallic_results to construct a list of NPs,</span>
@@ -606,7 +719,7 @@
         <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">element_1_histogram</span><span class="p">,</span> <span class="n">element_2_histogram</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="build_shapes_list"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.build_shapes_list">[docs]</a><span class="k">def</span> <span class="nf">build_shapes_list</span><span class="p">():</span>
+<div class="viewcode-block" id="build_shapes_list"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.build_shapes_list">[docs]</a><span class="k">def</span> <span class="nf">build_shapes_list</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns all shapes found in Nanoparticles Datatable as list of str</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -617,7 +730,7 @@
 <span class="c1"># GET FUNCTIONS</span>
 
 
-<div class="viewcode-block" id="get_entry"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_entry">[docs]</a><span class="k">def</span> <span class="nf">get_entry</span><span class="p">(</span><span class="n">datatable</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="get_entry"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.get_entry">[docs]</a><span class="k">def</span> <span class="nf">get_entry</span><span class="p">(</span><span class="n">datatable</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
               <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    GENERIC FUNCTION</span>
@@ -661,7 +774,7 @@
     <span class="k">return</span> <span class="n">res</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="get_bimet_log"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_bimet_log">[docs]</a><span class="k">def</span> <span class="nf">get_bimet_log</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="get_bimet_log"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.get_bimet_log">[docs]</a><span class="k">def</span> <span class="nf">get_bimet_log</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                   <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns BimetallicLog entry that matches criteria</span>
@@ -683,7 +796,7 @@
     <span class="k">return</span> <span class="n">get_entry</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">BimetallicLog</span><span class="p">,</span> <span class="o">**</span><span class="nb">locals</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="get_bimet_result"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_bimet_result">[docs]</a><span class="k">def</span> <span class="nf">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="get_bimet_result"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.get_bimet_result">[docs]</a><span class="k">def</span> <span class="nf">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">n_metal1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">only_bimet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                      <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -717,7 +830,7 @@
                      <span class="n">return_query</span><span class="o">=</span><span class="n">return_query</span><span class="p">,</span> <span class="n">custom_filter</span><span class="o">=</span><span class="n">custom_filter</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_model_coefficient"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_model_coefficient">[docs]</a><span class="k">def</span> <span class="nf">get_model_coefficient</span><span class="p">(</span><span class="n">element1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">element2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="get_model_coefficient"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.get_model_coefficient">[docs]</a><span class="k">def</span> <span class="nf">get_model_coefficient</span><span class="p">(</span><span class="n">element1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">element2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                           <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns tbl.ModelCoefficients entries that match criteria</span>
@@ -740,7 +853,7 @@
     <span class="k">return</span> <span class="n">get_entry</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">ModelCoefficients</span><span class="p">,</span> <span class="o">**</span><span class="nb">locals</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="get_nanoparticle"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">get_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<div class="viewcode-block" id="get_nanoparticle"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.get_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">get_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_query</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns tbl.Nanoparticles entries that match criteria</span>
@@ -763,7 +876,7 @@
     <span class="k">return</span> <span class="n">get_entry</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">Nanoparticles</span><span class="p">,</span> <span class="o">**</span><span class="nb">locals</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="get_shell2num"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.get_shell2num">[docs]</a><span class="k">def</span> <span class="nf">get_shell2num</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">):</span>
+<div class="viewcode-block" id="get_shell2num"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.get_shell2num">[docs]</a><span class="k">def</span> <span class="nf">get_shell2num</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the number of atoms of an NP</span>
 <span class="sd">    given shape and number of shells</span>
@@ -783,7 +896,7 @@
 <span class="c1"># INSERT FUNCTIONS</span>
 
 
-<div class="viewcode-block" id="insert_model_coefficients"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.insert_model_coefficients">[docs]</a><span class="k">def</span> <span class="nf">insert_model_coefficients</span><span class="p">(</span><span class="n">coeffs_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="insert_model_coefficients"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.insert_model_coefficients">[docs]</a><span class="k">def</span> <span class="nf">insert_model_coefficients</span><span class="p">(</span><span class="n">coeffs_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Inserts model coefficients into ModelCoefficients</span>
 <span class="sd">    - checks DB to ensure entry does not already exist</span>
@@ -812,7 +925,7 @@
     <span class="k">return</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="insert_nanoparticle"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.insert_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">insert_nanoparticle</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="insert_nanoparticle"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.insert_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">insert_nanoparticle</span><span class="p">(</span><span class="n">atom</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Inserts NP and their appropriate atoms into DB</span>
 
@@ -837,7 +950,7 @@
     <span class="k">return</span> <span class="n">np</span></div>
 
 
-<div class="viewcode-block" id="insert_bimetallic_log"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.insert_bimetallic_log">[docs]</a><span class="k">def</span> <span class="nf">insert_bimetallic_log</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span>
+<div class="viewcode-block" id="insert_bimetallic_log"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.insert_bimetallic_log">[docs]</a><span class="k">def</span> <span class="nf">insert_bimetallic_log</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span>
                           <span class="n">ga_generations</span><span class="p">,</span> <span class="n">shell_range</span><span class="p">,</span> <span class="n">new_min_structs</span><span class="p">,</span>
                           <span class="n">tot_structs</span><span class="p">,</span> <span class="n">batch_run_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -851,7 +964,7 @@
 <span class="c1"># UPDATE FUNCTIONS</span>
 
 
-<div class="viewcode-block" id="update_entry"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.update_entry">[docs]</a><span class="k">def</span> <span class="nf">update_entry</span><span class="p">(</span><span class="n">entry_inst</span><span class="p">):</span>
+<div class="viewcode-block" id="update_entry"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.update_entry">[docs]</a><span class="k">def</span> <span class="nf">update_entry</span><span class="p">(</span><span class="n">entry_inst</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    GENERIC METHOD</span>
 <span class="sd">    Updates datarow object</span>
@@ -866,7 +979,7 @@
     <span class="k">return</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="update_bimet_result"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.update_bimet_result">[docs]</a><span class="k">def</span> <span class="nf">update_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span>
+<div class="viewcode-block" id="update_bimet_result"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.update_bimet_result">[docs]</a><span class="k">def</span> <span class="nf">update_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span>
                         <span class="n">diameter</span><span class="p">,</span> <span class="n">n_metal1</span><span class="p">,</span>
                         <span class="n">CE</span><span class="p">,</span> <span class="n">ordering</span><span class="p">,</span> <span class="n">EE</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nanop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                         <span class="n">allow_insert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ensure_ce_min</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -917,7 +1030,7 @@
 <span class="c1"># REMOVE FUNCTIONS</span>
 
 
-<div class="viewcode-block" id="remove_entry"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.remove_entry">[docs]</a><span class="k">def</span> <span class="nf">remove_entry</span><span class="p">(</span><span class="n">entry_inst</span><span class="p">):</span>
+<div class="viewcode-block" id="remove_entry"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.remove_entry">[docs]</a><span class="k">def</span> <span class="nf">remove_entry</span><span class="p">(</span><span class="n">entry_inst</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    GENERIC FUNCTION</span>
 <span class="sd">    Deletes entry (and its children if applicable) from DB</span>
@@ -929,7 +1042,7 @@
     <span class="k">return</span> <span class="n">db_utils</span><span class="o">.</span><span class="n">commit_changes</span><span class="p">(</span><span class="n">session</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="remove_nanoparticle"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.remove_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">remove_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="remove_nanoparticle"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.remove_nanoparticle">[docs]</a><span class="k">def</span> <span class="nf">remove_nanoparticle</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_atoms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Removes a single NP and its corresponding atoms</span>
 <span class="sd">    - only commits if a single np is queried to be removed</span>
@@ -955,7 +1068,7 @@
 <span class="c1"># HELPER FUNCTIONS</span>
 
 
-<div class="viewcode-block" id="gen_coeffs_dict_from_raw"><a class="viewcode-back" href="../../../index.html#ce_expansion.npdb.db_inter.gen_coeffs_dict_from_raw">[docs]</a><span class="k">def</span> <span class="nf">gen_coeffs_dict_from_raw</span><span class="p">(</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">bulkce_m1</span><span class="p">,</span> <span class="n">bulkce_m2</span><span class="p">,</span>
+<div class="viewcode-block" id="gen_coeffs_dict_from_raw"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.db_inter.gen_coeffs_dict_from_raw">[docs]</a><span class="k">def</span> <span class="nf">gen_coeffs_dict_from_raw</span><span class="p">(</span><span class="n">metal1</span><span class="p">,</span> <span class="n">metal2</span><span class="p">,</span> <span class="n">bulkce_m1</span><span class="p">,</span> <span class="n">bulkce_m2</span><span class="p">,</span>
                              <span class="n">homo_bde_m1</span><span class="p">,</span> <span class="n">homo_bde_m2</span><span class="p">,</span> <span class="n">hetero_bde</span><span class="p">,</span> <span class="n">cnmax</span><span class="o">=</span><span class="mi">12</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates the Bond-Centric half bond energy terms for a bimetallic</span>
@@ -1050,67 +1163,43 @@
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 
+           </div>
+           
           </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../../../index.html">ce_expansion</a></h1>
+          <footer>
+  
 
+  <hr/>
 
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
 
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
-
-
-
-
-<h3>Navigation</h3>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../../index.html">Documentation overview</a><ul>
-  <li><a href="../../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
+</footer>
 
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2019, CANELa.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-    </div>
 
-    
+    </section>
 
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
     
-  </body>
+   
+
+</body>
 </html>
