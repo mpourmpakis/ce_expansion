@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ce_expansion.atomgraph.interface &mdash; ce_expansion 1.0 documentation</title>
+  <title>ce_expansion.bin.interface &mdash; ce_expansion 1.0 documentation</title>
   
 
   
@@ -24,6 +24,7 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -81,7 +82,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">1. CE Expansion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../license.html">2. License</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. Documentation</a></li>
 </ul>
 
             
@@ -129,7 +130,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>ce_expansion.atomgraph.interface</li>
+      <li>ce_expansion.bin.interface</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -144,7 +145,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for ce_expansion.atomgraph.interface</h1><div class="highlight"><pre>
+  <h1>Source code for ce_expansion.bin.interface</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
 
 <span class="kn">import</span> <span class="nn">ctypes</span>
@@ -158,16 +159,7 @@
 <span class="n">DEFAULT_NUM_ELEMENTS</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># Polymetallicity of the system; 2=bimetallic. Only works for bimetallics at the moment.</span>
 <span class="n">DEFAULT_MAX_COORDINATION</span> <span class="o">=</span> <span class="mi">12</span>  <span class="c1"># Maximum possible coordination number</span>
 
-<span class="c1"># Figure out where we are on the system, and make it to the bin directory</span>
-<span class="c1"># Current structure is:</span>
-<span class="c1">#   Project</span>
-<span class="c1">#   |---bin</span>
-<span class="c1">#       |---lib.dll</span>
-<span class="c1">#   |---ce_expansion</span>
-<span class="c1">#       |---atomgraph</span>
-<span class="c1">#           |----interface.py</span>
-<span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
-<span class="n">bin_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;bin&quot;</span><span class="p">])</span>
+<span class="n">bin_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
 <span class="c1"># Set the correct library for the given platform</span>
 <span class="k">if</span> <span class="n">DEBUG_MODE</span><span class="p">:</span>
@@ -182,7 +174,8 @@
         <span class="n">dll</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;_lib.so&#39;</span><span class="p">)</span>
 
 <span class="c1"># Load the library</span>
-<span class="n">_libCalc</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bin_directory</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">dll</span><span class="p">]))</span>
+<span class="n">dll_location</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bin_directory</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">dll</span><span class="p">])</span>
+<span class="n">_libCalc</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">dll_location</span><span class="p">)</span>
 
 <span class="c1"># Function return type</span>
 <span class="n">_libCalc</span><span class="o">.</span><span class="n">calculate_ce</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span>
@@ -204,7 +197,7 @@
                                       <span class="p">]</span>
 
 
-<div class="viewcode-block" id="pointerized_calculate_ce"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.html#ce_expansion.atomgraph.interface.pointerized_calculate_ce">[docs]</a><span class="k">def</span> <span class="nf">pointerized_calculate_ce</span><span class="p">(</span><span class="n">bond_energies</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">cns</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">):</span>
+<div class="viewcode-block" id="pointerized_calculate_ce"><a class="viewcode-back" href="../../../source/ce_expansion.bin.interface.html#ce_expansion.bin.interface.pointerized_calculate_ce">[docs]</a><span class="k">def</span> <span class="nf">pointerized_calculate_ce</span><span class="p">(</span><span class="n">bond_energies</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">cns</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Version of the calculate_CE function which takes in pre-converted c/pointer objects</span>
 
@@ -219,7 +212,7 @@
     <span class="k">return</span> <span class="n">_libCalc</span><span class="o">.</span><span class="n">calculate_ce</span><span class="p">(</span><span class="n">bond_energies</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">cns</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="calculate_ce"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.html#ce_expansion.atomgraph.interface.calculate_ce">[docs]</a><span class="k">def</span> <span class="nf">calculate_ce</span><span class="p">(</span><span class="n">bond_energies</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">cns</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">):</span>
+<div class="viewcode-block" id="calculate_ce"><a class="viewcode-back" href="../../../source/ce_expansion.bin.interface.html#ce_expansion.bin.interface.calculate_ce">[docs]</a><span class="k">def</span> <span class="nf">calculate_ce</span><span class="p">(</span><span class="n">bond_energies</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">cns</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Version of the calculate_CE function which creates the pointers on its own. This is slower than the pointerized</span>
 <span class="sd">    version.</span>
@@ -246,7 +239,7 @@
                                  <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="pointerized_calculate_mixing"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.html#ce_expansion.atomgraph.interface.pointerized_calculate_mixing">[docs]</a><span class="k">def</span> <span class="nf">pointerized_calculate_mixing</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">,</span> <span class="n">return_array</span><span class="p">):</span>
+<div class="viewcode-block" id="pointerized_calculate_mixing"><a class="viewcode-back" href="../../../source/ce_expansion.bin.interface.html#ce_expansion.bin.interface.pointerized_calculate_mixing">[docs]</a><span class="k">def</span> <span class="nf">pointerized_calculate_mixing</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">,</span> <span class="n">return_array</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Version of the calculate_mixing function that takes in all the pointers pre-done</span>
 
@@ -269,7 +262,7 @@
     <span class="k">return</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="calculate_mixing"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.html#ce_expansion.atomgraph.interface.calculate_mixing">[docs]</a><span class="k">def</span> <span class="nf">calculate_mixing</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">):</span>
+<div class="viewcode-block" id="calculate_mixing"><a class="viewcode-back" href="../../../source/ce_expansion.bin.interface.html#ce_expansion.bin.interface.calculate_mixing">[docs]</a><span class="k">def</span> <span class="nf">calculate_mixing</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">,</span> <span class="n">adjacency_table</span><span class="p">,</span> <span class="n">id_string</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Version of the calculate_mixing function which creates the pointers on its own.</span>
 <span class="sd">    </span>

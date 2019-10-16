@@ -1,0 +1,324 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>3.1.1.6.1.2. ce_expansion.utility.gen_coeffs module &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.1.1.6.1.3. ce_expansion.utility.gen_gamma module" href="ce_expansion.utility.gen_gamma.html" />
+    <link rel="prev" title="3.1.1.6.1.1. ce_expansion.utility.debug_check_datatypes module" href="ce_expansion.utility.debug_check_datatypes.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">1. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">2. License</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">3. Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="ce_expansion.html">3.1. ce_expansion package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="ce_expansion.html#subpackages">3.1.1. Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.atomgraph.html">3.1.1.1. ce_expansion.atomgraph package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.bin.html">3.1.1.2. ce_expansion.bin package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.ga.html">3.1.1.3. ce_expansion.ga package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.npdb.html">3.1.1.4. ce_expansion.npdb package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.plots.html">3.1.1.5. ce_expansion.plots package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="ce_expansion.utility.html">3.1.1.6. ce_expansion.utility package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">3. Documentation</a> &raquo;</li>
+        
+          <li><a href="ce_expansion.html">3.1. ce_expansion package</a> &raquo;</li>
+        
+          <li><a href="ce_expansion.utility.html">3.1.1.6. ce_expansion.utility package</a> &raquo;</li>
+        
+      <li>3.1.1.6.1.2. ce_expansion.utility.gen_coeffs module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/ce_expansion.utility.gen_coeffs.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-ce_expansion.utility.gen_coeffs">
+<span id="ce-expansion-utility-gen-coeffs-module"></span><h1>3.1.1.6.1.2. ce_expansion.utility.gen_coeffs module<a class="headerlink" href="#module-ce_expansion.utility.gen_coeffs" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="ce_expansion.utility.gen_coeffs.calculate_gamma_products">
+<code class="sig-prename descclassname">ce_expansion.utility.gen_coeffs.</code><code class="sig-name descname">calculate_gamma_products</code><span class="sig-paren">(</span><em class="sig-param">coordination: iterable</em>, <em class="sig-param">total_gamma: float</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="../_modules/ce_expansion/utility/gen_coeffs.html#calculate_gamma_products"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.utility.gen_coeffs.calculate_gamma_products" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scales the total gamma by coordination number. This will break if you fail to give it a sorted list whose values
+increase by 1 and do not skip numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coordination</strong> (<em>list</em>) – List of coordination numbers to calculate</p></li>
+<li><p><strong>total_gamma</strong> (<em>float</em>) – Total gamma coefficient.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The calculated gamma product.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.utility.gen_coeffs.calculate_total_gamma">
+<code class="sig-prename descclassname">ce_expansion.utility.gen_coeffs.</code><code class="sig-name descname">calculate_total_gamma</code><span class="sig-paren">(</span><em class="sig-param">element1: str</em>, <em class="sig-param">element2: str</em>, <em class="sig-param">ce_data: str = '../data/bulkcedata.csv'</em>, <em class="sig-param">cn_data: str = '../data/cndata.csv'</em><span class="sig-paren">)</span> &#x2192; tuple<a class="reference internal" href="../_modules/ce_expansion/utility/gen_coeffs.html#calculate_total_gamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.utility.gen_coeffs.calculate_total_gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total gamma coefficient. The total gamma coefficient is defined as the product of the gamma
+coefficient, the bulk cohesive energy, and the inverse of the square root of the coordination number of the bulk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>element1</strong> (<em>str</em>) – The first element, A, in the bimetallic pair AB</p></li>
+<li><p><strong>element2</strong> (<em>str</em>) – The second element, B, in the bimetallic pair AB</p></li>
+<li><p><strong>ce_data</strong> (<em>str</em>) – Data source for bulk cohesive energies.</p></li>
+<li><p><strong>cn_data</strong> (<em>str</em>) – Data source for the bulk coordination number.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A tuple containing the total gamma coefficients of A and B (in that order) in the bimetallic pair AB</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.utility.gen_coeffs.gen_coeffs_dict_from_raw">
+<code class="sig-prename descclassname">ce_expansion.utility.gen_coeffs.</code><code class="sig-name descname">gen_coeffs_dict_from_raw</code><span class="sig-paren">(</span><em class="sig-param">metal1</em>, <em class="sig-param">metal2</em>, <em class="sig-param">bulkce_m1</em>, <em class="sig-param">bulkce_m2</em>, <em class="sig-param">homo_bde_m1</em>, <em class="sig-param">homo_bde_m2</em>, <em class="sig-param">hetero_bde</em>, <em class="sig-param">cnmax=12</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/utility/gen_coeffs.html#gen_coeffs_dict_from_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.utility.gen_coeffs.gen_coeffs_dict_from_raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the Bond-Centric half bond energy terms for a bimetallic
+pair AB. Coordination number 0 is given the value None. Dictionary is
+used with AtomGraph to calculate total CE of bimetallic nanoparticles.
+Relies on raw data arguments to create dictionary.</p>
+<p>Args:
+- metal1 (str): atomic symbol of metal 1
+- metal2 (str): atomic symbol of metal 2
+- bulkce_m1 (float): bulk cohesive energy (in eV / atom) of metal1
+- bulkce_m2 (float): bulk cohesive energy (in eV / atom) of metal2
+- homo_bde_m1 (float): m1-m1 (homoatomic) bond dissociation energy
+- homo_bde_m2 (float): m2-m2 (homoatomic) bond dissociation energy
+- hetero_bde (float): m1-m2 (heteroatomic) bond dissociation energy</p>
+<p>KArgs:
+- cnmax: maximum bulk coordination number (CN) of metals</p>
+<blockquote>
+<div><p>(Default: 12)</p>
+</div></blockquote>
+<p>Returns:
+- (dict): form dict[m1][m2][CN] = half bond energy term</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.utility.gen_coeffs.generate_coefficient_dictionary">
+<code class="sig-prename descclassname">ce_expansion.utility.gen_coeffs.</code><code class="sig-name descname">generate_coefficient_dictionary</code><span class="sig-paren">(</span><em class="sig-param">element1: str</em>, <em class="sig-param">element2: str</em>, <em class="sig-param">min_coord: int = 0</em>, <em class="sig-param">max_coord: int = -1</em>, <em class="sig-param">cn_data: str = '../data/cndata.csv'</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="../_modules/ce_expansion/utility/gen_coeffs.html#generate_coefficient_dictionary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.utility.gen_coeffs.generate_coefficient_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the total Gamma coefficients for a bimetallic pair AB from min_coord to max_coord. Coordination
+number 0 is given the value None. The total Gamma coefficient is defined as the product of the gamma coefficient,
+the bulk cohesive energy, and the inverse of the square root of the coordination number of the bulk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>element1</strong> (<em>str</em>) – The first element, A, in the bimetallic pair AB</p></li>
+<li><p><strong>element2</strong> (<em>str</em>) – The second element, B, in the bimetallic pair AB</p></li>
+<li><p><strong>min_coord</strong> (<em>int</em>) – The minimum coordination number to investigate. Defaults to 0.</p></li>
+<li><p><strong>max_coord</strong> – The maximum coordination number to investigate. The default value of -1 indicates the maximum
+coordination number to investigate is that of the bulk.</p></li>
+<li><p><strong>cn_data</strong> (<em>str</em>) – The CSV file containing bulk coordination number information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dictionary of form dict[element1][element2][CN] = float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.utility.gen_coeffs.read_data_table">
+<code class="sig-prename descclassname">ce_expansion.utility.gen_coeffs.</code><code class="sig-name descname">read_data_table</code><span class="sig-paren">(</span><em class="sig-param">filename: str</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="../_modules/ce_expansion/utility/gen_coeffs.html#read_data_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.utility.gen_coeffs.read_data_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads in a CSV file containing columnwise data for various elements, and returns a dictionary containing the data.
+Lines beginning with “#” are ignored
+:param filename: A valid filename for a csv file
+:type filename: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A dictionary containing the data of interest</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ce_expansion.utility.gen_gamma.html" class="btn btn-neutral float-right" title="3.1.1.6.1.3. ce_expansion.utility.gen_gamma module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ce_expansion.utility.debug_check_datatypes.html" class="btn btn-neutral float-left" title="3.1.1.6.1.1. ce_expansion.utility.debug_check_datatypes module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

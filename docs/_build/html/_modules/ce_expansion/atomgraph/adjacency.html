@@ -24,6 +24,7 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -81,7 +82,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">1. CE Expansion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../license.html">2. License</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. Documentation</a></li>
 </ul>
 
             
@@ -162,7 +163,7 @@
 
 
 <span class="c1"># Functions below</span>
-<div class="viewcode-block" id="buildBondsList"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.html#ce_expansion.atomgraph.adjacency.buildBondsList">[docs]</a><span class="k">def</span> <span class="nf">buildBondsList</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
+<div class="viewcode-block" id="buildBondsList"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.adjacency.html#ce_expansion.atomgraph.adjacency.buildBondsList">[docs]</a><span class="k">def</span> <span class="nf">buildBondsList</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
                    <span class="n">radius_dictionary</span><span class="o">=</span><span class="p">{</span><span class="n">DEFAULT_ELEMENTS</span><span class="p">:</span> <span class="n">DEFAULT_RADIUS</span><span class="p">}):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    2D bonds list from an ASE atoms object.</span>
@@ -179,7 +180,7 @@
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">sources</span><span class="p">,</span> <span class="n">destinations</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="buildAdjacencyMatrix"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.html#ce_expansion.atomgraph.adjacency.buildAdjacencyMatrix">[docs]</a><span class="k">def</span> <span class="nf">buildAdjacencyMatrix</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
+<div class="viewcode-block" id="buildAdjacencyMatrix"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.adjacency.html#ce_expansion.atomgraph.adjacency.buildAdjacencyMatrix">[docs]</a><span class="k">def</span> <span class="nf">buildAdjacencyMatrix</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
                          <span class="n">radius_dictionary</span><span class="o">=</span><span class="p">{</span><span class="n">DEFAULT_ELEMENTS</span><span class="p">:</span> <span class="n">DEFAULT_RADIUS</span><span class="p">}):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sparse matrix representation from an ase atoms object.</span>
@@ -202,7 +203,7 @@
     <span class="k">return</span> <span class="n">adjacency_matrix</span></div>
 
 
-<div class="viewcode-block" id="buildAdjacencyList"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.html#ce_expansion.atomgraph.adjacency.buildAdjacencyList">[docs]</a><span class="k">def</span> <span class="nf">buildAdjacencyList</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
+<div class="viewcode-block" id="buildAdjacencyList"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.adjacency.html#ce_expansion.atomgraph.adjacency.buildAdjacencyList">[docs]</a><span class="k">def</span> <span class="nf">buildAdjacencyList</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
                        <span class="n">atom_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                        <span class="n">radius_dictionary</span><span class="o">=</span><span class="p">{</span><span class="n">DEFAULT_ELEMENTS</span><span class="p">:</span> <span class="n">DEFAULT_RADIUS</span><span class="p">}):</span>
     <span class="sd">&quot;&quot;&quot;</span>

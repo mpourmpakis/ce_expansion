@@ -24,6 +24,7 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -81,7 +82,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">1. CE Expansion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../license.html">2. License</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. Documentation</a></li>
 </ul>
 
             
@@ -158,7 +159,7 @@
 <span class="n">FS</span> <span class="o">=</span> <span class="mi">40</span>
 
 
-<div class="viewcode-block" id="get_fracs"><a class="viewcode-back" href="../../../source/ce_expansion.plots.html#ce_expansion.plots.triplot.get_fracs">[docs]</a><span class="k">def</span> <span class="nf">get_fracs</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_ee</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<div class="viewcode-block" id="get_fracs"><a class="viewcode-back" href="../../../source/ce_expansion.plots.triplot.html#ce_expansion.plots.triplot.get_fracs">[docs]</a><span class="k">def</span> <span class="nf">get_fracs</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_shells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_ee</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
               <span class="n">x_metal1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">db_inter</span><span class="o">.</span><span class="n">get_bimet_result</span><span class="p">(</span><span class="n">metals</span><span class="o">=</span><span class="n">metals</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
                                     <span class="n">num_shells</span><span class="o">=</span><span class="n">num_shells</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -209,7 +210,7 @@
     <span class="k">return</span> <span class="n">aa</span><span class="p">,</span> <span class="n">bb</span></div>
 
 
-<div class="viewcode-block" id="tri_plot"><a class="viewcode-back" href="../../../source/ce_expansion.plots.html#ce_expansion.plots.triplot.tri_plot">[docs]</a><span class="k">def</span> <span class="nf">tri_plot</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<div class="viewcode-block" id="tri_plot"><a class="viewcode-back" href="../../../source/ce_expansion.plots.triplot.html#ce_expansion.plots.triplot.tri_plot">[docs]</a><span class="k">def</span> <span class="nf">tri_plot</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
              <span class="n">z</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">xlab</span><span class="o">=</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm F_</span><span class="si">{AA}</span><span class="s1">$&#39;</span><span class="p">,</span> <span class="n">ylab</span><span class="o">=</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">rm F_</span><span class="si">{BB}</span><span class="s1">$&#39;</span><span class="p">):</span>
     <span class="c1"># time plot making</span>

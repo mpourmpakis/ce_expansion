@@ -1,38 +1,16 @@
 ce\_expansion.ga package
 ========================
 
+.. automodule:: ce_expansion.ga
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
 
-ce\_expansion.ga.batch\_ga\_run module
---------------------------------------
+.. toctree::
 
-.. automodule:: ce_expansion.ga.batch_ga_run
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ce\_expansion.ga.ga module
---------------------------
-
-.. automodule:: ce_expansion.ga.ga
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ce\_expansion.ga.structure\_gen module
---------------------------------------
-
-.. automodule:: ce_expansion.ga.structure_gen
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: ce_expansion.ga
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   ce_expansion.ga.batch_ga_run
+   ce_expansion.ga.ga
+   ce_expansion.ga.structure_gen

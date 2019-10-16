@@ -1,20 +1,19 @@
 ce\_expansion package
 =====================
 
+.. automodule:: ce_expansion
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
 .. toctree::
 
-    ce_expansion.atomgraph
-    ce_expansion.ga
-    ce_expansion.npdb
-    ce_expansion.plots
-
-Module contents
----------------
-
-.. automodule:: ce_expansion
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   ce_expansion.atomgraph
+   ce_expansion.bin
+   ce_expansion.ga
+   ce_expansion.npdb
+   ce_expansion.plots
+   ce_expansion.utility

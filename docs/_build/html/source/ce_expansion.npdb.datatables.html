@@ -1,0 +1,837 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>3.1.1.4.1.2. ce_expansion.npdb.datatables module &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.1.1.4.1.3. ce_expansion.npdb.db_inter module" href="ce_expansion.npdb.db_inter.html" />
+    <link rel="prev" title="3.1.1.4.1.1. ce_expansion.npdb.base module" href="ce_expansion.npdb.base.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">1. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">2. License</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">3. Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="ce_expansion.html">3.1. ce_expansion package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="ce_expansion.html#subpackages">3.1.1. Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.atomgraph.html">3.1.1.1. ce_expansion.atomgraph package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.bin.html">3.1.1.2. ce_expansion.bin package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.ga.html">3.1.1.3. ce_expansion.ga package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="ce_expansion.npdb.html">3.1.1.4. ce_expansion.npdb package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.plots.html">3.1.1.5. ce_expansion.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.utility.html">3.1.1.6. ce_expansion.utility package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">3. Documentation</a> &raquo;</li>
+        
+          <li><a href="ce_expansion.html">3.1. ce_expansion package</a> &raquo;</li>
+        
+          <li><a href="ce_expansion.npdb.html">3.1.1.4. ce_expansion.npdb package</a> &raquo;</li>
+        
+      <li>3.1.1.4.1.2. ce_expansion.npdb.datatables module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/ce_expansion.npdb.datatables.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-ce_expansion.npdb.datatables">
+<span id="ce-expansion-npdb-datatables-module"></span><h1>3.1.1.4.1.2. ce_expansion.npdb.datatables module<a class="headerlink" href="#module-ce_expansion.npdb.datatables" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="ce_expansion.npdb.datatables.Atoms">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.npdb.datatables.</code><code class="sig-name descname">Atoms</code><span class="sig-paren">(</span><em class="sig-param">index</em>, <em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">z</em>, <em class="sig-param">nanoparticle</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#Atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.Atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p>Atom coordinates that link to a Nanoparticles skeleton
+- no atom type needed since these only correspond to a skeleton
+- BimetallicResults holds atom type info</p>
+<p>Columns:
+index (int): atom index to ensure atom types from</p>
+<blockquote>
+<div><p>BimetallicResults.ordering can be correctly mapped</p>
+</div></blockquote>
+<p>x, y, z (float): coordinates of atom
+nanoparticle (many-to-one): Nanoparticles entry that atom belongs to</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>atom must belong to one NP</p></li>
+</ul>
+</div></blockquote>
+<p>Autofilled Columns:
+id (int): primary key (unique)
+structure_id (int): Foreign key from Nanoparticles to link atom</p>
+<blockquote>
+<div><p>to a single NP</p>
+</div></blockquote>
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Atoms.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Atoms.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Atoms.index">
+<code class="sig-name descname">index</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Atoms.index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Atoms.structure_id">
+<code class="sig-name descname">structure_id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Atoms.structure_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Atoms.x">
+<code class="sig-name descname">x</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Atoms.x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Atoms.y">
+<code class="sig-name descname">y</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Atoms.y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Atoms.z">
+<code class="sig-name descname">z</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Atoms.z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.npdb.datatables.</code><code class="sig-name descname">BimetallicLog</code><span class="sig-paren">(</span><em class="sig-param">start_time</em>, <em class="sig-param">metal1</em>, <em class="sig-param">metal2</em>, <em class="sig-param">shape</em>, <em class="sig-param">ga_generations</em>, <em class="sig-param">shell_range</em>, <em class="sig-param">new_min_structs</em>, <em class="sig-param">tot_structs</em>, <em class="sig-param">batch_run_num=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicLog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p>Table to log batch GA sims</p>
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.batch_run_num">
+<code class="sig-name descname">batch_run_num</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.batch_run_num" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.date">
+<code class="sig-name descname">date</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.ga_generations">
+<code class="sig-name descname">ga_generations</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.ga_generations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.metal1">
+<code class="sig-name descname">metal1</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.metal1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.metal2">
+<code class="sig-name descname">metal2</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.metal2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.new_min_structs">
+<code class="sig-name descname">new_min_structs</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.new_min_structs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.runtime">
+<code class="sig-name descname">runtime</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.runtime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.shape">
+<code class="sig-name descname">shape</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.shell_range">
+<code class="sig-name descname">shell_range</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.shell_range" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicLog.tot_structs">
+<code class="sig-name descname">tot_structs</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicLog.tot_structs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.npdb.datatables.</code><code class="sig-name descname">BimetallicResults</code><span class="sig-paren">(</span><em class="sig-param">metal1</em>, <em class="sig-param">metal2</em>, <em class="sig-param">shape</em>, <em class="sig-param">num_atoms</em>, <em class="sig-param">diameter</em>, <em class="sig-param">n_metal1</em>, <em class="sig-param">n_metal2</em>, <em class="sig-param">CE</em>, <em class="sig-param">EE</em>, <em class="sig-param">ordering</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicResults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p>Bimetallic GA Simulation Results Datatable
+- contains data for most stable structure found</p>
+<blockquote>
+<div><p>(based on CE) at a given shape, size, and metal composition</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>GA varies chemical ordering to find stable NP</p></li>
+</ul>
+<p>Columns:
+metal1 and metal2 (string(2)): metal element names that are always</p>
+<blockquote>
+<div><p>converted to alphabetical order
+- e.g. metal1 = Ag, metal2 = Cu</p>
+</div></blockquote>
+<p>shape (string): shape of NP
+num_atoms (int): number of atoms in NP
+diameter (float): “diameter” of NP measured using (atom.cell.max() / 10)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>units = nm</p></li>
+<li><p>measured in ga.run_ga</p></li>
+<li><p>NOTE: std measuring, but there might be a better way</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>n_metal1, n_metal2 (int): number of metal(1)(2) in NP</dt><dd><ul class="simple">
+<li><p>must add up to num_atoms</p></li>
+<li><p>constrains composition of NP</p></li>
+</ul>
+</dd>
+</dl>
+<p>CE (float): cohesive energy of NP (in ev / atom)
+EE (float): excess energy of NP (in ev / atom)
+ordering (string): string of 1’s and 0’s mapping atom type</p>
+<blockquote>
+<div><p>to Atoms skeleton
+- 1: metal2
+- 0: metal1
+- atoms of each NP are ordered with an index to</p>
+<blockquote>
+<div><p>ensure ordering maps correctly</p>
+</div></blockquote>
+</div></blockquote>
+<p>Autofilled Columns:
+id: primary key (unique)
+structure_id (int): Foreign key from Nanoparticles to link GA result</p>
+<blockquote>
+<div><p>to a single NP</p>
+</div></blockquote>
+<p>Mapped Properties:
+nanoparticle: (Nanoparticle Datatable entry) links to NP skeleton used</p>
+<blockquote>
+<div><p>in GA sim (size, and shape constraints)</p>
+</div></blockquote>
+<dl class="method">
+<dt>
+<code class="sig-name descname">build_atoms_obj: Returns atoms object of nanoparticle using ordering</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">build_chem_formula: Returns chemical formula of string e.g. 'Au23_Cu32'</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">build_prdf: returns data of partial radial distribution function</code></dt>
+<dd><dl class="simple">
+<dt>Args:</dt><dd><p>alpha (str): reference position metal
+beta (str): metal to measure distance from reference metal
+dr (float): shell size to quantify counts in PRDF</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">build_prdf_plot: creates 4 subplots containing</code></dt>
+<dd><ul class="simple">
+<li><p>metal1 : metal1 PRDF (blue)</p></li>
+<li><p>metal2 : metal2 PRDF (red)</p></li>
+<li><p>metal1 : metal2 PRDF (purple)</p></li>
+<li><p>png image of NP</p></li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">save_np: saves atoms object of nanoparticle</code></dt>
+<dd><dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>path (str): path to save Atoms object (<a href="#id1"><span class="problematic" id="id2">*</span></a>.xyz, <a href="#id3"><span class="problematic" id="id4">*</span></a>.pdb, etc.)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.CE">
+<code class="sig-name descname">CE</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.CE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.EE">
+<code class="sig-name descname">EE</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.EE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.build_atoms_obj">
+<code class="sig-name descname">build_atoms_obj</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicResults.build_atoms_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.build_atoms_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns ase.Atoms object of stable NP found
+- NP built with Nanoparticle.get_atoms_obj_skel</p>
+<blockquote>
+<div><p>and atom type added in using self.ordering</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>NP from entry</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(ase.Atoms)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.build_central_rdf">
+<code class="sig-name descname">build_central_rdf</code><span class="sig-paren">(</span><em class="sig-param">nbins=5</em>, <em class="sig-param">pcty=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicResults.build_central_rdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.build_central_rdf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.build_chem_formula">
+<code class="sig-name descname">build_chem_formula</code><span class="sig-paren">(</span><em class="sig-param">latex=False</em>, <em class="sig-param">bold=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicResults.build_chem_formula"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.build_chem_formula" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns chemical formula of bimetallic NP
+in alphabetical order
+- e.g. Ag6_Au7</p>
+<p>KArgs:
+latex (bool): if True, chemical formula is returned in Latex Math form</p>
+<blockquote>
+<div><p>(Default: False)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>(str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.build_prdf">
+<code class="sig-name descname">build_prdf</code><span class="sig-paren">(</span><em class="sig-param">alpha=None</em>, <em class="sig-param">beta=None</em>, <em class="sig-param">dr=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicResults.build_prdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.build_prdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates partial radial distribution functions
+of metal &lt;alpha&gt; vs. metal &lt;beta&gt;</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha</strong> (<em>str</em>) – </p></li>
+<li><p><strong>beta</strong> (<em>str</em>) – </p></li>
+<li><p><strong>dr</strong> (<em>float</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Histogram data of each metal in the shells</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.build_prdf_plot">
+<code class="sig-name descname">build_prdf_plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicResults.build_prdf_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.build_prdf_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a plt.Figure with PRDF subplots:
+M1 vs M1, M1 vs M2
+M2 vs M1, M2 vs M2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.diameter">
+<code class="sig-name descname">diameter</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.diameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.last_updated">
+<code class="sig-name descname">last_updated</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.last_updated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.metal1">
+<code class="sig-name descname">metal1</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.metal1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.metal2">
+<code class="sig-name descname">metal2</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.metal2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.n_metal1">
+<code class="sig-name descname">n_metal1</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.n_metal1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.n_metal2">
+<code class="sig-name descname">n_metal2</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.n_metal2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.num_atoms">
+<code class="sig-name descname">num_atoms</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.num_atoms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.ordering">
+<code class="sig-name descname">ordering</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.ordering" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.save_np">
+<code class="sig-name descname">save_np</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicResults.save_np"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.save_np" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves stable NP to desired path
+- uses ase to save
+- supports all ase save types</p>
+<blockquote>
+<div><p>e.g. xyz, pdb, png, etc.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if saved successfully</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.shape">
+<code class="sig-name descname">shape</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#BimetallicResults.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows nanoparticle using ase.visualize.view</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.BimetallicResults.structure_id">
+<code class="sig-name descname">structure_id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.BimetallicResults.structure_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ce_expansion.npdb.datatables.ModelCoefficients">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.npdb.datatables.</code><code class="sig-name descname">ModelCoefficients</code><span class="sig-paren">(</span><em class="sig-param">element1</em>, <em class="sig-param">element2</em>, <em class="sig-param">cn</em>, <em class="sig-param">bond_energy</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#ModelCoefficients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.ModelCoefficients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p>Bond-Centric Model Coefficients (gamma) precalculated
+based on atom types and coordination number</p>
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.ModelCoefficients.bond_energy">
+<code class="sig-name descname">bond_energy</code><a class="headerlink" href="#ce_expansion.npdb.datatables.ModelCoefficients.bond_energy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.ModelCoefficients.cn">
+<code class="sig-name descname">cn</code><a class="headerlink" href="#ce_expansion.npdb.datatables.ModelCoefficients.cn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.ModelCoefficients.element1">
+<code class="sig-name descname">element1</code><a class="headerlink" href="#ce_expansion.npdb.datatables.ModelCoefficients.element1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.ModelCoefficients.element2">
+<code class="sig-name descname">element2</code><a class="headerlink" href="#ce_expansion.npdb.datatables.ModelCoefficients.element2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.ModelCoefficients.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.ModelCoefficients.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.npdb.datatables.</code><code class="sig-name descname">Nanoparticles</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">num_atoms</em>, <em class="sig-param">num_shells=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#Nanoparticles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p>Nanoparticles (NP) Skeleton Datatable
+- contains header info for NP skeletons used in GA sims</p>
+<p>Columns:
+shape (string): shape of NP
+num_atoms (int): number of atoms in NP
+num_shells (int): number of shells used to build NP</p>
+<blockquote>
+<div><p>from structure_gen module
+- not required in initial entry</p>
+</div></blockquote>
+<p>Autofilled Columns:
+id: primary key (unique)
+bimetallic_results (one-to-many): links to entries in BimetallicResults</p>
+<blockquote>
+<div><p>that used this NP skeleton
+- new BimetallicResults entries require</p>
+<blockquote>
+<div><p>a NP to be entered</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>one NP can have many BimetallicResults</p></li>
+</ul>
+</div></blockquote>
+<p>Other Attributes:
+bonds_list (np.array): used to carry bonds_list for GA sims
+atoms_obj (ase.Atoms): stores an ase.Atoms skeleton after being built with</p>
+<blockquote>
+<div><p>get_atoms_obj_skel</p>
+</div></blockquote>
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.atoms">
+<code class="sig-name descname">atoms</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.atoms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.atoms_obj">
+<code class="sig-name descname">atoms_obj</code><em class="property"> = None</em><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.atoms_obj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.bimetallic_results">
+<code class="sig-name descname">bimetallic_results</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.bimetallic_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.bonds_list">
+<code class="sig-name descname">bonds_list</code><em class="property"> = None</em><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.bonds_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.get_atoms_obj_skel">
+<code class="sig-name descname">get_atoms_obj_skel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#Nanoparticles.get_atoms_obj_skel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.get_atoms_obj_skel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds NP in the form of a Cu NP ase.Atoms object
+- stores under self.atoms_obj property
+- returns atoms_obj</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.get_diameter">
+<code class="sig-name descname">get_diameter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#Nanoparticles.get_diameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.get_diameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.load_bonds_list">
+<code class="sig-name descname">load_bonds_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#Nanoparticles.load_bonds_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.load_bonds_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.num_atoms">
+<code class="sig-name descname">num_atoms</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.num_atoms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.num_bonds">
+<code class="sig-name descname">num_bonds</code><em class="property"> = None</em><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.num_bonds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.num_shells">
+<code class="sig-name descname">num_shells</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.num_shells" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.Nanoparticles.shape">
+<code class="sig-name descname">shape</code><a class="headerlink" href="#ce_expansion.npdb.datatables.Nanoparticles.shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ce_expansion.npdb.datatables.PartialRadialDists">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.npdb.datatables.</code><code class="sig-name descname">PartialRadialDists</code><span class="sig-paren">(</span><em class="sig-param">np_id</em>, <em class="sig-param">prdf_type</em>, <em class="sig-param">element_tracked</em>, <em class="sig-param">distance</em>, <em class="sig-param">frequency</em>, <em class="sig-param">element_center=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#PartialRadialDists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.PartialRadialDists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p>Holds partial radial distribution functions.</p>
+<dl>
+<dt>Columns:</dt><dd><dl>
+<dt>prdf_type (str)<span class="classifier">The type of PRDF being calculated here (atom or NP centered)</span></dt><dd><dl class="simple">
+<dt>The type can be one of the two following values:</dt><dd><p>Atom_Centered
+NP_Centered</p>
+</dd>
+</dl>
+<p>and will raise a ValueError if one of these two values is not used.</p>
+</dd>
+<dt>element_center (str[2])<span class="classifier">The element at the center of the distribution (if atomic prdf being used)</span></dt><dd><p>If this is supplied for an NP-centered PRDF, the program will raise a ValueError.</p>
+</dd>
+</dl>
+<p>element_tracked (str[2]) : The element whose radial distribution we are following
+distance (float) : How far away from the center of the distribution we are
+frequency (float) : Frequency of element_tracked found at that particular distance
+np_id (int) : The NP this radial distribution function corresponds to</p>
+</dd>
+</dl>
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PartialRadialDists.distance">
+<code class="sig-name descname">distance</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PartialRadialDists.distance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PartialRadialDists.element_center">
+<code class="sig-name descname">element_center</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PartialRadialDists.element_center" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PartialRadialDists.element_tracked">
+<code class="sig-name descname">element_tracked</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PartialRadialDists.element_tracked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PartialRadialDists.frequency">
+<code class="sig-name descname">frequency</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PartialRadialDists.frequency" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PartialRadialDists.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PartialRadialDists.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PartialRadialDists.np_id">
+<code class="sig-name descname">np_id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PartialRadialDists.np_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PartialRadialDists.prdf_type">
+<code class="sig-name descname">prdf_type</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PartialRadialDists.prdf_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ce_expansion.npdb.datatables.PostProcessing">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.npdb.datatables.</code><code class="sig-name descname">PostProcessing</code><span class="sig-paren">(</span><em class="sig-param">chemical_ordering_parameter=None</em>, <em class="sig-param">atomic_prdf_pointer=None</em>, <em class="sig-param">np_prdf_pointer=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/datatables.html#PostProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.datatables.PostProcessing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Base</span></code></p>
+<p>Logs post-processed data for a NP.</p>
+<dl class="simple">
+<dt>Currently we have:</dt><dd><ul class="simple">
+<li><p>Chemical Ordering Parameter</p></li>
+<li><p>Partial Radial Distribution Function (atom-centric)</p></li>
+<li><p>Partial Radial Distribution Function (NP-centric)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Colunns:</p>
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PostProcessing.atomic_prdf_pointer">
+<code class="sig-name descname">atomic_prdf_pointer</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PostProcessing.atomic_prdf_pointer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PostProcessing.chemical_ordering_parameter">
+<code class="sig-name descname">chemical_ordering_parameter</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PostProcessing.chemical_ordering_parameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PostProcessing.id">
+<code class="sig-name descname">id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PostProcessing.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PostProcessing.np_id">
+<code class="sig-name descname">np_id</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PostProcessing.np_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="ce_expansion.npdb.datatables.PostProcessing.np_prdf_pointer">
+<code class="sig-name descname">np_prdf_pointer</code><a class="headerlink" href="#ce_expansion.npdb.datatables.PostProcessing.np_prdf_pointer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ce_expansion.npdb.db_inter.html" class="btn btn-neutral float-right" title="3.1.1.4.1.3. ce_expansion.npdb.db_inter module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ce_expansion.npdb.base.html" class="btn btn-neutral float-left" title="3.1.1.4.1.1. ce_expansion.npdb.base module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

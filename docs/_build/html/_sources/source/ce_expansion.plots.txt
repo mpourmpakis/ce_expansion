@@ -1,54 +1,18 @@
 ce\_expansion.plots package
 ===========================
 
+.. automodule:: ce_expansion.plots
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
 
-ce\_expansion.plots.cn\_dist\_plot module
------------------------------------------
+.. toctree::
 
-.. automodule:: ce_expansion.plots.cn_dist_plot
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ce\_expansion.plots.plot\_defaults module
------------------------------------------
-
-.. automodule:: ce_expansion.plots.plot_defaults
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ce\_expansion.plots.plots module
---------------------------------
-
-.. automodule:: ce_expansion.plots.plots
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ce\_expansion.plots.shell\_vs\_tot module
------------------------------------------
-
-.. automodule:: ce_expansion.plots.shell_vs_tot
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-ce\_expansion.plots.triplot module
-----------------------------------
-
-.. automodule:: ce_expansion.plots.triplot
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: ce_expansion.plots
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   ce_expansion.plots.cn_dist_plot
+   ce_expansion.plots.plot_defaults
+   ce_expansion.plots.plots
+   ce_expansion.plots.shell_vs_tot
+   ce_expansion.plots.triplot

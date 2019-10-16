@@ -1,0 +1,14 @@
+ce\_expansion.bin package
+=========================
+
+.. automodule:: ce_expansion.bin
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+
+   ce_expansion.bin.interface

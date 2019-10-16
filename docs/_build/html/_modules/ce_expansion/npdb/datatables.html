@@ -24,6 +24,7 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -81,7 +82,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">1. CE Expansion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../license.html">2. License</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. Documentation</a></li>
 </ul>
 
             
@@ -162,7 +163,7 @@
 <span class="kn">from</span> <span class="nn">ase.data.colors</span> <span class="k">import</span> <span class="n">jmol_colors</span>
 
 
-<div class="viewcode-block" id="BimetallicResults"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicResults">[docs]</a><span class="k">class</span> <span class="nc">BimetallicResults</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicResults"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicResults">[docs]</a><span class="k">class</span> <span class="nc">BimetallicResults</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Bimetallic GA Simulation Results Datatable</span>
 <span class="sd">    - contains data for most stable structure found</span>
@@ -255,7 +256,7 @@
         <span class="c1"># attribute to store atoms object once it has been built</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="BimetallicResults.build_atoms_obj"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicResults.build_atoms_obj">[docs]</a>    <span class="k">def</span> <span class="nf">build_atoms_obj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicResults.build_atoms_obj"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicResults.build_atoms_obj">[docs]</a>    <span class="k">def</span> <span class="nf">build_atoms_obj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns ase.Atoms object of stable NP found</span>
 <span class="sd">        - NP built with Nanoparticle.get_atoms_obj_skel</span>
@@ -271,7 +272,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">atom</span></div>
 
-<div class="viewcode-block" id="BimetallicResults.build_chem_formula"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicResults.build_chem_formula">[docs]</a>    <span class="k">def</span> <span class="nf">build_chem_formula</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicResults.build_chem_formula"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicResults.build_chem_formula">[docs]</a>    <span class="k">def</span> <span class="nf">build_chem_formula</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns chemical formula of bimetallic NP</span>
 <span class="sd">        in alphabetical order</span>
@@ -293,7 +294,7 @@
         <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s%i</span><span class="s1">_</span><span class="si">%s%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metal1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metal1</span><span class="p">,</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">metal2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_metal2</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BimetallicResults.build_prdf"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicResults.build_prdf">[docs]</a>    <span class="k">def</span> <span class="nf">build_prdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicResults.build_prdf"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicResults.build_prdf">[docs]</a>    <span class="k">def</span> <span class="nf">build_prdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculates partial radial distribution functions</span>
 <span class="sd">        of metal &lt;alpha&gt; vs. metal &lt;beta&gt;</span>
@@ -375,7 +376,7 @@
 
         <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">gr</span></div>
 
-<div class="viewcode-block" id="BimetallicResults.build_prdf_plot"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicResults.build_prdf_plot">[docs]</a>    <span class="k">def</span> <span class="nf">build_prdf_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicResults.build_prdf_plot"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicResults.build_prdf_plot">[docs]</a>    <span class="k">def</span> <span class="nf">build_prdf_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Builds a plt.Figure with PRDF subplots:</span>
 <span class="sd">        M1 vs M1, M1 vs M2</span>
@@ -426,7 +427,7 @@
         <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">(</span><span class="n">rect</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">fig</span></div>
 
-<div class="viewcode-block" id="BimetallicResults.build_central_rdf"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicResults.build_central_rdf">[docs]</a>    <span class="k">def</span> <span class="nf">build_central_rdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">pcty</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicResults.build_central_rdf"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicResults.build_central_rdf">[docs]</a>    <span class="k">def</span> <span class="nf">build_central_rdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">pcty</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_atoms_obj</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="c1"># center atoms at origin (COP)</span>
@@ -468,7 +469,7 @@
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">fig</span></div>
 
-<div class="viewcode-block" id="BimetallicResults.save_np"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicResults.save_np">[docs]</a>    <span class="k">def</span> <span class="nf">save_np</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicResults.save_np"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicResults.save_np">[docs]</a>    <span class="k">def</span> <span class="nf">save_np</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Saves stable NP to desired path</span>
 <span class="sd">        - uses ase to save</span>
@@ -484,14 +485,14 @@
         <span class="n">atom</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="BimetallicResults.show"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicResults.show">[docs]</a>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicResults.show"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicResults.show">[docs]</a>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Shows nanoparticle using ase.visualize.view</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ase</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">build_atoms_obj</span><span class="p">())</span></div></div>
 
 
-<div class="viewcode-block" id="Nanoparticles"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.Nanoparticles">[docs]</a><span class="k">class</span> <span class="nc">Nanoparticles</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<div class="viewcode-block" id="Nanoparticles"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.Nanoparticles">[docs]</a><span class="k">class</span> <span class="nc">Nanoparticles</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Nanoparticles (NP) Skeleton Datatable</span>
 <span class="sd">    - contains header info for NP skeletons used in GA sims</span>
@@ -541,7 +542,7 @@
     <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span>
 
-<div class="viewcode-block" id="Nanoparticles.get_atoms_obj_skel"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.Nanoparticles.get_atoms_obj_skel">[docs]</a>    <span class="k">def</span> <span class="nf">get_atoms_obj_skel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Nanoparticles.get_atoms_obj_skel"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.Nanoparticles.get_atoms_obj_skel">[docs]</a>    <span class="k">def</span> <span class="nf">get_atoms_obj_skel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Builds NP in the form of a Cu NP ase.Atoms object</span>
 <span class="sd">        - stores under self.atoms_obj property</span>
@@ -552,14 +553,14 @@
                                         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span></div>
 
-<div class="viewcode-block" id="Nanoparticles.get_diameter"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.Nanoparticles.get_diameter">[docs]</a>    <span class="k">def</span> <span class="nf">get_diameter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Nanoparticles.get_diameter"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.Nanoparticles.get_diameter">[docs]</a>    <span class="k">def</span> <span class="nf">get_diameter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">get_atoms_obj_skel</span><span class="p">()</span>
         <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span><span class="o">.</span><span class="n">positions</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span>
                    <span class="bp">self</span><span class="o">.</span><span class="n">atoms_obj</span><span class="o">.</span><span class="n">positions</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="mi">10</span></div>
 
-<div class="viewcode-block" id="Nanoparticles.load_bonds_list"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.Nanoparticles.load_bonds_list">[docs]</a>    <span class="k">def</span> <span class="nf">load_bonds_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Nanoparticles.load_bonds_list"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.Nanoparticles.load_bonds_list">[docs]</a>    <span class="k">def</span> <span class="nf">load_bonds_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">num_bonds</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span>
@@ -576,7 +577,7 @@
             <span class="k">return</span> <span class="kc">None</span></div></div>
 
 
-<div class="viewcode-block" id="Atoms"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.Atoms">[docs]</a><span class="k">class</span> <span class="nc">Atoms</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<div class="viewcode-block" id="Atoms"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.Atoms">[docs]</a><span class="k">class</span> <span class="nc">Atoms</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Atom coordinates that link to a Nanoparticles skeleton</span>
 <span class="sd">    - no atom type needed since these only correspond to a skeleton</span>
@@ -613,7 +614,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nanoparticle</span> <span class="o">=</span> <span class="n">nanoparticle</span></div>
 
 
-<div class="viewcode-block" id="ModelCoefficients"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.ModelCoefficients">[docs]</a><span class="k">class</span> <span class="nc">ModelCoefficients</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<div class="viewcode-block" id="ModelCoefficients"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.ModelCoefficients">[docs]</a><span class="k">class</span> <span class="nc">ModelCoefficients</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Bond-Centric Model Coefficients (gamma) precalculated</span>
 <span class="sd">        based on atom types and coordination number</span>
@@ -633,7 +634,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bond_energy</span> <span class="o">=</span> <span class="n">bond_energy</span></div>
 
 
-<div class="viewcode-block" id="BimetallicLog"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.BimetallicLog">[docs]</a><span class="k">class</span> <span class="nc">BimetallicLog</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<div class="viewcode-block" id="BimetallicLog"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.BimetallicLog">[docs]</a><span class="k">class</span> <span class="nc">BimetallicLog</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Table to log batch GA sims</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -666,7 +667,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_run_num</span> <span class="o">=</span> <span class="n">batch_run_num</span></div>
 
 
-<div class="viewcode-block" id="PartialRadialDists"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.PartialRadialDists">[docs]</a><span class="k">class</span> <span class="nc">PartialRadialDists</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<div class="viewcode-block" id="PartialRadialDists"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.PartialRadialDists">[docs]</a><span class="k">class</span> <span class="nc">PartialRadialDists</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Holds partial radial distribution functions.</span>
 
@@ -709,7 +710,7 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Element_center only makes sense for atom-centered PRDFs.&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="PostProcessing"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.html#ce_expansion.npdb.datatables.PostProcessing">[docs]</a><span class="k">class</span> <span class="nc">PostProcessing</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<div class="viewcode-block" id="PostProcessing"><a class="viewcode-back" href="../../../source/ce_expansion.npdb.datatables.html#ce_expansion.npdb.datatables.PostProcessing">[docs]</a><span class="k">class</span> <span class="nc">PostProcessing</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Logs post-processed data for a NP.</span>
 

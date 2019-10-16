@@ -1,0 +1,7 @@
+ce\_expansion.plots.cn\_dist\_plot module
+=========================================
+
+.. automodule:: ce_expansion.plots.cn_dist_plot
+   :members:
+   :undoc-members:
+   :show-inheritance:

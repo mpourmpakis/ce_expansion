@@ -1,0 +1,7 @@
+ce\_expansion.ga.ga module
+==========================
+
+.. automodule:: ce_expansion.ga.ga
+   :members:
+   :undoc-members:
+   :show-inheritance:

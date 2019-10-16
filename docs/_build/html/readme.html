@@ -24,6 +24,7 @@
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -35,7 +36,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="2. License" href="license.html" />
-    <link rel="prev" title="Welcome to CE Expansion’s documentation!" href="index.html" /> 
+    <link rel="prev" title="Welcome to CE Expansion!" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -90,6 +91,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="license.html">2. License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/modules.html">3. Documentation</a></li>
 </ul>
 
             
@@ -164,8 +166,8 @@
 <h2>1.1. Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>To install this program, make sure you’ve fulfilled the following requirements:</p>
 <ul class="simple">
-<li>Python 3.7 or greater is installed</li>
-<li>Numpy and ASE are both present with your Python installation (or environment)</li>
+<li><p>Python 3.7 or greater is installed</p></li>
+<li><p>Numpy and ASE are both present with your Python installation (or environment)</p></li>
 </ul>
 <p>Simply download this repository, and run <code class="docutils literal notranslate"><span class="pre">ce_expansion/ga.py</span></code> to begin searching potential NPs.</p>
 </div>
@@ -176,9 +178,9 @@
 <p>But finding a fast algorithm is only one part of the problem. Even if we calculate one nanoparticle per CPU-nanosecond, exploring this space would still require over 900 CPU-years of computing time. Although this is still feasible with current supercomputers, that’s just one possible NP morphology andone possible NP size. NPs come in a variety of sizes and shapes, and polymetallic systems are also of interest, hence a brute-force search of the chemical space is simply not possible with current technology. Instead of a brute-force search, we resort to a genetic algorithm-based approach.</p>
 <p>In our genetic algorithm, the “DNA” of the NP is represented as a string of 1’s and 0’s representing its chemical ordering. For example, if we had a 13-atom NP containing 6 copper atoms and 6 silver atoms, here are a few possible chemical orderings:</p>
 <ul class="simple">
-<li>111111000000</li>
-<li>111010001100</li>
-<li>101010101010</li>
+<li><p>111111000000</p></li>
+<li><p>111010001100</p></li>
+<li><p>101010101010</p></li>
 </ul>
 <p>Essentially what we’re doing here, is we’re taking each atom in the NP, and arbitrarily assigning it an index. It doesn’t matter how that index is assigned, as long as every index is sequential, and is consistently assigned. See the section titled “The AtomGraph” for more detailed information on exactly how it’s assigned. This method is particularly convenient, because it can easily be extended to ternary or even polymetallic systems.</p>
 <p>Hence, for a particular nanoparticle size and shape, we now have a vector that represents the identity of each atom. This strand of “DNA” can then be mutated and bred within a genetic algorithm to try and find a minimum-energy chemical ordering for the NP’s morphology. This converges quite rapidly with our code, and as a result we can very quickly find the lowest-energy chemical ordering for an arbitrary NP composition.</p>
@@ -195,8 +197,8 @@
 <div class="section" id="references">
 <h2>1.5. References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Yan, Z.; Taylor, M. G.; Mascareno, A.; Mpourmpakis, G. Size-, Shape-, and Composition-Dependent Model for Metla Nanoparticle Stability Prediction.  Nano Lett. 2018. 18, 4, 2696-2704. DOI: <a class="reference external" href="https://doi.org/10.1021/acs.nanolett.8b00670">https://doi.org/10.1021/acs.nanolett.8b00670</a></li>
-<li>Larson, A. H.; Mortensen, J. J.; Blomqvist, J.; Castelli, I. E.; Christensen, R.; Dulak, M.; Friis, J.; Groves, M. N.; Hammer, B.; Hargus, J. The atomic simulation environment - a Python library for working with atoms. J. Phys. Condens. Matter 2017. 29, 273002. DOI: <a class="reference external" href="https://doi.org/10.1088/1361-648X/aa680e">https://doi.org/10.1088/1361-648X/aa680e</a> , Github repository: <a class="reference external" href="https://github.com/rosswhitfield/ase">https://github.com/rosswhitfield/ase</a></li>
+<li><p>Yan, Z.; Taylor, M. G.; Mascareno, A.; Mpourmpakis, G. Size-, Shape-, and Composition-Dependent Model for Metla Nanoparticle Stability Prediction.  Nano Lett. 2018. 18, 4, 2696-2704. DOI: <a class="reference external" href="https://doi.org/10.1021/acs.nanolett.8b00670">https://doi.org/10.1021/acs.nanolett.8b00670</a></p></li>
+<li><p>Larson, A. H.; Mortensen, J. J.; Blomqvist, J.; Castelli, I. E.; Christensen, R.; Dulak, M.; Friis, J.; Groves, M. N.; Hammer, B.; Hargus, J. The atomic simulation environment - a Python library for working with atoms. J. Phys. Condens. Matter 2017. 29, 273002. DOI: <a class="reference external" href="https://doi.org/10.1088/1361-648X/aa680e">https://doi.org/10.1088/1361-648X/aa680e</a> , Github repository: <a class="reference external" href="https://github.com/rosswhitfield/ase">https://github.com/rosswhitfield/ase</a></p></li>
 </ol>
 </div>
 </div>
@@ -212,7 +214,7 @@
         <a href="license.html" class="btn btn-neutral float-right" title="2. License" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to CE Expansion’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to CE Expansion!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -1,0 +1,7 @@
+ce\_expansion.plots.shell\_vs\_tot module
+=========================================
+
+.. automodule:: ce_expansion.plots.shell_vs_tot
+   :members:
+   :undoc-members:
+   :show-inheritance:
