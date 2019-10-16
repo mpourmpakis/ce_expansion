@@ -165,6 +165,7 @@ class NPBuilder(object):
     Returns:
     (ase.Atoms): the NP skeleton"""
 
+    @staticmethod
     def cuboctahedron(num_shells, kind="Cu"):
         """
         Creates a cuboctahedral NP.
@@ -184,7 +185,7 @@ class NPBuilder(object):
             return ase.Atoms(kind)
         return ase.Atoms(ase.cluster.Octahedron(kind, 2 * num_shells + 1,
                                                 cutoff=num_shells), pbc=False)
-
+    @staticmethod
     def elongated_pentagonal_bipyramid(num_shells,
                                        kind="Cu"):
         """
@@ -205,6 +206,7 @@ class NPBuilder(object):
             ase.cluster.Decahedron("Cu", num_shells, num_shells, 0),
             pbc=False)
 
+    @staticmethod
     def fcc_cube(num_units, kind="Cu"):
         """
         Creates an FCC-cube with faces on the {100} family of planes.
@@ -229,6 +231,7 @@ class NPBuilder(object):
                                                        [num_units] * 3))
         return atom
 
+    @staticmethod
     def icosahedron(num_shells, kind="Cu"):
         """
         Creates an icosahedral NP.
@@ -247,40 +250,40 @@ class NPBuilder(object):
         return ase.Atoms(ase.cluster.Icosahedron(kind, num_shells + 1),
                          pbc=False)
 
+    # WIP - sphere is not perfectly symmetric
+    @staticmethod
+    def sphere(num_layers, kind="Cu",
+               unit_cell_length=3.61):
+        """
+        Inscribes a sphere inside a cube and makes it a nanoparticle.
+        NOTE: Perfect symmetry not guaranteed.
 
-# WIP - sphere is not perfectly symmetric
-def sphere(num_layers, kind="Cu",
-           unit_cell_length=3.61):
-    """
-    Inscribes a sphere inside a cube and makes it a nanoparticle.
-    NOTE: Perfect symmetry not guaranteed.
+        :param num_layers: The size of the lattice containing the inscribed sphere.
+        :type num_layers: int
+        :param kind: The element making up the skeleton. Defaults to "Cu"
+        :type kind: str
+        :param unit_cell_length: The edge-length of the unit cell.
+        :type unit_cell_length: float
 
-    :param num_layers: The size of the lattice containing the inscribed sphere.
-    :type num_layers: int
-    :param kind: The element making up the skeleton. Defaults to "Cu"
-    :type kind: str
-    :param unit_cell_length: The edge-length of the unit cell.
-    :type unit_cell_length: float
+        :return: An ASE atoms object containing the sphere skeleton.
+        """
+        raise NotImplementedError
+        # Create the cube
+        trimmed_cube = fcc_cube(num_layers, kind)
 
-    :return: An ASE atoms object containing the sphere skeleton.
-    """
-    raise NotImplementedError
-    # Create the cube
-    trimmed_cube = fcc_cube(num_layers, kind)
+        # Simple geometry
+        center = trimmed_cube.positions.mean(0)
+        cutoff_radius = num_layers * unit_cell_length / 1.99
+        distance_list = map(ase.np.linalg.norm,
+                            ase.geometry.get_distances(trimmed_cube.get_positions(), p2=center)[1])
 
-    # Simple geometry
-    center = trimmed_cube.positions.mean(0)
-    cutoff_radius = num_layers * unit_cell_length / 1.99
-    distance_list = map(ase.np.linalg.norm,
-                        ase.geometry.get_distances(trimmed_cube.get_positions(), p2=center)[1])
+        # Build the sphere using atoms that are within the cutoff
+        sphere = ase.Atoms()
+        for atom, distance in zip(trimmed_cube, distance_list):
+            if distance <= cutoff_radius:
+                sphere += atom
 
-    # Build the sphere using atoms that are within the cutoff
-    sphere = ase.Atoms()
-    for atom, distance in zip(trimmed_cube, distance_list):
-        if distance <= cutoff_radius:
-            sphere += atom
-
-    return sphere
+        return sphere
 
 
 if __name__ == '__main__':
