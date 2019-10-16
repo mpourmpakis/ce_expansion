@@ -1,1 +1,1 @@
-from . import base, datatables, db_inter, db_utils
+from ce_expansion.npdb import base, datatables, db_inter, db_utils

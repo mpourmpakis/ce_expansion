@@ -7,7 +7,7 @@ from ce_expansion.ga import ga
 from ce_expansion.npdb import db_inter
 
 
-def main():
+def run_ga():
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
     """

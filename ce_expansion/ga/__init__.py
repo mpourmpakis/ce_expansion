@@ -1,1 +1,1 @@
-from . import ga, structure_gen, batch_ga_run
+from ce_expansion.ga import ga, structure_gen, batch_ga_run

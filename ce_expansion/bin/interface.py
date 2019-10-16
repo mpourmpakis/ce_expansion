@@ -11,16 +11,7 @@ DEBUG_MODE = False
 DEFAULT_NUM_ELEMENTS = 2  # Polymetallicity of the system; 2=bimetallic. Only works for bimetallics at the moment.
 DEFAULT_MAX_COORDINATION = 12  # Maximum possible coordination number
 
-# Figure out where we are on the system, and make it to the bin directory
-# Current structure is:
-#   Project
-#   |---bin
-#       |---lib.dll
-#   |---ce_expansion
-#       |---atomgraph
-#           |----interface.py
-path = os.path.realpath(__file__)
-bin_directory = os.sep.join(path.split(os.sep)[:-3] + ["bin"])
+bin_directory = os.sep.join(os.path.realpath(__file__).split(os.sep)[:-1])
 
 # Set the correct library for the given platform
 if DEBUG_MODE:
@@ -35,7 +26,8 @@ else:
         dll = ('_lib.so')
 
 # Load the library
-_libCalc = ctypes.CDLL(os.sep.join(bin_directory.split(os.sep) + [dll]))
+dll_location = os.sep.join(bin_directory.split(os.sep) + [dll])
+_libCalc = ctypes.CDLL(dll_location)
 
 # Function return type
 _libCalc.calculate_ce.restype = ctypes.c_double

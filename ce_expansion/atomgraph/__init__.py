@@ -1,3 +1,3 @@
-# No dependencies
-from . import interface, adjacency, atomgraph
+from ce_expansion.atomgraph import adjacency, atomgraph
+
 AtomGraph = atomgraph.AtomGraph
