@@ -13,9 +13,6 @@ Base module:
 """
 
 db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                       '..',
-                       '..',
-                       'data',
                        'np.db')
 engine = create_engine('sqlite:///' + db_path)
 Session = sessionmaker(bind=engine)
