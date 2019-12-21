@@ -504,10 +504,10 @@ def build_srf_plot(metals, shape, T=None):
     ax.set_xlabel('\n\n$X_{%s}$' % metal2)
     ax.set_ylabel('\n\n$\\rm N_{atoms}$')
     if T is not None:
-        ax.set_zlabel('\n\n$\\rm \\Delta$G (eV)')
+        ax.set_zlabel('\n\n$\\rm \\Delta$G (eV / atom)')
         ax.set_title('%iK\n%s %s %s' % (T, metal1, metal2, shape.title()))
     else:
-        ax.set_zlabel('\n\nEE (eV)')
+        ax.set_zlabel('\n\nEE (eV / atom)')
         ax.set_title('%s %s %s' % (metal1, metal2, shape.title()))
     return fig, ax
 
@@ -974,8 +974,95 @@ def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
     return coeffs
 
 
+def boltzmann(metals, num_shells, T=298, axes=None, ylabels=True, title=False):
+    shapes = ['icosahedron', 'cuboctahedron', 'elongated-pentagonal-bipyramid']
+    colors = ['red', 'blue', 'green']
+    barcolors = ['lightcoral', 'dodgerblue', 'palegreen']
+    ee = None
+    for i, s in enumerate(shapes):
+        res = get_bimet_result(metals, s, num_shells=num_shells)
+        res = sorted(res, key=lambda n: n.n_metal1)
+
+        if not isinstance(ee, np.ndarray):
+            ee = np.zeros((len(res), 3))
+
+            # percent of metal1 in NP
+            comps = np.array([r.n_metal1 / r.num_atoms for r in res])
+
+        ee[:, i] = [r.EE for r in res]
+
+    # k_b T [eV] = (25.7 mEV at 298 K)
+    kt = 25.7E-3 * (T / 298.)
+
+    del_s = comps * np.ma.log(comps).filled(0) + \
+        (1 - comps) * np.ma.log(1 - comps).filled(0)
+    del_s *= -kt
+
+    # convert to delta G mix
+    gmix = ee.copy()
+    gmix[:, 0] -= del_s
+    gmix[:, 1] -= del_s
+    gmix[:, 2] -= del_s
+
+    # boltzmann distribution
+    # use Gmix as energy in boltzmann
+    boltz = np.exp(-gmix / kt)
+    for j, den in enumerate(boltz.sum(1)):
+        boltz[j, :] = boltz[j, :] / den
+
+    if axes is None:
+        fig, axes = plt.subplots(2, 1, sharex=True)
+    else:
+        fig = axes[0].figure
+    ax, ax2 = axes
+    start = np.zeros(boltz.shape[0])
+    for i, s in enumerate(shapes):
+        lab = s[:3].upper() if ylabels else '_nolabel_'
+        lab = lab.replace('ELO', 'EPB')
+        ax.plot(comps, boltz[:, i], label=lab, color=colors[i], zorder=10)
+        # ax.bar(comps, boltz[:, i], width=0.01, bottom=start,
+        #        color=barcolors[i], alpha=0.7)
+        start = start + boltz[:, i]
+        ax2.plot(comps, ee[:, i], color=colors[i])
+
+    ax.set_ylim(0, 0.65)
+
+    if ylabels:
+        ax.set_ylabel('Boltzmann Probability', labelpad=21)
+        ax2.set_ylabel('$\\rm \\Delta G_{mix}$ (eV / atom)', labelpad=0)
+        ax.legend(fontsize=13, frameon=False, loc='upper left')
+    ax2.set_xlabel('$\\rm X_{%s}$' % (res[0].metal1))
+    ax.set_title('%s%s' % (res[0].metal1, res[0].metal2))
+    if title:
+        ax.set_title('%i-Atom %s%s NPs at T = %i K' % (res[0].num_atoms,
+                                                       res[0].metal1,
+                                                       res[0].metal2,
+                                                       T))
+    return fig, axes
+    # fig.tight_layout()
+    # plt.show()
+
+
+def totalfig_boltzmann(num_shells, T=298):
+    num_atoms = get_shell2num('icosahedron', num_shells)
+    size = 14
+    plt.rcParams['xtick.labelsize'] = size
+    plt.rcParams['ytick.labelsize'] = size
+    fig, all_axes = plt.subplots(2, 3, sharex=True, figsize=(13, 8))
+    for i, metal in enumerate(['agau', 'agcu', 'aucu']):
+        axes = all_axes[:, i]
+        boltzmann(metal, num_shells, T=298, axes=axes, ylabels=not i)
+    fig.tight_layout()  # rect=(0, 0, 1, 0.96))
+    fig.savefig('C:\\users\\yla\\desktop\\%i-atom_%iK_plot.svg'
+                % (num_atoms, T))
+
+
 if __name__ == '__main__':
-    a = build_srf_plot('auag', 'icosahedron', T=800)
+    for s in range(1, 11):
+        totalfig_boltzmann(s)
+    sys.exit()
+
+    a = build_srf_plot('cuag', 'icosahedron', T=None)
     plt.show()
     sys.exit()
 
