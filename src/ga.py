@@ -111,7 +111,7 @@ class Chromo(object):
             raise ValueError("Mutating Chromo should only be done through"
                              "Pop simulations")
 
-        if not self.n_metal2 or self.n_metal2 == self.num_atoms:
+        if self.n_metal2 in {0, self.num_atoms}:
             print('Warning: attempting to mutate, but system is monometallic')
             return
 
@@ -155,11 +155,75 @@ class Chromo(object):
         self.calc_score()
 
     def mate(self, chromo2):
+            """
+            Pairwise crossover algorithm to mix two parent chromosomes into
+            two new child chromosomes, taking traits from each parent
+            - conserves doping concentration
+            - about O(N^2) scaling
+            Args:
+            - chromo2 (Chromo): second parent Chromo obj
+            Returns:
+            - (list): two children Chromo objs with new ordering <arr>s
+            """
+            child1 = self.ordering.copy()
+            child2 = chromo2.ordering.copy()
+
+            # if only one '1' or one '0' then mating is not possible
+            if self.n_metal2 in [1, self.num_atoms - 1]:
+                return [self.copy(), chromo2.copy()]
+
+            # indices where a '1' is found in child1
+            ones = np.where(child1 == 1)[0]
+
+            # indices where child1 and child2 do not match
+            diff = np.where(child1 != child2)[0]
+
+            # must have at least two different sites
+            if len(diff) < 2:
+                return [self.copy(), chromo2.copy()]
+
+            # swap ~half of the different sites
+            # s1: number of '1's from child1 switched to child2
+            # s2: number of '1's from child2 switched to child1
+            s1 = s2 = int(len(diff)) // 2
+
+            # even number of swaps must be made to conserve composition
+            if s1 % 2:
+                s1 = s2 = s1 - 1
+
+            # number of swaps must be at least 2
+            if s1 < 2:
+                s1 = s2 = 2
+
+            # shuffle diff for random selection of traits to crossover
+            np.random.shuffle(diff)
+            for i in diff:
+                # swap '1' from child1 to child2
+                if i in ones:
+                    if s1:
+                        child1[i] = 0
+                        child2[i] = 1
+                        s1 -= 1
+                # swap '1' from child2 to child1
+                elif s2:
+                    child1[i] = 1
+                    child2[i] = 0
+                    s2 -= 1
+                if s1 == s2 == 0:
+                    break
+
+            children = [Chromo(self.atomg, n_metal2=self.n_metal2,
+                               ordering=child1.copy()),
+                        Chromo(self.atomg, n_metal2=self.n_metal2,
+                               ordering=child2.copy())]
+            return children
+
+    def mate2(self, chromo2):
         """
         Pairwise crossover algorithm to mix two parent chromosomes into
         two new child chromosomes, taking traits from each parent
         - conserves doping concentration
-        - about O(N^2) scaling
+        - about O(N) scaling
 
         Args:
         - chromo2 (Chromo): second parent Chromo obj
@@ -167,64 +231,42 @@ class Chromo(object):
         Returns:
         - (list): two children Chromo objs with new ordering <arr>s
         """
+        # if only one '1' or one '0' then mating is not possible
+        if self.n_metal2 in {1, self.num_atoms - 1}:
+            return [self.copy(), chromo2.copy()]
+
+        # create ordering copies to modify
         child1 = self.ordering.copy()
         child2 = chromo2.ordering.copy()
 
-        assert (child1.sum() == child2.sum() ==
-                self.n_metal2 == chromo2.n_metal2)
+        # find positions with different values
+        # a: child1 = 1 while child2 = 0
+        # b: child1 = 0 while child2 = 1
+        diffs = child1 - child2
+        a = np.where(diffs == 1)[0]
+        b = np.where(diffs == -1)[0]
 
-        # if only one '1' or one '0' then mating is not possible
-        if self.n_metal2 in [1, self.num_atoms - 1]:
-            return [self.copy(), chromo2.copy()]
+        # number of pairs to crossover
+        npairs = len(a) // 2
 
-        # indices where a '1' is found in child1
-        ones = np.where(child1 == 1)[0]
+        # randomly select half of the mismatched pairs
+        change1 = np.random.choice(a, npairs, replace=False)
+        change2 = np.random.choice(b, npairs, replace=False)
 
-        # indices where child1 and child2 do not match
-        diff = np.where(child1 != child2)[0]
+        # concatenate selected pairs into single array
+        tot_change = np.concatenate([change1, change2]).copy()
 
-        # must have at least two different sites
-        if len(diff) < 2:
-            return [self.copy(), chromo2.copy()]
+        # invert selected pairs (1 -> 0 and 0 -> 1)
+        child1[tot_change] = 1 - child1[tot_change]
+        child2[tot_change] = 1 - child2[tot_change]
 
-        # swap ~half of the different sites
-        # s1: number of '1's from child1 switched to child2
-        # s2: number of '1's from child2 switched to child1
-        s1 = s2 = int(len(diff)) // 2
+        assert self.n_metal2 == sum(child1) == sum(child2)
 
-        # even number of swaps must be made to conserve composition
-        if s1 % 2:
-            s1 = s2 = s1 - 1
-
-        # number of swaps must be at least 2
-        if s1 < 2:
-            s1 = s2 = 2
-
-        # shuffle diff for random selection of traits to crossover
-        np.random.shuffle(diff)
-        for i in diff:
-            # swap '1' from child1 to child2
-            if i in ones:
-                if s1:
-                    child1[i] = 0
-                    child2[i] = 1
-                    s1 -= 1
-            # swap '1' from child2 to child1
-            elif s2:
-                child1[i] = 1
-                child2[i] = 0
-                s2 -= 1
-            if s1 == s2 == 0:
-                break
-
-        assert (child1.sum() == child2.sum() ==
-                self.n_metal2 == chromo2.n_metal2)
-
-        children = [Chromo(self.atomg, n_metal2=self.n_metal2,
-                           ordering=child1.copy()),
-                    Chromo(self.atomg, n_metal2=self.n_metal2,
-                           ordering=child2.copy())]
-        return children
+        # return new children as Chromo objects
+        return [Chromo(self.atomg, n_metal2=self.n_metal2,
+                       ordering=child1),
+                Chromo(self.atomg, n_metal2=self.n_metal2,
+                       ordering=child2)]
 
     def calc_score(self):
         """
@@ -259,7 +301,7 @@ class Pop(object):
                             (Default: 0.8)
         - n_mute_atomswaps (int): number of atom swaps to make
                                   during a mutation
-                                  (Default: None: half min(n_metal1, n_metal2))
+                                  (Default: None: 2% of min(n_metal1, n_metal2))
         - spike (bool): if True, following structures are added to generation 0
                         - if same structure and composition found in DB,
                           it is added to population
@@ -328,11 +370,11 @@ class Pop(object):
         # when it's getting mutated
         self.n_mute_atomswaps = n_mute_atomswaps
 
-        # if no specific atomswap number given, choose half of the
+        # if no specific atomswap number given, choose 2% of the
         # minimum atom type (min(n_mute_atomswaps) is 1)
         if self.n_mute_atomswaps is None:
-            self.n_mute_atomswaps = max(min(self.n_metal1, self.n_metal2) // 50,
-                                        1)
+            lowmetal = min(self.n_metal1, self.n_metal2)
+            self.n_mute_atomswaps = max(lowmetal // 50, 1)
 
         # spike ga with previous run and structures from fill_cn
         self.spike = spike
@@ -511,7 +553,7 @@ class Pop(object):
             # MUTATE - does not mutate most fit nanoparticle
             for j in range(self.n_mute):
                 self[random.randrange(1, self.popsize)
-                ].mutate(self.n_mute_atomswaps)
+                     ].mutate(self.n_mute_atomswaps)
 
         self.sort_pop()
         self.update_stats()
@@ -531,11 +573,11 @@ class Pop(object):
                      (Default: '\r')
         """
         # format of string to be written to console during sim
-        update_str = ' %s %s...Min: %.5f eV/atom   %05i'
-        val = update_str % (self.formula,
-                            self.shape.upper()[:3],
-                            self.stats[-1][0],
-                            self.generation)
+        left_str = ' %s %s...Min:' % (self.formula, self.shape.upper()[:3])
+        val = left_str.rjust(30)
+        update_str = ' %.5f eV/atom   %05i'
+        val += update_str % (self.stats[-1][0], self.generation)
+
         assert self.stats[-1][0] <= self.last_min
         self.last_min = self.stats[-1][0]
         print(val.center(CENTER), end=end)
@@ -668,6 +710,7 @@ class Pop(object):
                           key=lambda j: j.ce)
 
     def update_stats(self):
+
         """
         - Adds statistics of current generation to self.stats
         - Adds best Chromo of current generation to self.min_struct_ls
@@ -919,8 +962,6 @@ def make_file(atom, chrom, path, verbose=False, filetype="xyz"):
     atom.set_tags(None)
     for i, dope in enumerate(chrom.ordering):
         atom[i].symbol = metal2 if dope else metal1
-    print(atom)
-    print(chrom.ordering)
 
     # create file name if not included in path
     if not path.endswith(filetype):
@@ -1529,42 +1570,46 @@ def benchmark_plot(max_nochange=500, metals=('Ag', 'Cu'), shape='icosahedron',
     fig, ax = newp.plot_results()
     randp.plot_results(ax=ax)
 
+    # print run info
+    m1, m2 = metals
+    n = newp.num_atoms
+    n1 = newp.n_metal1
+    n2 = newp.n_metal2
+    x2 = int(round(x_metal2 * 100, 2))
+    x1 = 100 - x2
+    nscreened = newp.max_gens * newp.popsize
+    screen_per_min = nscreened / (newp.runtime / 60)
+    text = '%i-atom %s%s %s (%s shells)\n' % (newp.num_atoms, m1, m2,
+                                              shape, num_shells)
+    text += '%i%% %s (%i)\n' % (x1, m1, n1)
+    text += '%i%% %s (%i)\n' % (x2, m2, n2)
+    text += '\nGA PROPS\n'
+    text += 'popsize = %i\n' % newp.popsize
+    text += 'max_nochange=%i\n' % max_nochange
+    text += 'spike=%s\n' % str(spike)
+    text += 'runtime=%.2f seconds (%.2f minutes)\n' % (newp.runtime,
+                                                       newp.runtime / 60)
+    text += 'total NPs screened = %i (%.2f NPs per min)' % (nscreened,
+                                                            screen_per_min)
+    print(text)
+
     if save:
         if path and not os.path.isdir(path):
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
         # save figure as svg
-        fig.savefig(os.path.join(path, 'results.svg'))
-        fig.savefig(os.path.join(path, 'results.png'), dpi=66.6667)
+        # fig.savefig(os.path.join(path, 'NEWresults.svg'))
+        fig.savefig(os.path.join(path, 'NEWresults.png'), dpi=66.6667)
 
         # save run info to txt file
-        m1, m2 = metals
-        n = newp.num_atoms
-        n1 = newp.n_metal1
-        n2 = newp.n_metal2
-        x2 = int(round(x_metal2 * 100, 2))
-        x1 = 100 - x2
-        nscreened = newp.max_gens * newp.popsize
-        screen_per_min = nscreened / (newp.runtime / 60)
-        with open(os.path.join(path, 'benchmark_info.txt'), 'w') as fid:
-            fid.write('%i-atom %s%s %s (%s shells)\n' % (newp.num_atoms,
-                                                         m1, m2,
-                                                         shape, num_shells))
-            fid.write('%i%% %s (%i)\n' % (x1, m1, n1))
-            fid.write('%i%% %s (%i)\n' % (x2, m2, n2))
-            fid.write('\nGA PROPS\n')
-            fid.write('popsize = %i\n' % newp.popsize)
-            fid.write('max_nochange=%i\n' % max_nochange)
-            fid.write('spike=%s\n' % str(spike))
-            fid.write('runtime=%.2f seconds (%.2f minutes)\n'
-                      % (newp.runtime, newp.runtime / 60))
-            fid.write('total NPs screened = %i (%.2f NPs per min)'
-                      % (nscreened, screen_per_min))
+        with open(os.path.join(path, 'NEWbenchmark_info.txt'), 'w') as fid:
+            fid.write(text)
     return fig, ax
 
 
 def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
-                 num_shells_range=range(2, 11), x_metal2=0.5):
+                 num_shells_range=range(4, 8), x_metal2=0.5, mating='mate',
+                 ax=None, color='orange'):
     """Creates a scaling plot to test GA
        - number of atoms vs. runtime for 500 generations (in seconds)
        Reveals that GA simulations scale by O(n) where n = num_atoms
@@ -1585,20 +1630,32 @@ def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
     """
     natoms = []
     times = []
+    std_devs = []
+
+    n = 6
 
     for num_shells in num_shells_range:
-        newp = build_pop_obj(metals, shape, num_shells,
-                             x_metal2=x_metal2)
-        newp.run(max_gens=500, max_nochange=-1)
+        temptimes = np.zeros(n)
+        for i in range(n):
+            newp = build_pop_obj(metals, shape, num_shells,
+                                 x_metal2=x_metal2, mating=mating)
+            newp.run(max_gens=500, max_nochange=-1)
+
+            temptimes[i] = newp.runtime
+            if newp.is_new_min():
+                print('New min.')
+
+        times.append(temptimes.mean())
+        std_devs.append(temptimes.std())
         natoms.append(len(newp.atom))
-        times.append(newp.runtime)
-        if newp.is_new_min():
-            print('New min.')
         # newp.save_to_db()
 
-    fig, ax = plt.subplots()
-    ax.plot(natoms, times, 'o-', color='green',
-            ms=10, markeredgecolor='k')
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+    ax.errorbar(natoms, times, yerr=std_devs, fmt='o-', color=color,
+                ms=10, markeredgecolor='k', capsize=3)
 
     ax.set_xlabel('Number of Atoms')
     ax.set_ylabel('Runtime (seconds)\nfor 500 Generations')
@@ -1606,7 +1663,8 @@ def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
     return fig, ax
 
 
-def build_central_rdf(atoms, metals, nbins=5, pcty=False, ax=None):
+def build_central_rdf(atoms, metals, nbins=5, pcty=False, ax=None,
+                      m1_color=None, m2_color=None):
     # center atoms at origin (COP)
     atoms.positions -= atoms.positions.mean(0)
 
@@ -1624,8 +1682,10 @@ def build_central_rdf(atoms, metals, nbins=5, pcty=False, ax=None):
     else:
         fig = ax.figure
 
-    m1_color = jmol_colors[atoms[atoms.symbols == metal1][0].number]
-    m2_color = jmol_colors[atoms[atoms.symbols == metal2][0].number]
+    if m1_color is None:
+        m1_color = jmol_colors[atoms[atoms.symbols == metal1][0].number]
+    if m2_color is None:
+        m2_color = jmol_colors[atoms[atoms.symbols == metal2][0].number]
 
     binrange = (0, dists.max())
 
@@ -1649,9 +1709,9 @@ def build_central_rdf(atoms, metals, nbins=5, pcty=False, ax=None):
                width=width, label=metal2, bottom=counts_m1)
     else:
         ax.bar(x, counts_m1, color=m1_color, width=width,
-               label=metal1, zorder=2)
+               label=metal1, edgecolor='w', zorder=2, linewidth=0.2)
         ax.bar(x, counts_m2, bottom=counts_m1, color=m2_color,
-               width=width, label=metal2, zorder=0)
+               width=width, label=metal2, edgecolor='w', zorder=0, linewidth=0.2)
 
     ax.set_xlabel('Distance from Core ($\\rm \\AA$)')
     return fig, ax
@@ -1692,13 +1752,23 @@ def vis_FePt_results(pcty=False):
     # rand_ax.set_title('Random FePt NP')
     nbins = 20
 
-    build_central_rdf(ga, metals, nbins=nbins, pcty=pcty, ax=ga_ax)
-    build_central_rdf(orig, metals, nbins=nbins, pcty=pcty, ax=orig_ax)
-    build_central_rdf(rand, metals, nbins=nbins, pcty=pcty, ax=rand_ax)
+    # get metal colors
+    m1_color = [i / 255. for i in [1, 85, 131]]  # jmol_colors[26]
+    # m1_color = 'blue'
+    m2_color = 'tab:purple'
+    # m2_color = [i / 255. for i in [106, 109, 169]]  # jmol_colors[78]
+
+    build_central_rdf(ga, metals, nbins=nbins, pcty=pcty, ax=ga_ax,
+                      m1_color=m1_color, m2_color=m2_color)
+    build_central_rdf(orig, metals, nbins=nbins, pcty=pcty, ax=orig_ax,
+                      m1_color=m1_color, m2_color=m2_color)
+    build_central_rdf(rand, metals, nbins=nbins, pcty=pcty, ax=rand_ax,
+                      m1_color=m1_color, m2_color=m2_color)
 
     if pcty:
         ga_ax.set_ylim(0, 1.1)
-        ga_ax.set_yticklabels(['{:,.0%}'.format(x) for x in ga_ax.get_yticks()])
+        ga_ax.set_yticklabels(['{:,.0%}'.format(x)
+                               for x in ga_ax.get_yticks()])
         ga_ax.set_ylabel('Atom Type Composition')
     else:
         ga_ax.set_ylabel('Number of Atoms')
@@ -1743,8 +1813,8 @@ def vis_FePt_results(pcty=False):
     ga_cn_dist = ag.calc_cn_dist(ga_order)
 
     # get metal colors
-    m1_color = jmol_colors[26]
-    m2_color = jmol_colors[78]
+    m1_color = 'mediumblue'  # [106, 109, 169]  # jmol_colors[26]
+    m2_color = 'slateblue' # 'mediumpurple' # [1, 85, 131]  # jmol_colors[78]
 
     # get x value for both plots
     x = range(1, len(ga_cn_dist['cn_options']) + 1)
@@ -1873,8 +1943,13 @@ def test_FePt_nanop():
 
 
 if __name__ == '__main__':
-    check_db_values()
-    for r in plt.rcParams:
-        if plt.rcParams[r] == 'bold':
-            plt.rcParams[r] = 'normal'
-    # vis_FePt_results(True)
+    vis_FePt_results(1)
+    # pop = build_pop_obj(('Ag', 'Au'), 'icosahedron', 2, n_metal2=20)
+    # print(pop.num_atoms)
+    # a = pop[0].atom
+
+    # pop.run(max_gens=2)
+    # pop.plot_results()
+    # plt.show()
+    # benchmark_plot(save=False)
+    # plt.show()

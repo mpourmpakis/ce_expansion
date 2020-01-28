@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import cm
 
 
-use_experimental = False
+use_experimental = True
 startfrom = 7
 
 ce_bulks = dict(
@@ -97,14 +97,16 @@ for m1 in range(n_els - 1):
 cmap = cm.get_cmap('hsv')
 colors = ['red', 'blue', 'green', 'gold', 'violet', 'black', 'gray',
           'brown', 'pink']
-# markers = ['s', 'o', '*', '^']
-x = np.linspace(0, 1, len(names))
-print(len(names))
-fig, ax = plt.subplots()
-for i in range(len(names)):
-    ax.scatter(diffce[i], gamma1[i], label=names[i], s=100,
-               color=colors[i % (11 - startfrom)])  # , marker=markers[i % 4])
-ax.legend(ncol=8)
-ax.set_xlabel('$\\rm \\Delta CE$')
-ax.set_ylabel('$\\rm \\gamma_1$')
-plt.show()
+# # markers = ['s', 'o', '*', '^']
+# x = np.linspace(0, 1, len(names))
+# print(len(names))
+# fig, ax = plt.subplots()
+# for i in range(len(names)):
+#     ax.scatter(diffce[i], gamma1[i], label=names[i], s=100,
+#                color=colors[i % (11 - startfrom)])  # , marker=markers[i % 4])
+# ax.legend(ncol=8)
+# ax.set_xlabel('$\\rm \\Delta CE$')
+# ax.set_ylabel('$\\rm \\gamma_1$')
+# plt.show()
+print(hbes.keys())
+print(matrix)
