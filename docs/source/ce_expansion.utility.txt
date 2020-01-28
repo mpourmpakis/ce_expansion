@@ -1,0 +1,16 @@
+ce\_expansion.utility package
+=============================
+
+.. automodule:: ce_expansion.utility
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+
+   ce_expansion.utility.debug_check_datatypes
+   ce_expansion.utility.gen_coeffs
+   ce_expansion.utility.gen_gamma

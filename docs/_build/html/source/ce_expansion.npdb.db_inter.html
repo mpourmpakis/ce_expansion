@@ -1,0 +1,671 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>3.1.1.4.1.3. ce_expansion.npdb.db_inter module &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.1.1.4.1.4. ce_expansion.npdb.db_utils module" href="ce_expansion.npdb.db_utils.html" />
+    <link rel="prev" title="3.1.1.4.1.2. ce_expansion.npdb.datatables module" href="ce_expansion.npdb.datatables.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">1. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">2. License</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">3. Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="ce_expansion.html">3.1. ce_expansion package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="ce_expansion.html#subpackages">3.1.1. Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.atomgraph.html">3.1.1.1. ce_expansion.atomgraph package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.bin.html">3.1.1.2. ce_expansion.bin package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.ga.html">3.1.1.3. ce_expansion.ga package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="ce_expansion.npdb.html">3.1.1.4. ce_expansion.npdb package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.plots.html">3.1.1.5. ce_expansion.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.utility.html">3.1.1.6. ce_expansion.utility package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">3. Documentation</a> &raquo;</li>
+        
+          <li><a href="ce_expansion.html">3.1. ce_expansion package</a> &raquo;</li>
+        
+          <li><a href="ce_expansion.npdb.html">3.1.1.4. ce_expansion.npdb package</a> &raquo;</li>
+        
+      <li>3.1.1.4.1.3. ce_expansion.npdb.db_inter module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/ce_expansion.npdb.db_inter.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-ce_expansion.npdb.db_inter">
+<span id="ce-expansion-npdb-db-inter-module"></span><h1>3.1.1.4.1.3. ce_expansion.npdb.db_inter module<a class="headerlink" href="#module-ce_expansion.npdb.db_inter" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_atoms_in_shell_dict">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_atoms_in_shell_dict</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">num_shells</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_atoms_in_shell_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_atoms_in_shell_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates dictionary of atom indices for each shell</p>
+<p>MAPPING:
+shell 0: core atom
+shell 1: 12-atom layer
+shell 2: 42-atom layer
+etc.</p>
+<p>Args:
+shape (str): shape of the nanoparticle</p>
+<p>num_shells (int): shells to create NP from DB</p>
+<p>Returns:
+(dict): {&lt;shell&gt;: atom indices that are in &lt;shell&gt;}</p>
+<p>Raises:
+- ValueError: num_shells must be &gt; 0
+- ValueError: only certain shapes supported</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_coefficient_dict">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_coefficient_dict</code><span class="sig-paren">(</span><em class="sig-param">metals</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_coefficient_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_coefficient_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates coefficient dictionary used to calc CE</p>
+<p>Args:
+- metals (string || iterable): string(s) containing two metal elements</p>
+<p>Returns:
+- (dict): coefficient dictionary for GA sim</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_df">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_df</code><span class="sig-paren">(</span><em class="sig-param">datatable</em>, <em class="sig-param">lim=None</em>, <em class="sig-param">custom_filter=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>GENERIC FUNCTION
+Returns pandas dataframe of entries in &lt;datatable&gt;
+that match criteria in &lt;<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs&gt;
+- NOTE: changes ‘shape’ column name to ‘np_shape’!</p>
+<p>Args:
+- datatable (Datatable class): datatable to query</p>
+<p>KArgs:
+- lim (int): max number of entries returned</p>
+<blockquote>
+<div><p>(default: None = no limit)</p>
+</div></blockquote>
+<ul class="simple">
+<li><p><a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs: arguments whose name(s) matches a column in the datatable</p></li>
+</ul>
+<p>Returns:
+- (pd.DataFrame): df of results</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_metals_list">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_metals_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_metals_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_metals_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of possible metal combinations for GA sims</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_new_structs_plot">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_new_structs_plot</code><span class="sig-paren">(</span><em class="sig-param">metal_opts</em>, <em class="sig-param">shape_opts</em>, <em class="sig-param">pct=False</em>, <em class="sig-param">cutoff_date=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_new_structs_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_new_structs_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses BimetallicLog to create 2D line plot of
+new structures found vs. datetime</p>
+<p>Args:
+- metal_opts (list): list of metal options
+- shape_opts (list): list of shape options</p>
+<p>Kargs:
+- pct (bool): if True, y-axis = % new structures</p>
+<blockquote>
+<div><p>else, y-axis = number of new structures</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>cutoff_date (Datetime.Datetime): if given, will filter out runs</dt><dd><p>older than &lt;cutoff_date&gt;</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- (plt.Figure): 2D line plot object</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_prdf_shapes_comparison">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_prdf_shapes_comparison</code><span class="sig-paren">(</span><em class="sig-param">metals</em>, <em class="sig-param">num_shells</em>, <em class="sig-param">x_dope</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_prdf_shapes_comparison"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_prdf_shapes_comparison" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Creates list of figures, each containing partial radial distribution</dt><dd><p>functions (PRDFs) of a given shape</p>
+</dd>
+</dl>
+<p>Args:
+- metals (str || iterable): two metal elements
+- num_shells (int): number of shells (i.e. layers) of atoms used to make NP
+- x_dope (float): percentage of metal2 in NPs</p>
+<p>Returns:
+- list of plt.Figure elements containing PRDFs and an image of the NPs</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_radial_distributions">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_radial_distributions</code><span class="sig-paren">(</span><em class="sig-param">metals=None</em>, <em class="sig-param">shape=None</em>, <em class="sig-param">num_atoms=None</em>, <em class="sig-param">n_metal1=None</em>, <em class="sig-param">lim=None</em>, <em class="sig-param">nbins='Auto'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_radial_distributions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_radial_distributions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a query to get_bimetallic_results to construct a list of NPs,
+then for each NP found, returns radial distribution functions for the
+two elements.</p>
+<p>Args:
+metals (str || iterable): two metal elements
+shape (str): shape of NP
+num_atoms (int): number of atoms in NP
+n_metal1 (int): number of metal1 atoms in NP
+lim (int): max number of entries returned</p>
+<blockquote>
+<div><p>(default: None = no limit)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>bins (int || str)<span class="classifier">Number of bins to use for the radial distribution.</span></dt><dd><p>If set to “Auto”, uses num_atoms / 10, rounded up</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A list of N radial distribution functions as dicts. First element gives the
+atom type. Second element gives the dimension. Third element is the value at
+that dimension. For example, returned_value[“Cu”][“distance”][3] equaling 3.4
+indicates that whatever returned_value[“Cu”][“density”][3] equals is at distance 3.4</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_shapes_list">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_shapes_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_shapes_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_shapes_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all shapes found in Nanoparticles Datatable as list of str</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_shell2num_dict">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_shell2num_dict</code><span class="sig-paren">(</span><em class="sig-param">shape=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_shell2num_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_shell2num_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a number of shells –&gt; number of atoms dict</p>
+<p>Kargs:
+- shape (str): shape of NP</p>
+<p>Returns:
+- dict: shell2num_dict[shape][num_shell] = num_atoms</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_shell_dist_fig">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_shell_dist_fig</code><span class="sig-paren">(</span><em class="sig-param">bimet</em>, <em class="sig-param">show=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_shell_dist_fig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_shell_dist_fig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates shell distribution figure of
+BimetallicResult</p>
+<p>Args:</p>
+<p>Returns:
+(plt.Figure)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.build_srf_plot">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">build_srf_plot</code><span class="sig-paren">(</span><em class="sig-param">metals</em>, <em class="sig-param">shape</em>, <em class="sig-param">T=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#build_srf_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.build_srf_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a 3D surface plot from NP SQL database
+- plots Size vs. Shape vs. Excess Energy (EE)
+- can also use configurational entropy of mixing</p>
+<blockquote>
+<div><p>to plot Size vs. Shape vs. delG = EE - T * delS(mix)</p>
+</div></blockquote>
+<p>Args:
+- metals (string || iterable): string(s) containing two metal elements
+- shape (string): shape of the NP</p>
+<p>KArgs:
+T (float): if temperature is given, plot delG(mix)</p>
+<blockquote>
+<div><p>(i.e. include configurational entropy)
+(Default: None)</p>
+</div></blockquote>
+<p>Returns:
+- (plt.figure): figure of 3D surface plot</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.gen_coeffs_dict_from_raw">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">gen_coeffs_dict_from_raw</code><span class="sig-paren">(</span><em class="sig-param">metal1</em>, <em class="sig-param">metal2</em>, <em class="sig-param">bulkce_m1</em>, <em class="sig-param">bulkce_m2</em>, <em class="sig-param">homo_bde_m1</em>, <em class="sig-param">homo_bde_m2</em>, <em class="sig-param">hetero_bde</em>, <em class="sig-param">cnmax=12</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#gen_coeffs_dict_from_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.gen_coeffs_dict_from_raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the Bond-Centric half bond energy terms for a bimetallic
+pair AB. Coordination number 0 is given the value None. Dictionary is
+used with AtomGraph to calculate total CE of bimetallic nanoparticles.
+Relies on raw data arguments to create dictionary.</p>
+<p>Args:
+- metal1 (str): atomic symbol of metal 1
+- metal2 (str): atomic symbol of metal 2
+- bulkce_m1 (float): bulk cohesive energy (in eV / atom) of metal1
+- bulkce_m2 (float): bulk cohesive energy (in eV / atom) of metal2
+- homo_bde_m1 (float): m1-m1 (homoatomic) bond dissociation energy
+- homo_bde_m2 (float): m2-m2 (homoatomic) bond dissociation energy
+- hetero_bde (float): m1-m2 (heteroatomic) bond dissociation energy</p>
+<p>KArgs:
+- cnmax: maximum bulk coordination number (CN) of metals</p>
+<blockquote>
+<div><p>(Default: 12)</p>
+</div></blockquote>
+<p>Returns:
+- (dict): form dict[m1][m2][CN] = half bond energy term</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.get_bimet_log">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">get_bimet_log</code><span class="sig-paren">(</span><em class="sig-param">metals=None</em>, <em class="sig-param">shape=None</em>, <em class="sig-param">date=None</em>, <em class="sig-param">lim=None</em>, <em class="sig-param">return_query=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#get_bimet_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.get_bimet_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns BimetallicLog entry that matches criteria
+- if no criteria given, all data (up to &lt;lim&gt; amount)</p>
+<blockquote>
+<div><p>returned</p>
+</div></blockquote>
+<p>Kargs:
+- metals (str || iterable): two metal elements
+- shape (str): shape of NP
+- date (datetime.datetime): GA batch run completion time
+- lim (int): max number of entries returned</p>
+<blockquote>
+<div><p>(default: None = no limit)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>return_query (bool): if True, return query and</dt><dd><p>not results</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- (BimetallicResults)(s) if match is found else (None)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.get_bimet_result">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">get_bimet_result</code><span class="sig-paren">(</span><em class="sig-param">metals=None</em>, <em class="sig-param">shape=None</em>, <em class="sig-param">num_atoms=None</em>, <em class="sig-param">num_shells=None</em>, <em class="sig-param">n_metal1=None</em>, <em class="sig-param">only_bimet=False</em>, <em class="sig-param">lim=None</em>, <em class="sig-param">return_query=False</em>, <em class="sig-param">custom_filter=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#get_bimet_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.get_bimet_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns BimetallicResults entry that matches criteria
+- if no criteria given, all data (up to &lt;lim&gt; amount)</p>
+<blockquote>
+<div><p>returned</p>
+</div></blockquote>
+<p>Kargs:
+- metals (str || iterable): two metal elements
+- shape (str): shape of NP
+- num_atoms (int): number of atoms in NP
+- n_metal1 (int): number of metal1 atoms in NP
+- lim (int): max number of entries returned</p>
+<blockquote>
+<div><p>(default: None = no limit)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>return_query (bool): if True, return query and</dt><dd><p>not results</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- (BimetallicResults)(s) if match is found else (None)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.get_entry">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">get_entry</code><span class="sig-paren">(</span><em class="sig-param">datatable</em>, <em class="sig-param">lim=None</em>, <em class="sig-param">custom_filter=None</em>, <em class="sig-param">return_query=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#get_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.get_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>GENERIC FUNCTION
+Returns entry/entries from table if criteria is matched
+- if no criteria given, all data (up to &lt;lim&gt; amount)</p>
+<blockquote>
+<div><p>returned</p>
+</div></blockquote>
+<p>Args:
+- datatable (Datatable class): datatable to query</p>
+<p>Kargs:
+- lim (int): max number of entries returned</p>
+<blockquote>
+<div><p>(default: None = no limit)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>custom_filter (sqlalchemy.sql.elements.BinaryExpression):</dt><dd><p>custom sqlalchemy filter that will be applied
+(default: None = no added filter)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>return_query (bool): if True, return query and</dt><dd><p>not results</p>
+</dd>
+</dl>
+</li>
+<li><p><a href="#id5"><span class="problematic" id="id6">**</span></a>kwargs: arguments whose name(s) matches a column in the datatable</p></li>
+</ul>
+<p>Returns:
+- (Datatable instance(s)) if match is found else (None)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.get_model_coefficient">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">get_model_coefficient</code><span class="sig-paren">(</span><em class="sig-param">element1=None</em>, <em class="sig-param">element2=None</em>, <em class="sig-param">cn=None</em>, <em class="sig-param">lim=None</em>, <em class="sig-param">return_query=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#get_model_coefficient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.get_model_coefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns tbl.ModelCoefficients entries that match criteria
+- if no criteria given, all data (up to &lt;lim&gt; amount)</p>
+<blockquote>
+<div><p>returned</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>query is always ordered by cn</p></li>
+</ul>
+<p>Kargs:
+- element1 (str): first element
+- element2 (str): second element
+- cn (int): coordination number of element 1
+- lim (int): max number of entries returned</p>
+<blockquote>
+<div><p>(default: None = no limit)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>return_query (bool): if True, returns just the query</dt><dd><p>and not the results</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- (tbl.ModelCoefficients)(s) if match else (None)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.get_nanoparticle">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">get_nanoparticle</code><span class="sig-paren">(</span><em class="sig-param">shape=None</em>, <em class="sig-param">num_atoms=None</em>, <em class="sig-param">num_shells=None</em>, <em class="sig-param">lim=None</em>, <em class="sig-param">return_query=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#get_nanoparticle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.get_nanoparticle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns tbl.Nanoparticles entries that match criteria
+- if no criteria given, all data (up to &lt;lim&gt; amount)</p>
+<blockquote>
+<div><p>returned</p>
+</div></blockquote>
+<p>Kargs:
+- shape (str): shape of NP
+- num_atoms (int): number of atoms in NP
+- num_shells (int): number of shells used to build NP</p>
+<blockquote>
+<div><p>from structure_gen module</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>lim (int): max number of entries returned</dt><dd><p>(default: None = no limit)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>return_query (bool): if True, returns just the query</dt><dd><p>and not the results</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- (tbl.Nanoparticles)(s) if match else (None)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.get_shell2num">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">get_shell2num</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">num_shells</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#get_shell2num"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.get_shell2num" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of atoms of an NP
+given shape and number of shells</p>
+<p>Args:
+- shape (str): shape of NP
+- num_shells (int): number of shells used to build NP</p>
+<blockquote>
+<div><p>from structure_gen module</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.insert_bimetallic_log">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">insert_bimetallic_log</code><span class="sig-paren">(</span><em class="sig-param">start_time</em>, <em class="sig-param">metal1</em>, <em class="sig-param">metal2</em>, <em class="sig-param">shape</em>, <em class="sig-param">ga_generations</em>, <em class="sig-param">shell_range</em>, <em class="sig-param">new_min_structs</em>, <em class="sig-param">tot_structs</em>, <em class="sig-param">batch_run_num=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#insert_bimetallic_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.insert_bimetallic_log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.insert_model_coefficients">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">insert_model_coefficients</code><span class="sig-paren">(</span><em class="sig-param">coeffs_dict=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#insert_model_coefficients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.insert_model_coefficients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts model coefficients into ModelCoefficients
+- checks DB to ensure entry does not already exist</p>
+<p>Kargs:
+- coeffs_dict (dict): dictionary of coefficients</p>
+<blockquote>
+<div><p>if None, read in from data directory
+(default: None)</p>
+</div></blockquote>
+<p>Returns:
+- (bool): True if successful insertion else False</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.insert_nanoparticle">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">insert_nanoparticle</code><span class="sig-paren">(</span><em class="sig-param">atom</em>, <em class="sig-param">shape</em>, <em class="sig-param">num_shells=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#insert_nanoparticle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.insert_nanoparticle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts NP and their appropriate atoms into DB</p>
+<p>Args:
+- atom (ase.Atoms): atoms object of NP skeleton
+- shape (string): common name for shape of NP</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>e.g. icosahedron</p></li>
+<li><p>always lower case</p></li>
+</ul>
+</div></blockquote>
+<p>Kargs:
+- num_shells (int): number of shells used to build NP</p>
+<blockquote>
+<div><p>from structure_gen module</p>
+</div></blockquote>
+<p>Returns:
+- (Nanoparticle): tbl.Nanoparticles object</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.remove_entry">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">remove_entry</code><span class="sig-paren">(</span><em class="sig-param">entry_inst</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#remove_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.remove_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>GENERIC FUNCTION
+Deletes entry (and its children if applicable) from DB</p>
+<p>Args:
+- entry_inst (DataTable instance): datarow to be deleted</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.remove_nanoparticle">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">remove_nanoparticle</code><span class="sig-paren">(</span><em class="sig-param">shape=None</em>, <em class="sig-param">num_atoms=None</em>, <em class="sig-param">num_shells=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#remove_nanoparticle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.remove_nanoparticle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a single NP and its corresponding atoms
+- only commits if a single np is queried to be removed</p>
+<p>Kargs:
+- shape (str): shape of NP
+- num_atoms (int): number of atoms in NP
+- num_shells (int): number of shells used to build NP</p>
+<blockquote>
+<div><p>from structure_gen module</p>
+</div></blockquote>
+<p>Returns:
+- True if successful</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.update_bimet_result">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">update_bimet_result</code><span class="sig-paren">(</span><em class="sig-param">metals</em>, <em class="sig-param">shape</em>, <em class="sig-param">num_atoms</em>, <em class="sig-param">diameter</em>, <em class="sig-param">n_metal1</em>, <em class="sig-param">CE</em>, <em class="sig-param">ordering</em>, <em class="sig-param">EE=None</em>, <em class="sig-param">nanop=None</em>, <em class="sig-param">allow_insert=True</em>, <em class="sig-param">ensure_ce_min=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#update_bimet_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.update_bimet_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes raw data and inserts the BimetallicResults datatable
+- will update CE, EE, and ordering of an entry if necessary</p>
+<p>Returns:
+- BimetallicResults entry after successfully updating</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.npdb.db_inter.update_entry">
+<code class="sig-prename descclassname">ce_expansion.npdb.db_inter.</code><code class="sig-name descname">update_entry</code><span class="sig-paren">(</span><em class="sig-param">entry_inst</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/npdb/db_inter.html#update_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.npdb.db_inter.update_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>GENERIC METHOD
+Updates datarow object</p>
+<p>Args:
+- entry_inst (DataTable): DataTable object where changes have been made</p>
+<p>Returns:
+- (bool): True if successful</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ce_expansion.npdb.db_utils.html" class="btn btn-neutral float-right" title="3.1.1.4.1.4. ce_expansion.npdb.db_utils module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ce_expansion.npdb.datatables.html" class="btn btn-neutral float-left" title="3.1.1.4.1.2. ce_expansion.npdb.datatables module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

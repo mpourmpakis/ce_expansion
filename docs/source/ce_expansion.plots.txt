@@ -1,0 +1,18 @@
+ce\_expansion.plots package
+===========================
+
+.. automodule:: ce_expansion.plots
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+
+   ce_expansion.plots.cn_dist_plot
+   ce_expansion.plots.plot_defaults
+   ce_expansion.plots.plots
+   ce_expansion.plots.shell_vs_tot
+   ce_expansion.plots.triplot

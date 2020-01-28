@@ -1,0 +1,15 @@
+ce\_expansion.atomgraph package
+===============================
+
+.. automodule:: ce_expansion.atomgraph
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+
+   ce_expansion.atomgraph.adjacency
+   ce_expansion.atomgraph.atomgraph

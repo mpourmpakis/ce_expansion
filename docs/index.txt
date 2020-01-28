@@ -1,0 +1,21 @@
+Welcome to CE Expansion!
+========================
+
+.. image:: images/logo.png
+
+.. toctree::
+   :numbered:
+   :maxdepth: 4
+   :caption: Table of Contents:
+
+   readme
+   license
+   source/modules
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

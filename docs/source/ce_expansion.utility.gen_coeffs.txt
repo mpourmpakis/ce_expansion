@@ -1,0 +1,7 @@
+ce\_expansion.utility.gen\_coeffs module
+========================================
+
+.. automodule:: ce_expansion.utility.gen_coeffs
+   :members:
+   :undoc-members:
+   :show-inheritance:

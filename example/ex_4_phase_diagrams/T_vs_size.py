@@ -50,13 +50,11 @@ class Result(object):
         """
         Calculates Excess energies plus an entropic contribution.
 
-        Args:
-            excess_energy (list): Excess energies from DB query
-            comp (list): Compositions from DB query
-            T (int): Temperature
+        :param excess_energy (list): Excess energies from DB query
+        :param comp (list): Compositions from DB query
+        :param T (int): Temperature
 
-        Returns:
-            Free energy of mixing = excess energy (related to enthalpy of mixing) - entropy of mixing
+        :return: Free energy of mixing = excess energy (related to enthalpy of mixing) - entropy of mixing
         """
 
         if self.composition == 1 or self.composition == 0:
@@ -94,13 +92,13 @@ def get_best(alloy,
     """
     Produces a phase diagram
 
-    Args:
-        alloy (str): Alloy of interest
-        size_range (list): Range of sizes to consider, in atoms, inclusive
-        temperature_range (list): Range of temperatures to consider, in K, inclusive
-        temperature_res (int): How fine our temperature mesh is, in K. Default = 1K
-    Returns:
-        A dictionary with {size : {temp : Result_object() } }
+    Produces a phase diagram
+    :param alloy: Alloy of interest
+    :param size_range: Range of sizes to consider, in atoms, inclusive
+    :param temperature_range: Range of temperatures to consider, in K, inclusive
+    :param temperature_res: How fine our temperature mesh is, in K, defaults to 1K
+    :return: A dictionary with {size : {temp : Result_object() } }
+
     """
 
     # Book-keeping and initialization
@@ -147,10 +145,9 @@ def get_best(alloy,
 def plot_phase(results, alloy):
     """
     Plots a phase diagram
-    Args:
-        Results in the form of a dictionary. Format is {size : {temp : Result_object } }
-    Returns:
-        None
+
+    :param results: Results in the form of a dictionary. Format is {size : {temp : Result_object } }
+    :param alloy: Alloy of interest
     """
     # Set up colors
     comprange = np.linspace(10, 110, 100) / 100

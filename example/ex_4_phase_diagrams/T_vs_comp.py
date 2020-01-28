@@ -33,13 +33,9 @@ class Result(object):
         """
         Calculates Excess energies plus an entropic contribution.
 
-        Args:
-            excess_energy (list): Excess energies from DB query
-            comp (list): Compositions from DB query
-            T (int): Temperature
+        :param T: Temperature
 
-        Returns:
-            Free energy of mixing = excess energy (related to enthalpy of mixing) - entropy of mixing
+        :return: Free energy of mixing = excess energy (related to enthalpy of mixing) - entropy of mixing
         """
 
         if self.composition == 1 or self.composition == 0:
@@ -59,14 +55,11 @@ def get_best(alloy,
              temperature_range, temperature_res=100):
     """
     Produces a phase diagram
-
-    Args:
-        alloy (str): Alloy of interest
-        size_range (list): Range of sizes to consider, in atoms, inclusive
-        temperature_range (list): Range of temperatures to consider, in K, inclusive
-        temperature_res (int): How fine our temperature mesh is, in K. Default = 1K
-    Returns:
-        None. Drops a plot of the alloy into the working directory.
+    :param alloy: Alloy of interest
+    :param size_range: Range of sizes to consider, in atoms, inclusive
+    :param temperature_range: Range of temperatures to consider, in K, inclusive
+    :param temperature_res: How fine our temperature mesh is, in K, defaults to 1K
+    :return: A dictionary with {size : {temp : Result_object() } }
     """
 
     # Book-keeping and initialization
@@ -134,12 +127,10 @@ def scale_colors(sizes, shapes):
     """
     Scales colors so they aren't all faded out. Returns R/G/B scales.
 
-    Args:
-        sizes (list): List of sizes
-        shapes(list): List of shapes
+    :param sizes: List of sizes
+    :param shapes: List of shapes
 
-    Returns:
-        Colormap object
+    :return: Colormap object
     """
     size_set = sorted(list(set(sizes)))
     linspace = np.linspace(0.2, 1, len(size_set))
@@ -169,12 +160,10 @@ def make_phase(results, colors, alloy):
     """
     Does the plotting and makes the phase diagram
 
-    Args:
-        points (list): Result from the get_best function
-        colors (list): colors from the scale_colors function
+    :param points: Result from the get_best function
+    :param colors: colors from the scale_colors function
 
-    Returns:
-        Nothing
+    :return: Nothing
     """
     points = []
     labels = []

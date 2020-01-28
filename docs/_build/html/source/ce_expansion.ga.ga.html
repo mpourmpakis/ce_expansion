@@ -1,0 +1,910 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>3.1.1.3.1.2. ce_expansion.ga.ga module &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.1.1.3.1.3. ce_expansion.ga.structure_gen module" href="ce_expansion.ga.structure_gen.html" />
+    <link rel="prev" title="3.1.1.3.1.1. ce_expansion.ga.batch_ga_run module" href="ce_expansion.ga.batch_ga_run.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">1. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">2. License</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">3. Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="ce_expansion.html">3.1. ce_expansion package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="ce_expansion.html#subpackages">3.1.1. Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.atomgraph.html">3.1.1.1. ce_expansion.atomgraph package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.bin.html">3.1.1.2. ce_expansion.bin package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="ce_expansion.ga.html">3.1.1.3. ce_expansion.ga package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.npdb.html">3.1.1.4. ce_expansion.npdb package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.plots.html">3.1.1.5. ce_expansion.plots package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ce_expansion.utility.html">3.1.1.6. ce_expansion.utility package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">3. Documentation</a> &raquo;</li>
+        
+          <li><a href="ce_expansion.html">3.1. ce_expansion package</a> &raquo;</li>
+        
+          <li><a href="ce_expansion.ga.html">3.1.1.3. ce_expansion.ga package</a> &raquo;</li>
+        
+      <li>3.1.1.3.1.2. ce_expansion.ga.ga module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/source/ce_expansion.ga.ga.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-ce_expansion.ga.ga">
+<span id="ce-expansion-ga-ga-module"></span><h1>3.1.1.3.1.2. ce_expansion.ga.ga module<a class="headerlink" href="#module-ce_expansion.ga.ga" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="ce_expansion.ga.ga.Chromo">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">Chromo</code><span class="sig-paren">(</span><em class="sig-param">atomg</em>, <em class="sig-param">n_metal2=0</em>, <em class="sig-param">ordering=None</em>, <em class="sig-param">x_metal2=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Chromo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Chromo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Chromo.calc_score">
+<code class="sig-name descname">calc_score</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Chromo.calc_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Chromo.calc_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns CE of structure based on Bond-Centric Model
+- Yan, Z. et al., Nano Lett. 2018, 18 (4), 2696-2704.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Chromo.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Chromo.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Chromo.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a copy of the Chromo object</p>
+<p>Returns:
+- (Chromo): exact copy of the Chromo object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Chromo.mate">
+<code class="sig-name descname">mate</code><span class="sig-paren">(</span><em class="sig-param">chromo2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Chromo.mate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Chromo.mate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pairwise crossover algorithm to mix two parent chromosomes into
+two new child chromosomes, taking traits from each parent
+- conserves doping concentration
+- about O(N^2) scaling</p>
+<p>Args:
+- chromo2 (Chromo): second parent Chromo obj</p>
+<p>Returns:
+- (list): two children Chromo objs with new ordering &lt;arr&gt;s</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Chromo.mutate">
+<code class="sig-name descname">mutate</code><span class="sig-paren">(</span><em class="sig-param">n_swaps=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Chromo.mutate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Chromo.mutate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Algorithm to randomly switch a ‘1’ &amp; a ‘0’ within ordering array
+- about O(n) scaling</p>
+<p>Args:
+- n_swaps (int): number of swaps to make</p>
+<blockquote>
+<div><p>(Default: 1)</p>
+</div></blockquote>
+<p>Raises:
+- ValueError: if not AtomGraph, Chromo can not and</p>
+<blockquote>
+<div><p>should not be mutated</p>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ce_expansion.ga.ga.Pop">
+<em class="property">class </em><code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">Pop</code><span class="sig-paren">(</span><em class="sig-param">atom</em>, <em class="sig-param">bond_list</em>, <em class="sig-param">metals</em>, <em class="sig-param">shape</em>, <em class="sig-param">n_metal2=1</em>, <em class="sig-param">popsize=50</em>, <em class="sig-param">mute_pct=0.8</em>, <em class="sig-param">n_mute_atomswaps=None</em>, <em class="sig-param">spike=False</em>, <em class="sig-param">x_metal2=None</em>, <em class="sig-param">random=False</em>, <em class="sig-param">num_shells=None</em>, <em class="sig-param">atomg=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.continue_run">
+<code class="sig-name descname">continue_run</code><span class="sig-paren">(</span><em class="sig-param">max_gens=-1</em>, <em class="sig-param">max_nochange=50</em>, <em class="sig-param">min_gens=-1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.continue_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.continue_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to continue GA sim from where it left off</p>
+<p>Kargs:
+max_gens (int): maximum generations the GA will run</p>
+<blockquote>
+<div><p>-1: the GA only stops based on &lt;max_nochange&gt;
+(Default: -1)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>max_nochange (int): specifies max number of generations GA will run</dt><dd><p>without finding a better NP
+-1: GA will run to &lt;max_gens&gt;
+(default: 50)</p>
+</dd>
+</dl>
+<ul class="simple">
+<li><dl class="simple">
+<dt>min_gens (int): minimum generations that the GA runs before checking</dt><dd><p>the max_nochange criteria
+-1: no minimum
+(Default: -1)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.get_min">
+<code class="sig-name descname">get_min</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.get_min"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.get_min" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns nanoparticle with lowest CE of current generation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.initialize_new_run">
+<code class="sig-name descname">initialize_new_run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.initialize_new_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.initialize_new_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up Pop for a new GA simulation (generation 0)
+- can simulate different composition by changing n_metal2</p>
+<blockquote>
+<div><p>then running this method</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.initialize_pop">
+<code class="sig-name descname">initialize_pop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.initialize_pop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.initialize_pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize population of nanoparticle Chromosome objects
+- if self.random, population filled completely with random structures
+- if self.spike, following structures are added</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>if same structure and composition found in DB, it is added to
+population</p></li>
+<li><p>minCN-filled or maxCN-filled nanoparticle (depending on which is
+more fit) also added to population - structure created using
+fill_cn function</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.is_new_min">
+<code class="sig-name descname">is_new_min</code><span class="sig-paren">(</span><em class="sig-param">check_db=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.is_new_min"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.is_new_min" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if GA sim found new minimum CE
+(compares to SQL DB if &lt;check_db&gt;)</p>
+<p>KArgs:
+check_db (bool): if True, only compares to database min</p>
+<blockquote>
+<div><p>else it’ll compare to generation 0</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.plot_results">
+<code class="sig-name descname">plot_results</code><span class="sig-paren">(</span><em class="sig-param">savepath=None</em>, <em class="sig-param">ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.plot_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.plot_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to create a plot of GA simulation
+- plots average, std deviation, and minimum score</p>
+<blockquote>
+<div><p>of the population at each step</p>
+</div></blockquote>
+<p>Kargs:
+- savepath (str): path and file name to save the figure</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>if None, figure is not saved</p></li>
+</ul>
+<p>(default: None)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>ax (matplotlib.axis): if given, results will be plotted on axis</dt><dd><p>(Default: None)</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- (matplotlib.figure.Figure),
+- (matplotlib.axes._subplots.AxesSubplot): fig and ax objs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.print_status">
+<code class="sig-name descname">print_status</code><span class="sig-paren">(</span><em class="sig-param">end='\r'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.print_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.print_status" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Prints info on current generation of GA</p>
+<p>KArgs:
+- end (str): what to end the print statement with</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>allows generations to overwrite on same line
+during simulation</p></li>
+</ul>
+<p>(Default: ‘</p>
+</div></blockquote>
+</div></blockquote>
+<p>‘)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.reload_atomg">
+<code class="sig-name descname">reload_atomg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.reload_atomg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.reload_atomg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to reinitialize AtomGraph objects
+in self and two lists of Chromos</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.roulette_mate">
+<code class="sig-name descname">roulette_mate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.roulette_mate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.roulette_mate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Roulette Wheel selection algorithm that chooses mates
+based on their fitness
+- probability of chromosome &lt;i&gt; being selected:</p>
+<blockquote>
+<div><p>P_i = (fitness_i / sum of all fitnesses)</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>fitter chromosomes more likely to be selected, but not guaranteed
+to help mitigate lack of diversity in population</p></li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">max_gens=-1</em>, <em class="sig-param">max_nochange=50</em>, <em class="sig-param">min_gens=-1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a GA simulation</p>
+<p>Kargs:
+- max_gens (int): maximum generations the GA will run</p>
+<blockquote>
+<div><p>-1: the GA only stops based on &lt;max_nochange&gt;
+(Default: -1)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>max_nochange (int): specifies max number of generations GA will run</dt><dd><p>without finding a better NP
+-1: GA will run to &lt;max_gens&gt;
+(default: 50)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>min_gens (int): minimum generations that the GA runs before checking</dt><dd><p>the max_nochange criteria
+-1: no minimum
+(Default: -1)</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Raises:
+- TypeError: can only call run for first GA sim
+- ValueError: max_gens and max_nochange cannot both equal -1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the Pop instance as a pickle</p>
+<p>Args:
+path (str): path to save pickle file</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>can include filename</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.save_to_db">
+<code class="sig-name descname">save_to_db</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.save_to_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.save_to_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save minimum CE nanoparticle to database
+- connection is made through npdb.db_inter
+- only updates database if new min is found</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.sort_pop">
+<code class="sig-name descname">sort_pop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.sort_pop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.sort_pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sorts population based on cohesive energy
+- lowest cohesive energy = most fit = first in list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.step">
+<code class="sig-name descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper method that takes GA to next generation
+- mates the population
+- mutates the population
+- calculates statistics of new population
+- resorts population and increments self.generation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.summ_results">
+<code class="sig-name descname">summ_results</code><span class="sig-paren">(</span><em class="sig-param">disp=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.summ_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.summ_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates string listing GA simulation stats and results info
+str includes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>minimum, mean, and std dev. of CEs for last population</p></li>
+<li><p>mute and mate (crossover) rates of GA</p></li>
+<li><p>total steps taken by GA</p></li>
+<li><p>structure formula</p></li>
+</ul>
+</div></blockquote>
+<p>Kargs:
+- disp (bool): if True, results string is written to console</p>
+<blockquote>
+<div><p>(default: False)</p>
+</div></blockquote>
+<p>Returns:
+- (str): result string</p>
+<p>Raises:
+- Exception: if sim has not been run</p>
+<blockquote>
+<div><p>i.e. self.has_run == False</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ce_expansion.ga.ga.Pop.update_stats">
+<code class="sig-name descname">update_stats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#Pop.update_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.Pop.update_stats" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Adds statistics of current generation to self.stats</p></li>
+<li><p>Adds best Chromo of current generation to self.min_struct_ls</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.benchmark_plot">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">benchmark_plot</code><span class="sig-paren">(</span><em class="sig-param">max_nochange=500</em>, <em class="sig-param">metals=('Ag'</em>, <em class="sig-param">'Cu')</em>, <em class="sig-param">shape='icosahedron'</em>, <em class="sig-param">num_shells=9</em>, <em class="sig-param">x_metal2=0.57</em>, <em class="sig-param">spike=False</em>, <em class="sig-param">max_gens=-1</em>, <em class="sig-param">min_gens=-1</em>, <em class="sig-param">path=''</em>, <em class="sig-param">save=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#benchmark_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.benchmark_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a plot comparing GA simulation vs. random search</p>
+<p>KArgs:
+- max_nochange (int): Convergence criteria for GA - GA stops when</p>
+<blockquote>
+<div><p>&lt;max_nochange&gt; generations pass with no difference
+in minimum CE
+(Default: 50)</p>
+</div></blockquote>
+<ul>
+<li><dl class="simple">
+<dt>metals (tuple): tuple of metal types in nanoparticle</dt><dd><p>(default: {(‘Ag’, ‘Cu’)})</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>shape (str): shape of nanoparticle</dt><dd><p>(Default: ‘icosahedron’)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>num_shells (int): number of shells that make up nanoparticle</dt><dd><p>(Default: 10 (2869-atom nanoparticle))</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>x_metal2 (float): concentration of metal2 in nanoparticle</dt><dd><p>(Default: 0.57)</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt>spike (bool): if True, following structures are added to generation 0</dt><dd><ul class="simple">
+<li><p>if same structure and composition found in DB,
+it is added to population</p></li>
+<li><p>minCN-filled or maxCN-filled nanoparticle
+(depending on which is more fit) also added
+to population - structure created using
+fill_cn function</p></li>
+</ul>
+<p>(Default: False)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_gens (int): if not -1, use specified value as max</dt><dd><p>generations for each GA sim
+(Default: -1)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>min_gens (int): if not -1, use specified value as min</dt><dd><p>generations that run before max_nochange
+criteria is applied
+(Default: -1)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs (type): additional kwargs get passed in to Pop class</dt><dd><ul class="simple">
+<li><p>examples: popsize, mute_pct, n_mute_atomswaps</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- plt.Figure, plt.axis: figure and axis object of plot</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.build_central_rdf">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">build_central_rdf</code><span class="sig-paren">(</span><em class="sig-param">atoms</em>, <em class="sig-param">metals</em>, <em class="sig-param">nbins=5</em>, <em class="sig-param">pcty=False</em>, <em class="sig-param">ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#build_central_rdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.build_central_rdf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.build_pop_obj">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">build_pop_obj</code><span class="sig-paren">(</span><em class="sig-param">metals</em>, <em class="sig-param">shape</em>, <em class="sig-param">num_shells</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#build_pop_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.build_pop_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an initialized Pop for the specified shape,
+metals, and number of shells
+- e.g. 55-atom (3 shell) AgCu Icosahedron Pop
+- <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs gets passed directly into Pop.__init__</p>
+<p>Args:
+- metals (str | iterator): list of two metals used in the bimetallic NP
+- shape (str): shape of NP</p>
+<blockquote>
+<div><p>NOTE: currently supported methods (found in NPBuilder)
+- cuboctahedron
+- elongated-trigonal-pyramid
+- fcc-cube
+- icosahedron</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>num_shells (int): number of shells used to generate atom size</dt><dd><p>e.g. icosahedron with 3 shells makes a 55-atom object
+(1 in core (shell_0) + 12 in shell_1 + 42 in shell_2)</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p><a href="#id5"><span class="problematic" id="id6">**</span></a>Kwargs:
+- valid arguments to initialize Pop object</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>e.g. popsize=50, x_metal2=0.5</p></li>
+</ul>
+</div></blockquote>
+<p>Returns:
+- (Pop): Pop instance</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.check_db_values">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">check_db_values</code><span class="sig-paren">(</span><em class="sig-param">update_db=False</em>, <em class="sig-param">metal_opts=None</em>, <em class="sig-param">shape_opts=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#check_db_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.check_db_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks CE values in database to ensure CE and EE match their ordering</p>
+<p>KArgs:
+- update_db (bool): if True and mismatch is found, the database will be</p>
+<blockquote>
+<div><p>updated to the correct CE and EE
+(Default: False)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>metal_opts (list): can pass in list of metal combination options to check</dt><dd><p>(Default: [(‘Ag’, ‘Au’), (‘Ag’, ‘Cu’), (‘Au’, ‘Cu’)])</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>shape_opts (list): can pass in list of nanoparticle shapes to check</dt><dd><dl class="simple">
+<dt>(Default: [‘icosahedron’, ‘cuboctahedron’, ‘fcc-cube’,</dt><dd><p>‘elongated-pentagonal-bipyramid’])</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+- (np.ndarray): CE’s and EE’s of mismatches found</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>each row contains: [CE-db, CE-actual, EE-db, EE-actual]</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.fill_cn">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">fill_cn</code><span class="sig-paren">(</span><em class="sig-param">atomg</em>, <em class="sig-param">n_metal2</em>, <em class="sig-param">max_search=50</em>, <em class="sig-param">low_first=True</em>, <em class="sig-param">return_n=None</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#fill_cn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.fill_cn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Algorithm to fill the lowest (or highest) coordination sites with ‘metal2’</p>
+<p>Args:
+- atomg (atomgraph.AtomGraph): AtomGraph object
+- n_metal2 (int): number of dopants</p>
+<p>Kargs:
+- max_search (int): if there are a number of possible structures with</p>
+<blockquote>
+<div><p>partially-filled sites, the function will search
+max_search options and return lowest CE structure
+(Default: 50)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>low_first (bool): if True, fills low CNs, else fills high CNs</dt><dd><p>(Default: True)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>return_n (bool): if &gt; 0, function will return a list of possible</dt><dd><p>structures
+(Default: None)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>verbose (bool): if True, function will print info to console</dt><dd><p>(Default: False)</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns:
+if return_n &gt; 0:
+- (list): list of chemical ordering np.ndarrays
+else:
+- (np.ndarray), (float): chemical ordering np.ndarray with its</p>
+<blockquote>
+<div><p>calculated CE</p>
+</div></blockquote>
+<p>Raises:
+- ValueError: not enough options to produce &lt;return_n&gt; sample size</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.gen_random">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">gen_random</code><span class="sig-paren">(</span><em class="sig-param">atomg</em>, <em class="sig-param">n_metal2</em>, <em class="sig-param">n=500</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#gen_random"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.gen_random" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates random structures (constrained by size, shape, and concentration)
+and returns minimum structure and stats on CEs</p>
+<p>Args:
+- atomg (atomgraph.AtomGraph): AtomGraph object
+- n_metal2 (int): number of metal2 in nanoparticle
+- n (int): sample size</p>
+<p>Returns:
+- (Chrom), (np.ndarray): Chrom object of minimum structure found</p>
+<blockquote>
+<div><p>1D array of all CEs calculated in sample</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.load_pop">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">load_pop</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#load_pop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.load_pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a pickled Pop object</p>
+<p>Args:
+path (str): path to Pop object (<a href="#id7"><span class="problematic" id="id8">*</span></a>.pickle file)</p>
+<p>Returns:
+(Pop): pop object</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.make_file">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">make_file</code><span class="sig-paren">(</span><em class="sig-param">atom</em>, <em class="sig-param">chrom</em>, <em class="sig-param">path</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">filetype='xyz'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#make_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.make_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an XYZ file given Atoms obj skeleton and
+GA Chrom obj for metals and ordering</p>
+<p>Args:
+- atom (ase.Atoms): Atoms obj skeleton
+- chrom (Chrom): Chrom obj from GA containing ordering and metals
+- path (str): path to save file
+- filetype (str): Type of file to save. Default XYZ</p>
+<p>Kargs:
+- verbose (bool): if True, print save path on success</p>
+<p>Returns: None</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.ncr">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">ncr</code><span class="sig-paren">(</span><em class="sig-param">n</em>, <em class="sig-param">r</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#ncr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.ncr" title="Permalink to this definition">¶</a></dt>
+<dd><p>N choose r function (combinatorics)</p>
+<p>Args:
+- n (int): from ‘n’ choices
+- r (int): choose r without replacement</p>
+<p>Returns:
+- (int): total combinations</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.run_ga">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">run_ga</code><span class="sig-paren">(</span><em class="sig-param">metals</em>, <em class="sig-param">shape</em>, <em class="sig-param">save_data=True</em>, <em class="sig-param">batch_runinfo=None</em>, <em class="sig-param">shells=None</em>, <em class="sig-param">max_generations=5000</em>, <em class="sig-param">min_generations=-1</em>, <em class="sig-param">max_nochange=2000</em>, <em class="sig-param">add_coreshell=True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#run_ga"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.run_ga" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submission function to run GAs of a given metal combination and
+shape, sweeping over different sizes (measured in number of shells)
+- capable of saving minimum structures as XYZs, logging GA stats, saving</p>
+<blockquote>
+<div><p>all run info as excel, and creating a 3D surface plot of results</p>
+</div></blockquote>
+<p>Args:
+- metals (iterator): list of two metals used in the bimetallic NP
+- shape (str): shape of NP that is being studied</p>
+<blockquote>
+<div><dl class="simple">
+<dt>NOTE: currently supports</dt><dd><ul class="simple">
+<li><p>icosahedron</p></li>
+<li><p>cuboctahedron</p></li>
+<li><p>fcc-cube</p></li>
+<li><p>elongated-trigonal-pyramic</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<p>Kargs:
+- plotit (bool): if true, a 3D surface plot is made of GA sims</p>
+<blockquote>
+<div><p>dope concentration vs. size vs. excess energy
+(Default: False)</p>
+</div></blockquote>
+<ul>
+<li><dl>
+<dt>save_data (bool): - if true, GA sim data is saved to BimetallicResults</dt><dd><blockquote>
+<div><p>table in database</p>
+</div></blockquote>
+<p>(Default: True)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>batch_runinfo (str): if str, add to BimetallicLog entry</dt><dd><p>(Default: None)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>shells (int || list): if int, only that shell size is simulated</dt><dd><p>elif list of ints, nshell_range = shells
+(Default: None)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_generations (int): if not -1, use specified value as max</dt><dd><p>generations for each GA sim
+(Default: 5000)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>min_generations (int): if not -1, use specified value as min</dt><dd><p>generations that run before max_nochange
+criteria is applied
+(Default: -1)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_nochange (int): maximum generations GA will go without a change in</dt><dd><p>minimum CE
+(Default: 2000)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>add_coreshell (bool): if True, core shell structures will be included in</dt><dd><p>GA simulations
+(Default: True)</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Returns: None</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.scaling_plot">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">scaling_plot</code><span class="sig-paren">(</span><em class="sig-param">metals=('Ag'</em>, <em class="sig-param">'Cu')</em>, <em class="sig-param">shape='icosahedron'</em>, <em class="sig-param">num_shells_range=range(2</em>, <em class="sig-param">11)</em>, <em class="sig-param">x_metal2=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#scaling_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.scaling_plot" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>Creates a scaling plot to test GA</dt><dd><ul class="simple">
+<li><p>number of atoms vs. runtime for 500 generations (in seconds)</p></li>
+</ul>
+<p>Reveals that GA simulations scale by O(n) where n = num_atoms</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Keyword Arguments</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metals</strong> (<em>tuple</em>) – metal types in nanoparticle
+(Default: (‘Ag’, ‘Cu’))</p></li>
+<li><p><strong>shape</strong> (<em>str</em>) – shape of nanoparticle
+(Default: ‘icosahedron’)</p></li>
+<li><p><strong>num_shells_range</strong> (<em>list</em>) – range of num_shells (nanoparticle sizes)
+to test
+(Default: (range(2, 11))</p></li>
+<li><p><strong>x_metal2</strong> (<em>float</em>) – concentration of metal2 in nanoparticle
+(Default: 0.57)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:
+- plt.Figure, plt.axis: figure and axis object of plot</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.test_FePt_nanop">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">test_FePt_nanop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#test_FePt_nanop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.test_FePt_nanop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimizes FePt structure from Nano Lett. paper
+- NOTE: not complemented</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.vis_FePt_results">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">vis_FePt_results</code><span class="sig-paren">(</span><em class="sig-param">pcty=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#vis_FePt_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.vis_FePt_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load in exp. FePt and GA opt FePt NPs
+- same as cn_dist_plot, but customized for FePt comparison</p>
+<p>KArgs:
+- pcty (bool): if True, y-axis is normalized to show percentage</p>
+<blockquote>
+<div><p>of CN filled by each metal type
+(Default: False)</p>
+</div></blockquote>
+<p>Returns:
+- (plt.Figure), (plt.gca()): figure and axis object of plot</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ce_expansion.ga.ga.xyz_to_chrom">
+<code class="sig-prename descclassname">ce_expansion.ga.ga.</code><code class="sig-name descname">xyz_to_chrom</code><span class="sig-paren">(</span><em class="sig-param">atomg</em>, <em class="sig-param">path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ce_expansion/ga/ga.html#xyz_to_chrom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ce_expansion.ga.ga.xyz_to_chrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method used to create Chromo of <a href="#id9"><span class="problematic" id="id10">*</span></a>.xyz
+using AtomGraph and <a href="#id11"><span class="problematic" id="id12">*</span></a>.xyz path</p>
+<p>Args:
+- atomg (atomgraph.AtomGraph): AtomGraph obj
+- path (str): path to <a href="#id13"><span class="problematic" id="id14">*</span></a>.xyz file</p>
+<p>Returns:
+- (Chromo): Chromo representing <a href="#id15"><span class="problematic" id="id16">*</span></a>.xyz structure
+- (None): if path is not a file</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ce_expansion.ga.structure_gen.html" class="btn btn-neutral float-right" title="3.1.1.3.1.3. ce_expansion.ga.structure_gen module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ce_expansion.ga.batch_ga_run.html" class="btn btn-neutral float-left" title="3.1.1.3.1.1. ce_expansion.ga.batch_ga_run module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

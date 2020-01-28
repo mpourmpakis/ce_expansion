@@ -1,0 +1,17 @@
+ce\_expansion.npdb package
+==========================
+
+.. automodule:: ce_expansion.npdb
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+
+   ce_expansion.npdb.base
+   ce_expansion.npdb.datatables
+   ce_expansion.npdb.db_inter
+   ce_expansion.npdb.db_utils

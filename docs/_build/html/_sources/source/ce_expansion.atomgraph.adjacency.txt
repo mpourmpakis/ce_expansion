@@ -1,0 +1,7 @@
+ce\_expansion.atomgraph.adjacency module
+========================================
+
+.. automodule:: ce_expansion.atomgraph.adjacency
+   :members:
+   :undoc-members:
+   :show-inheritance:

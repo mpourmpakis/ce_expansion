@@ -1,14 +1,16 @@
 import os
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import atomgraph
-import structure_gen
-import numpy as np
 import random
 import sys
 
-src = os.path.join(os.path.realpath(__file__), '..', 'src')
-sys.path.append(src)
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
+
+import atomgraph
+from ga import structure_gen
+
+ce_expansion = os.path.join(os.path.realpath(__file__), '..', 'ce_expansion')
+sys.path.append(ce_expansion)
 
 for p in plt.rcParams:
     if plt.rcParams[p] == 'bold':

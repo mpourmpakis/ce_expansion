@@ -1,0 +1,7 @@
+ce\_expansion.utility.gen\_gamma module
+=======================================
+
+.. automodule:: ce_expansion.utility.gen_gamma
+   :members:
+   :undoc-members:
+   :show-inheritance:

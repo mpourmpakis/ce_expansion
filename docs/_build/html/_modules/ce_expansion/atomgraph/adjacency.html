@@ -1,0 +1,318 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ce_expansion.atomgraph.adjacency &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">1. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">2. License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>ce_expansion.atomgraph.adjacency</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ce_expansion.atomgraph.adjacency</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="c1"># Library for buiding bonding lists/tables/matrices</span>
+<span class="c1"># James Dean, 2019</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+
+<span class="kn">import</span> <span class="nn">ase.neighborlist</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Set up globals for defaults</span>
+<span class="n">DEFAULT_ELEMENTS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Cu&quot;</span><span class="p">,</span> <span class="s2">&quot;Cu&quot;</span><span class="p">)</span>
+<span class="n">DEFAULT_RADIUS</span> <span class="o">=</span> <span class="mf">2.8</span>
+
+
+<span class="c1"># Functions below</span>
+<div class="viewcode-block" id="buildBondsList"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.adjacency.html#ce_expansion.atomgraph.adjacency.buildBondsList">[docs]</a><span class="k">def</span> <span class="nf">buildBondsList</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
+                   <span class="n">radius_dictionary</span><span class="o">=</span><span class="p">{</span><span class="n">DEFAULT_ELEMENTS</span><span class="p">:</span> <span class="n">DEFAULT_RADIUS</span><span class="p">}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2D bonds list from an ASE atoms object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    atoms_object (ase.Atoms): An ASE atoms object representing the system of interest</span>
+<span class="sd">    radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a</span>
+<span class="sd">      bond. If no dict is supplied, Cu-Cu bonds of a max-len 2.8 are assumes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    np.ndarray : A numpy array representing the bonds list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sources</span><span class="p">,</span> <span class="n">destinations</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">neighborlist</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="s2">&quot;ij&quot;</span><span class="p">,</span> <span class="n">atoms_object</span><span class="p">,</span> <span class="n">radius_dictionary</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">sources</span><span class="p">,</span> <span class="n">destinations</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="buildAdjacencyMatrix"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.adjacency.html#ce_expansion.atomgraph.adjacency.buildAdjacencyMatrix">[docs]</a><span class="k">def</span> <span class="nf">buildAdjacencyMatrix</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
+                         <span class="n">radius_dictionary</span><span class="o">=</span><span class="p">{</span><span class="n">DEFAULT_ELEMENTS</span><span class="p">:</span> <span class="n">DEFAULT_RADIUS</span><span class="p">}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sparse matrix representation from an ase atoms object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    atoms_object (ase.Atoms): An ASE atoms object representing the system of interest</span>
+<span class="sd">    radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a</span>
+<span class="sd">                              bond. If no dict is supplied, Cu-Cu bonds of max-len 2.8 are assumed.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    np.ndarray : A numpy array representing the sparse matrix of the ase object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Construct the list of bonds</span>
+    <span class="n">sources</span><span class="p">,</span> <span class="n">destinations</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">neighborlist</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="s2">&quot;ij&quot;</span><span class="p">,</span> <span class="n">atoms_object</span><span class="p">,</span> <span class="n">radius_dictionary</span><span class="p">)</span>
+    <span class="c1"># Generate the matrix</span>
+    <span class="n">adjacency_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sources</span><span class="p">,</span> <span class="n">destinations</span><span class="p">):</span>
+        <span class="n">adjacency_matrix</span><span class="p">[</span><span class="n">bond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bond</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">adjacency_matrix</span></div>
+
+
+<div class="viewcode-block" id="buildAdjacencyList"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.adjacency.html#ce_expansion.atomgraph.adjacency.buildAdjacencyList">[docs]</a><span class="k">def</span> <span class="nf">buildAdjacencyList</span><span class="p">(</span><span class="n">atoms_object</span><span class="p">,</span>
+                       <span class="n">atom_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">radius_dictionary</span><span class="o">=</span><span class="p">{</span><span class="n">DEFAULT_ELEMENTS</span><span class="p">:</span> <span class="n">DEFAULT_RADIUS</span><span class="p">}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">      Adjacency list representation for an ase atoms object.</span>
+
+
+<span class="sd">      atoms_object (ase.Atoms): An ASE atoms object representing the system of interest</span>
+<span class="sd">      radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a</span>
+<span class="sd">                                bond. If no dict is supplied, Cu-Cu bonds of max-len 2.8 are assumed.</span>
+
+<span class="sd">      Returns:</span>
+<span class="sd">      np.ndarray : A numpy array representing the adjacency list of the ase object</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check to see if adjacency list has already been generated</span>
+    <span class="c1"># Current folder structure:</span>
+    <span class="c1">#   Project</span>
+    <span class="c1">#   |---bin</span>
+    <span class="c1">#       |---lib.dll</span>
+    <span class="c1">#   |---ce_expansion</span>
+    <span class="c1">#       |---atomgraph</span>
+    <span class="c1">#           |----interface.py</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+    <span class="n">data_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">])</span>
+
+    <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">data_directory</span><span class="p">,</span> <span class="s1">&#39;adjacency_lists&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">data_directory</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.npy&#39;</span><span class="p">])</span> <span class="o">%</span> <span class="n">atom_name</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span> <span class="ow">and</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">adj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">adj</span><span class="p">]</span>
+
+    <span class="c1"># Construct the list of bonds</span>
+    <span class="n">sources</span><span class="p">,</span> <span class="n">destinations</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">neighborlist</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="s2">&quot;ij&quot;</span><span class="p">,</span> <span class="n">atoms_object</span><span class="p">,</span> <span class="n">radius_dictionary</span><span class="p">)</span>
+    <span class="c1"># Sort along our destinations</span>
+    <span class="c1"># Mergesort has a slightly better worst-case time complexity than quicksort or heapsort, and is stable</span>
+    <span class="n">sorted_destinations</span> <span class="o">=</span> <span class="n">destinations</span><span class="p">[</span><span class="n">sources</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;mergesort&#39;</span><span class="p">)]</span>
+
+    <span class="c1"># Figure out how the list of bonds will be sliced, and slice it</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
+    <span class="n">splitting</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">count</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">bins</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">splitting</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">splitting</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span> <span class="o">+</span> <span class="n">splitting</span><span class="p">[</span><span class="n">count</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Slice the list of bonds to get the adjacency list</span>
+    <span class="n">adjacency_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sorted_destinations</span><span class="p">,</span> <span class="n">splitting</span><span class="p">)</span>
+
+    <span class="c1"># Check that the final entry is an empty list, otherwise something weird happened</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">adjacency_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The following atoms have bonds yet do not appear to be bound to any item: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">adjacency_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">adjacency_list</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">atom_name</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">data_directory</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.npy&#39;</span><span class="p">])</span> <span class="o">%</span> <span class="n">atom_name</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">result</span><span class="p">]</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">ase.cluster</span>
+
+    <span class="n">nanoparticle</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">Icosahedron</span><span class="p">(</span><span class="s1">&#39;Cu&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">adjacency_list</span> <span class="o">=</span> <span class="n">buildAdjacencyList</span><span class="p">(</span><span class="n">nanoparticle</span><span class="p">)</span>
+    <span class="n">adjacency_matrix</span> <span class="o">=</span> <span class="n">buildAdjacencyMatrix</span><span class="p">(</span><span class="n">nanoparticle</span><span class="p">)</span>
+    <span class="n">bonds_list</span> <span class="o">=</span> <span class="n">buildBondsList</span><span class="p">(</span><span class="n">nanoparticle</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">adjacency_list</span><span class="p">,</span> <span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">bonds_list</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

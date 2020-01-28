@@ -1,0 +1,16 @@
+ce\_expansion.ga package
+========================
+
+.. automodule:: ce_expansion.ga
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+
+   ce_expansion.ga.batch_ga_run
+   ce_expansion.ga.ga
+   ce_expansion.ga.structure_gen

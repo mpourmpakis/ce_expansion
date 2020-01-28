@@ -1,0 +1,564 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ce_expansion.atomgraph.atomgraph &mdash; ce_expansion 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ce_expansion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">1. CE Expansion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">2. License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/modules.html">3. Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ce_expansion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>ce_expansion.atomgraph.atomgraph</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ce_expansion.atomgraph.atomgraph</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="kn">import</span> <span class="nn">ctypes</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">ce_expansion.bin</span> <span class="k">import</span> <span class="n">interface</span>
+<span class="kn">from</span> <span class="nn">ce_expansion.npdb</span> <span class="k">import</span> <span class="n">db_inter</span>
+
+
+<div class="viewcode-block" id="AtomGraph"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph">[docs]</a><span class="k">class</span> <span class="nc">AtomGraph</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A graph representing the ASE Atoms object to be investigated.</span>
+<span class="sd">    This graph is represented as an Nx2 list of edges in the nanoparticle.</span>
+<span class="sd">    Note that the function signature is slightly different than AtomGraph.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    bond_list (np.array): An Nx2 numpy array containing a list of bonds in the</span>
+<span class="sd">                          nanoparticle. Zero indexed. Assumed to come from</span>
+<span class="sd">                          adjacency.buildBondList.</span>
+<span class="sd">    kind0 (str): A string indicating the atomic symbol a &quot;0&quot; represents.</span>
+<span class="sd">    kind1 (str): A string indicating the atomic symbol a &quot;1&quot; represents.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">    symbols (tuple): A tuple containing the compositional information of the</span>
+<span class="sd">                     NP. Index 0 is the element a &quot;0&quot; represents. Index 1 is</span>
+<span class="sd">                     the element a &quot;1&quot; represents. This attribute is updated</span>
+<span class="sd">                     whenever the NP&#39;s composition is updated via the</span>
+<span class="sd">                     &quot;set_composition&quot; method.</span>
+<span class="sd">    coeffs (dict): A nested dictionary of bond coefficients, of the format</span>
+<span class="sd">                   dict[source][destination][CN]. Source and destination are</span>
+<span class="sd">                   strings indicating the element of interest. Defaults to the</span>
+<span class="sd">                   global DFTAULT_BOND_COEFFS. Coefficients can be calculated</span>
+<span class="sd">                   using /tools/gen_coeffs.py.</span>
+<span class="sd">    num_atoms (int): The number of atoms in the NP.</span>
+<span class="sd">    cns (np.array): An array containing the coordination number of each atom.</span>
+<span class="sd">    unique_cns (np.array): array of unique coordination numbers of NP</span>
+<span class="sd">    min_cn (int): minimum coordination number of NP</span>
+<span class="sd">    max_cn (int): maximum coordination number of NP</span>
+<span class="sd">    mono_ce0 (float): CE value for monometallic NP of &quot;kind0&quot;</span>
+<span class="sd">    mono_ce1 (float): CE value for monometallic NP of &quot;kind1&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bond_list</span><span class="p">,</span> <span class="n">kind0</span><span class="p">,</span> <span class="n">kind1</span><span class="p">,</span>
+                 <span class="n">coeffs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bond_list</span> <span class="o">=</span> <span class="n">bond_list</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_bonds</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bond_list</span><span class="p">)</span>
+
+        <span class="c1"># Public attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">coeffs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span> <span class="o">=</span> <span class="n">db_inter</span><span class="o">.</span><span class="n">build_coefficient_dict</span><span class="p">(</span><span class="n">kind0</span> <span class="o">+</span> <span class="n">kind1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span> <span class="o">=</span> <span class="n">coeffs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">bond_list</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">bond_list</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cns</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">)</span>
+
+        <span class="c1"># precalculate some useful info on CNs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unique_cns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cns</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_cn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_cns</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_cn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_cns</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="c1"># Set up the matrix of bond energies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bond_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p_bond_energies</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_composition</span><span class="p">(</span><span class="n">kind0</span><span class="p">,</span> <span class="n">kind1</span><span class="p">)</span>
+
+        <span class="c1"># Create pointers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_long_num_atoms</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">)</span>
+
+        <span class="c1"># Windows compatibility?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p_cns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cns</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_long_num_bonds</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_bonds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p_bond_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bond_list</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">))</span>
+
+        <span class="c1"># calculate monometallic CEs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mono_ce0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTotalCE</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mono_ce1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTotalCE</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_bonds</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;AtomGraph returns CN of given atom index&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+<div class="viewcode-block" id="AtomGraph.set_composition"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph.set_composition">[docs]</a>    <span class="k">def</span> <span class="nf">set_composition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind0</span><span class="p">,</span> <span class="n">kind1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the bond energies to be passed to the C library. Energies come</span>
+<span class="sd">        from the coeffs attribute.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        kind0 (str): The element a &quot;0&quot; represents.</span>
+<span class="sd">        kind1 (str): The element a &quot;1&quot; represents.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">kind0</span><span class="p">,</span> <span class="n">kind1</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">(</span><span class="n">kind0</span><span class="p">,</span> <span class="n">kind1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">element1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">element2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span>
+                        <span class="n">coefficient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span><span class="p">[</span><span class="n">element1</span><span class="p">][</span><span class="n">element2</span><span class="p">][</span><span class="n">cn</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_bond_energies</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">cn</span><span class="p">]</span> <span class="o">=</span> <span class="n">coefficient</span>
+
+        <span class="c1"># Create pointer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p_bond_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bond_energies</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="AtomGraph.calc_cn_dist"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph.calc_cn_dist">[docs]</a>    <span class="k">def</span> <span class="nf">calc_cn_dist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordering</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets CN distribution of each atom type</span>
+<span class="sd">        - can be used to create bar plots of CN distribution</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        - ordering (np.array): chemical ordering of the NP</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        - (dict): {cn_options (np.array): possible CN options,</span>
+<span class="sd">                   m1_counts (np.array): metal1 CN counts,</span>
+<span class="sd">                   m2_counts (np.array): metal2 CN counts,</span>
+<span class="sd">                   tot_counts (np.array): total CN counts}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># create arrays of CNs occupied by each metal type</span>
+        <span class="n">metal1_cns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cns</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ordering</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">metal2_cns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cns</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ordering</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="c1"># counts of CN type for each metal</span>
+        <span class="n">m1_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">metal1_cns</span> <span class="o">==</span> <span class="n">cn</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                              <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_cns</span><span class="p">])</span>
+        <span class="n">m2_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">metal2_cns</span> <span class="o">==</span> <span class="n">cn</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                              <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_cns</span><span class="p">])</span>
+
+        <span class="c1"># total counts of CN type</span>
+        <span class="n">tot_counts</span> <span class="o">=</span> <span class="n">m1_counts</span> <span class="o">+</span> <span class="n">m2_counts</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">cn_options</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_cns</span><span class="p">,</span>
+                    <span class="n">m1_counts</span><span class="o">=</span><span class="n">m1_counts</span><span class="p">,</span>
+                    <span class="n">m2_counts</span><span class="o">=</span><span class="n">m2_counts</span><span class="p">,</span>
+                    <span class="n">tot_counts</span><span class="o">=</span><span class="n">tot_counts</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AtomGraph.countMixing"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph.countMixing">[docs]</a>    <span class="k">def</span> <span class="nf">countMixing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordering</span><span class="p">,</span>
+                    <span class="n">holder_array</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines the number of homo/hetero-atomic bonds in the system.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        - ordering (np.array): Chemcial ordering of the NP</span>
+<span class="sd">        - holder_array (np.array): A length-3 array to hold the result.</span>
+<span class="sd">                                   Optional. If not supplied, will create</span>
+<span class="sd">                                   the array on the spot. May be slower to do</span>
+<span class="sd">                                   this. This array is OVER-WRITTEN by the</span>
+<span class="sd">                                   C-library, and contains long ints.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Bond counts(np.array): [A-A bonds, B-B bonds, A-B bonds]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">)</span>
+        <span class="n">p_ordering</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">holder_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">holder_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">)</span>
+
+        <span class="n">p_holder_array</span> <span class="o">=</span> <span class="n">holder_array</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">))</span>
+
+        <span class="n">interface</span><span class="o">.</span><span class="n">pointerized_calculate_mixing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_long_num_atoms</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">_long_num_bonds</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">_p_bond_list</span><span class="p">,</span>
+                                               <span class="n">p_ordering</span><span class="p">,</span>
+                                               <span class="n">p_holder_array</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">holder_array</span></div>
+
+<div class="viewcode-block" id="AtomGraph.calcMixing"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph.calcMixing">[docs]</a>    <span class="k">def</span> <span class="nf">calcMixing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordering</span><span class="p">,</span>
+                   <span class="n">holder_array</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the mixing parameter. From Batista et al. Adsorption of CO, NO, and H2 on the</span>
+<span class="sd">        PdnAu55-n nanoclusters: A Density Functional Theory Investigation within the van der</span>
+<span class="sd">        Waals D3 Corrections. J Phys Chem C 2019, 123 (12) 7431-7439.</span>
+<span class="sd">        Link here: https://pubs.acs.org/doi/10.1021/acs.jpcc.8b12219</span>
+<span class="sd">        </span>
+<span class="sd">        For bimetallics, this mixing parameter is the percent of homo-atomic </span>
+<span class="sd">        bonds scaled between -1 and 1.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        ordering(np.array): Chemcial ordering of the NP</span>
+<span class="sd">        holder_array(np.array): A length-3 array to hold the result of countMixing. </span>
+<span class="sd">                                Optional. If not supplied, will create the array on the spot. </span>
+<span class="sd">                                May be slower to do this. This array is OVER-WRITTEN by the </span>
+<span class="sd">                                C-library, and contains long ints.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The mixing parameter. +1 indicates complete segregation (e.g. only homo-atomic bonds).</span>
+<span class="sd">            -1 indicates complete mixing (e.g. zero bonds between the same element).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">holder_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">holder_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">countMixing</span><span class="p">(</span><span class="n">ordering</span><span class="p">,</span> <span class="n">holder_array</span><span class="p">)</span>
+
+        <span class="n">numerator</span> <span class="o">=</span> <span class="p">(</span><span class="n">holder_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">holder_array</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">holder_array</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="p">(</span><span class="n">holder_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">holder_array</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">holder_array</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">mixing_parameter</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+
+        <span class="k">return</span> <span class="n">mixing_parameter</span></div>
+
+<div class="viewcode-block" id="AtomGraph.getTotalCE"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph.getTotalCE">[docs]</a>    <span class="k">def</span> <span class="nf">getTotalCE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordering</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the cohesive energy of the NP using the BC model,</span>
+<span class="sd">        as implemented in interface.py and lib.c</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ordering (np.array): Chemical ordering of the NP.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">)</span>
+        <span class="c1"># Pointerize ordering</span>
+        <span class="n">p_ordering</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">interface</span><span class="o">.</span><span class="n">pointerized_calculate_ce</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_p_bond_energies</span><span class="p">,</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">_long_num_atoms</span><span class="p">,</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">_p_cns</span><span class="p">,</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">_long_num_bonds</span><span class="p">,</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">_p_bond_list</span><span class="p">,</span>
+                                                  <span class="n">p_ordering</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AtomGraph.getEE"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph.getEE">[docs]</a>    <span class="k">def</span> <span class="nf">getEE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordering</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the excess energy in eV / atom of a given ordering</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        ordering (np.array): 1D chemical ordering array</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        (float): Excess Energy (EE) in eV / atom</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># number and concentration of &quot;kind1&quot;</span>
+        <span class="n">n1</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">n1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span>
+
+        <span class="c1"># number and concentration of &quot;kind0&quot;</span>
+        <span class="n">n0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span> <span class="o">-</span> <span class="n">n1</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">n0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span>
+
+        <span class="c1"># excess energy</span>
+        <span class="n">ee</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTotalCE</span><span class="p">(</span><span class="n">ordering</span><span class="p">)</span> <span class="o">-</span> \
+             <span class="p">(</span><span class="n">x0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mono_ce0</span> <span class="o">+</span> <span class="n">x1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mono_ce1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ee</span></div>
+
+<div class="viewcode-block" id="AtomGraph.get_adjacency_list"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph.get_adjacency_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_adjacency_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculates an adjacency list given the bonds list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        The NxM adjacency list represented by the bonds list</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">adjacency_list</span> <span class="o">=</span> <span class="p">[[]]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_atoms</span>
+        <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bond_list</span><span class="p">:</span>
+            <span class="n">adjacency_list</span><span class="p">[</span><span class="n">bond</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">adjacency_list</span><span class="p">[</span><span class="n">bond</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="p">[</span><span class="n">bond</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="n">adjacency_list</span></div>
+
+<div class="viewcode-block" id="AtomGraph.metropolis"><a class="viewcode-back" href="../../../source/ce_expansion.atomgraph.atomgraph.html#ce_expansion.atomgraph.atomgraph.AtomGraph.metropolis">[docs]</a>    <span class="k">def</span> <span class="nf">metropolis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordering</span><span class="p">,</span>
+                   <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                   <span class="n">swap_any</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Metropolis-Hastings-based exploration of similar NPs</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        atomgraph (atomgraph.AtomGraph) : An atomgraph representing the NP</span>
+<span class="sd">        ordering (np.array) : 1D chemical ordering array</span>
+<span class="sd">        num_steps (int) : How many steps to simulate for</span>
+<span class="sd">        swap_any (bool) : Determines whether to restrict the algorithm&#39;s swaps</span>
+<span class="sd">                          to only atoms directly bound to  the atom of interest.</span>
+<span class="sd">                          If set to &#39;True&#39;, the algorithm chooses any two atoms</span>
+<span class="sd">                          in the NP regardless of where they are. Selecting</span>
+<span class="sd">                          &#39;False&#39; yields a slightly-more-physical case of</span>
+<span class="sd">                          atomic diffusion.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># Initialization</span>
+        <span class="c1"># create new instance of ordering array</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">best_ordering</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">best_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTotalCE</span><span class="p">(</span><span class="n">ordering</span><span class="p">)</span>
+        <span class="n">prev_energy</span> <span class="o">=</span> <span class="n">best_energy</span>
+        <span class="n">energy_history</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_steps</span><span class="p">)</span>
+        <span class="n">energy_history</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_energy</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">swap_any</span><span class="p">:</span>
+            <span class="n">adj_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_adjacency_list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_steps</span><span class="p">):</span>
+            <span class="c1"># Determine where the ones and zeroes are currently</span>
+            <span class="n">ones</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ordering</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">zeros</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ordering</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Choose a random step</span>
+            <span class="k">if</span> <span class="n">swap_any</span><span class="p">:</span>
+                <span class="n">chosen_one</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">ones</span><span class="p">)</span>
+                <span class="n">chosen_zero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">zeros</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Search the NP for a 1 with heteroatomic bonds</span>
+                <span class="k">for</span> <span class="n">chosen_one</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">ones</span><span class="p">):</span>
+                    <span class="n">connected_atoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">adj_list</span><span class="p">[</span><span class="n">chosen_one</span><span class="p">])</span>
+                    <span class="n">connected_zeros</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">connected_atoms</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span>
+                                                     <span class="n">assume_unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">connected_zeros</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="c1"># The atom has zeros connected to it</span>
+                        <span class="n">chosen_zero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">connected_zeros</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+            <span class="c1"># Evaluate the energy change</span>
+            <span class="n">prev_ordering</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">ordering</span><span class="p">[</span><span class="n">chosen_one</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">ordering</span><span class="p">[</span><span class="n">chosen_zero</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTotalCE</span><span class="p">(</span><span class="n">ordering</span><span class="p">)</span>
+
+            <span class="c1"># Metropolis-related stuff</span>
+            <span class="n">ratio</span> <span class="o">=</span> <span class="n">energy</span> <span class="o">/</span> <span class="n">prev_energy</span>
+            <span class="k">if</span> <span class="n">ratio</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">():</span>
+                <span class="c1"># Commit to the step</span>
+                <span class="n">energy_history</span><span class="p">[</span><span class="n">step</span><span class="p">]</span> <span class="o">=</span> <span class="n">energy</span>
+                <span class="k">if</span> <span class="n">energy</span> <span class="o">&lt;</span> <span class="n">best_energy</span><span class="p">:</span>
+                    <span class="n">best_energy</span> <span class="o">=</span> <span class="n">energy</span>
+                    <span class="n">best_ordering</span> <span class="o">=</span> <span class="n">ordering</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Reject the step</span>
+                <span class="n">ordering</span> <span class="o">=</span> <span class="n">prev_ordering</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">energy_history</span><span class="p">[</span><span class="n">step</span><span class="p">]</span> <span class="o">=</span> <span class="n">prev_energy</span>
+
+        <span class="k">return</span> <span class="n">best_ordering</span><span class="p">,</span> <span class="n">best_energy</span><span class="p">,</span> <span class="n">energy_history</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ce_expansion.atomgraph</span> <span class="k">import</span> <span class="n">adjacency</span>
+    <span class="kn">import</span> <span class="nn">ase.cluster</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="c1"># Create a nanoparticle and its graph object</span>
+    <span class="n">nanoparticle</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">Icosahedron</span><span class="p">(</span><span class="s1">&#39;Cu&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">bond_list</span> <span class="o">=</span> <span class="n">adjacency</span><span class="o">.</span><span class="n">buildBondsList</span><span class="p">(</span><span class="n">nanoparticle</span><span class="p">)</span>
+
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">AtomGraph</span><span class="p">(</span><span class="n">bond_list</span><span class="p">,</span> <span class="s1">&#39;Cu&#39;</span><span class="p">,</span> <span class="s1">&#39;Au&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Generate the chemical ordering</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
+    <span class="n">chemical_ordering</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">graph</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">)</span>
+
+    <span class="c1"># Calculate cohesive energy</span>
+    <span class="n">cohesive_energy</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">getTotalCE</span><span class="p">(</span><span class="n">chemical_ordering</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cohesive energy = </span><span class="si">%.2e</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cohesive_energy</span><span class="p">)</span>
+
+    <span class="n">mixing</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">countMixing</span><span class="p">(</span><span class="n">chemical_ordering</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[A-A   A-B   B-B] =&quot;</span><span class="p">,</span> <span class="n">mixing</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sum of homo/hetero-atomic bonds: &quot;</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="n">mixing</span><span class="p">))</span>
+    <span class="n">num_bonds</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bond_list</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;True bondcount: &quot;</span><span class="p">,</span> <span class="n">num_bonds</span><span class="p">)</span>
+    <span class="n">mixing_parameter</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">calcMixing</span><span class="p">(</span><span class="n">chemical_ordering</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mixing Parameter: &quot;</span><span class="p">,</span> <span class="n">mixing_parameter</span><span class="p">)</span>
+
+    <span class="c1"># Enter global metropolis</span>
+    <span class="n">opt_order</span><span class="p">,</span> <span class="n">opt_energy</span><span class="p">,</span> <span class="n">energy_history</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">metropolis</span><span class="p">(</span><span class="n">chemical_ordering</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">swap_any</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Performed 1000 metropolis steps swapping anywhere, yielding CE = </span><span class="si">%.2e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">opt_energy</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">energy_history</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Swap_Global&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Enter locally-swapped metropolis</span>
+    <span class="n">opt_order</span><span class="p">,</span> <span class="n">opt_energy</span><span class="p">,</span> <span class="n">energy_history</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">metropolis</span><span class="p">(</span><span class="n">chemical_ordering</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">swap_any</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Performed 1000 metropolis steps swapping across bonds, yielding CE = </span><span class="si">%.2e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">opt_energy</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">energy_history</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Swap_Local&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Step&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Energy (eV)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># Exeunt metropoles</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, CANELa
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

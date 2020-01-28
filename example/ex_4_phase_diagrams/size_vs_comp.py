@@ -45,14 +45,9 @@ class Result(object):
     def get_free_energy_mix(self, T):
         """
         Calculates Excess energies plus an entropic contribution.
+        :param T: Temperature
 
-        Args:
-            excess_energy (list): Excess energies from DB query
-            comp (list): Compositions from DB query
-            T (int): Temperature
-
-        Returns:
-            Free energy of mixing = excess energy (related to enthalpy of mixing) - entropy of mixing
+        :return: Free energy of mixing = excess energy (related to enthalpy of mixing) - entropy of mixing
         """
 
         if self.composition == 1 or self.composition == 0:
@@ -89,14 +84,11 @@ def get_best(alloy,
              temperature_range, temperature_res=100):
     """
     Produces a phase diagram
-
-    Args:
-        alloy (str): Alloy of interest
-        size_range (list): Range of sizes to consider, in atoms, inclusive
-        temperature_range (list): Range of temperatures to consider, in K, inclusive
-        temperature_res (int): How fine our temperature mesh is, in K. Default = 1K
-    Returns:
-        None. Drops a plot of the alloy into the working directory.
+    :param alloy: Alloy of interest
+    :param size_range: Range of sizes to consider, in atoms, inclusive
+    :param temperature_range: Range of temperatures to consider, in K, inclusive
+    :param temperature_res: How fine our temperature mesh is, in K, defaults to 1K
+    :return: A dictionary with {size : {temp : Result_object() } }
     """
 
     # Book-keeping and initialization
@@ -113,6 +105,7 @@ def get_best(alloy,
     for shape in shapes:
         query = npdb.db_inter.get_bimet_result(metals=alloy, shape=shape)
         for result in query:
+            print(result)
             # Calculate size
             size = result.num_atoms
             if size <= min_size or size >= max_size:
@@ -136,6 +129,7 @@ def get_best(alloy,
 
     # Choose minimum-energy objects to plot
     for result in results:
+        print(result)
         for temp in result.free_energies:
             compared = chosen_dict[temp][comps.index(result.composition)][sizes.index(result.size)]
             if compared.energy is None:
@@ -206,6 +200,7 @@ def make_unfilled(points, alloy):
     Does the actual plotting. Makes several Size/Comp phase diagrams varying temperature.
 
     :param points: Dict with temps as keys, values are lists of point objects.
+    :param alloy: Alloy of interest
     """
     for temp in points:
         fig, ax = plt.subplots()
@@ -213,7 +208,7 @@ def make_unfilled(points, alloy):
         # Add points
         for composition in points[temp]:
             for point in composition:
-                if None in [point.comp, point.size, point.energy]:
+                if None in [point.comp, point.size, point.energy] or point.comp == 0 or point.comp==1:
                     pass
                 ax.scatter(point.comp, point.size, c=point.color, marker=point.symbol, s=point.symbol_size)
 
@@ -238,6 +233,8 @@ def make_filled(points, alloy, resolution=10):
     1st-nearest-neighbor interpolation
 
     :param points: Dict with temps as keys, values are lists of point objects.
+    :param alloy: Alloy of interest
+    :param resolution: Grid spacing, defaults to 10
     """
     for temp in points:
         # Get known observations
@@ -247,7 +244,7 @@ def make_filled(points, alloy, resolution=10):
         colors = []
         for composition in points[temp]:
             for point in composition:
-                if None in [point.comp, point.size]:
+                if None in [point.comp, point.size] or point.comp == 0 or point.comp == 1:
                     continue
                 sizes.add(point.size)
                 comps.add(point.comp)
@@ -286,12 +283,14 @@ def make_filled(points, alloy, resolution=10):
         custom_legend = [matplotlib.lines.Line2D([0],[0], color=cmap_bold(0), marker="o", lw=0),
                          matplotlib.lines.Line2D([0],[0], color=cmap_bold(1), marker="o", lw=0),
                          matplotlib.lines.Line2D([0],[0], color=cmap_bold(2), marker="o", lw=0)]
-        ax.legend(custom_legend, ["Ico", "EPB", "Cuboct"], fancybox=True, framealpha=0.5)
+        #ax.legend(custom_legend, ["Ico", "EPB", "Cuboct"], fancybox=True, framealpha=0.5)
         plt.tight_layout()
+        plt.ylim(13,3871)
         plt.savefig("size_comp_" + alloy + "_" + str(temp) + "K.png")
         plt.close()
 
 alloys = ["AgAu" , "AgCu", "AuCu"]
 for alloy in alloys:
-    results = get_best(alloy, [0, 1000], [0, 1000], temperature_res=250)
+    print(alloy)
+    results = get_best(alloy, [0, 4000], [0, 1000], temperature_res=250)
     make_filled(results, alloy, resolution=1000)

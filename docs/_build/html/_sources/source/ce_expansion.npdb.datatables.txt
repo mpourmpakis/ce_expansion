@@ -1,0 +1,7 @@
+ce\_expansion.npdb.datatables module
+====================================
+
+.. automodule:: ce_expansion.npdb.datatables
+   :members:
+   :undoc-members:
+   :show-inheritance:

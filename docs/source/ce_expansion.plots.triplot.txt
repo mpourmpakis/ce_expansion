@@ -1,0 +1,7 @@
+ce\_expansion.plots.triplot module
+==================================
+
+.. automodule:: ce_expansion.plots.triplot
+   :members:
+   :undoc-members:
+   :show-inheritance:

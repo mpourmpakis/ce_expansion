@@ -1,0 +1,7 @@
+ce\_expansion.ga.batch\_ga\_run module
+======================================
+
+.. automodule:: ce_expansion.ga.batch_ga_run
+   :members:
+   :undoc-members:
+   :show-inheritance:

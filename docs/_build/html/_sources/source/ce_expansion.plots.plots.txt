@@ -1,0 +1,7 @@
+ce\_expansion.plots.plots module
+================================
+
+.. automodule:: ce_expansion.plots.plots
+   :members:
+   :undoc-members:
+   :show-inheritance:
