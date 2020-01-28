@@ -22,6 +22,8 @@ if DEBUG_MODE:
 else:
     if sys.platform in ['win32', 'cygwin']:
         dll = ('_lib.dll')
+    elif sys.platform in ['darwin']:
+        dll = ('_libmac.so')
     else:
         dll = ('_lib.so')
 
