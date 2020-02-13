@@ -68,7 +68,7 @@ def get_fracs(metals=None, shape=None, num_shells=None, return_ee=False,
 
 def tri_plot(aa, bb, ax=None, marker='o', label=None, legend=False,
              z=None, zmin=None, zmax=None, cmap=None,
-             xlab='$\\rm F_{AA}$', ylab='$\\rm F_{BB}$'):
+             xlab='$\\rm F_{A-A}$', ylab='$\\rm F_{B-B}$'):
     # time plot making
     start = time.time()
 
@@ -139,13 +139,19 @@ def tri_plot(aa, bb, ax=None, marker='o', label=None, legend=False,
     print('Time to create plot: %0.2f s' % (time.time() - start))
     return fig, ax, scatter
 
+
 if __name__ == '__main__':
+    fig, ax, s = tri_plot([], [])
+    fig.savefig('C:\\users\\yla\\desktop\\tutorial_triangle_AABB.svg')
+    plt.show()
+    import sys
+    sys.exit()
     # PLOT DATA PARAMS
     metals_ls = [('Ag', 'Au'), ('Ag', 'Cu'), ('Au', 'Cu')]
     metals = metals_ls[0]
 
     shapes = 'icosahedron', 'cuboctahedron', 'elongated-pentagonal-bipyramid'
-    shell_sizes = list(range(2, 11))
+    shell_sizes = range(1, 11)
 
     colors = ['lime', 'red', 'royalblue']
     markers = ['o', 's', '^']
@@ -154,12 +160,21 @@ if __name__ == '__main__':
     min_n = db_inter.get_shell2num(shapes[0], shell_sizes[0])
     max_n = db_inter.get_shell2num(shapes[0], shell_sizes[-1])
 
+
+    fig, ax, s = tri_plot([], [], cmap=cm.get_cmap('rainbow'), zmin=min_n, zmax=max_n)
+    fig.colorbar(s, orientation='horizontal', aspect=40,
+                 ticks=[13, 500, 1000, 1500, 2000, 2500, 3000, 3500, 3871])
+
+    fig.tight_layout()
+    # fig.savefig('C:\\users\\yla\\desktop\\tutorial_triangle.svg')
+    plt.show()
+    import sys
+    sys.exit()
+
     for metals in metals_ls:
         ax = None
         for shell in shell_sizes:
             for i, shape in enumerate(shapes):
-                if shape == 'cuboctahedron' and shell == 10:
-                    continue
                 num_atoms = db_inter.get_shell2num(shape, shell)
                 aa, bb, ee = get_fracs(metals=metals,
                                        return_ee=True, shape=shape,
@@ -170,16 +185,16 @@ if __name__ == '__main__':
                     xlab='$\\rm F_{%s-%s}$' % (metals[0], metals[0]),
                     ylab='$\\rm F_{%s-%s}$' % (metals[1], metals[1]),
                     z=z, zmin=min_n, zmax=max_n,
-                    marker=markers[i],
+                    marker='o',  # markers[i],
                     cmap=cm.get_cmap('rainbow'))
 
         ax.text(0.5, 0.5, ''.join(metals), fontsize=FS, rotation=135,
                 va='bottom', ha='center')
         ax.text(0.5, 1, '$\\rm N_{Atoms}$', fontsize=FS)
-        fig.colorbar(s, orientation='vertical', aspect=40,
-                     ticks=[13, 500, 1000, 1500, 2000, 2500, 2869])
+        fig.colorbar(s, orientation='horizontal', aspect=40,
+                     ticks=[13, 500, 1000, 1500, 2000, 2500, 3000, 3500, 3871])
 
         fig.tight_layout()
-        # fig.savefig('C:\\users\\yla\\desktop\\%s_colorbar.svg'
+        # fig.savefig('C:\\users\\yla\\desktop\\%s_colorbar_allcircles.svg'
         #             % ''.join(metals))
     plt.show()
