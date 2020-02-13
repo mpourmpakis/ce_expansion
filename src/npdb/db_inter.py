@@ -1017,8 +1017,8 @@ def boltzmann(metals, num_shells, T=298, axes=None, ylabels=True, title=False):
     ax, ax2 = axes
     start = np.zeros(boltz.shape[0])
     for i, s in enumerate(shapes):
-        lab = s[:3].upper() if ylabels else '_nolabel_'
-        lab = lab.replace('ELO', 'EPB')
+        lab = s[:3].title() if ylabels else '_nolabel_'
+        lab = lab.replace('Elo', 'EPB')
         ax.plot(comps, boltz[:, i], label=lab, color=colors[i], zorder=10)
         # ax.bar(comps, boltz[:, i], width=0.01, bottom=start,
         #        color=barcolors[i], alpha=0.7)
@@ -1030,7 +1030,7 @@ def boltzmann(metals, num_shells, T=298, axes=None, ylabels=True, title=False):
     if ylabels:
         ax.set_ylabel('Boltzmann Probability', labelpad=21)
         ax2.set_ylabel('$\\rm \\Delta G_{mix}$ (eV / atom)', labelpad=0)
-        ax.legend(fontsize=13, frameon=False, loc='upper left')
+        ax.legend(fontsize=13, handletextpad=0.2, frameon=False, loc='upper left')
     ax2.set_xlabel('$\\rm X_{%s}$' % (res[0].metal1))
     ax.set_title('%s%s' % (res[0].metal1, res[0].metal2))
     if title:
@@ -1043,22 +1043,26 @@ def boltzmann(metals, num_shells, T=298, axes=None, ylabels=True, title=False):
     # plt.show()
 
 
-def totalfig_boltzmann(num_shells, T=298):
-    num_atoms = get_shell2num('icosahedron', num_shells)
+def totalfig_boltzmann(num_shells, shape='icosahedron', T=298):
+    num_atoms = get_shell2num(shape, num_shells)
+    print('Creating Boltzmann figure for %i-atom %s (%i K)'
+          % (num_atoms, shape, T))
     size = 14
     plt.rcParams['xtick.labelsize'] = size
     plt.rcParams['ytick.labelsize'] = size
     fig, all_axes = plt.subplots(2, 3, sharex=True, figsize=(13, 8))
-    for i, metal in enumerate(['agau', 'agcu', 'aucu']):
+    for i, metal in enumerate(['aucu', 'agau', 'agcu']):
         axes = all_axes[:, i]
         boltzmann(metal, num_shells, T=298, axes=axes, ylabels=not i)
     fig.tight_layout()  # rect=(0, 0, 1, 0.96))
-    fig.savefig('C:\\users\\yla\\desktop\\%i-atom_%iK_plot.svg'
-                % (num_atoms, T))
+    fname = '%i-atom_%iK_%s_plot.svg' % (num_atoms, T, shape[:3])
+    dirpath = r'C:\Users\mcowa\Box Sync\Michael_Cowan_PhD_research\np_ga\FIGURES\boltzmann'
+    fig.savefig(os.path.join(dirpath, fname))
+    fig.savefig(os.path.join(dirpath, fname.replace('.svg', '.png')), dpi=140)
 
 
 if __name__ == '__main__':
-    for s in range(1, 11):
+    for s in range(5, 6):
         totalfig_boltzmann(s)
     sys.exit()
 
