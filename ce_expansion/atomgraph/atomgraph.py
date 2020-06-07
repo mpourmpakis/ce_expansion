@@ -209,6 +209,21 @@ class AtomGraph(object):
 
         return mixing_parameter
 
+    def getLocalCE(self, ordering, index):
+        """
+        Claculates the Local cohesive energy of the NP using the BC model,
+        implemented in interface.py and lib.c. The local cohesive energy is
+        the BC model only applied to the atom of interest
+
+        Args:
+            ordering (np.array): Chemical ordering of the NP.
+            index (int): The target atom
+
+        Returns:
+            The local cohesive energy of the atom at <index>.
+        """
+        return None
+
     def getTotalCE(self, ordering):
         """
         Calculates the cohesive energy of the NP using the BC model,
@@ -216,6 +231,9 @@ class AtomGraph(object):
 
         Args:
             ordering (np.array): Chemical ordering of the NP.
+
+        Returns:
+            The cohesive energy of the NP.
         """
         ordering = ordering.astype(ctypes.c_long)
         # Pointerize ordering
