@@ -418,7 +418,7 @@ class Nanoparticles(Base):
             return self.bonds_list
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            '..', '..', 'data', 'bond_lists',
+                            '..', 'data', 'bond_lists',
                             self.shape, '%i.npy' % self.num_shells)
 
         if os.path.isfile(path):
