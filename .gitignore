@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 /data/adjacency_lists
 /data/atom_objects
+/ce_expansion/data/bond_lists
+/ce_expansion/data/atom_objects
 .iml
 /ce_expansion.egg-info
 /build
