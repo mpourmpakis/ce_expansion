@@ -7,6 +7,7 @@ import os
 import pathlib
 
 import ase.neighborlist
+from ase.data import covalent_radii
 import numpy as np
 
 # Set up globals for defaults
@@ -20,6 +21,9 @@ def buildBondsList(atoms_object,
     """
     2D bonds list from an ASE atoms object.
 
+    NOTE: incredibly slow if code has interacted with SQL DB
+          in that case, use build_bonds_list
+
     Args:
     atoms_object (ase.Atoms): An ASE atoms object representing the system of interest
     radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a
@@ -30,6 +34,61 @@ def buildBondsList(atoms_object,
     """
     sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
     return np.column_stack((sources, destinations))
+
+
+def build_bonds_list(atoms_object, radius_arr=None, scale=1.25):
+    """
+    ALTERNATIVE FUNCTION WHEN INTERACTING WITH SQLite DB
+    Finds bonds between atoms based on bonding radii
+    Default radii to determine bonding: covalent radii * 1.25
+
+    Args:
+    atoms_object (ase.Atoms): atoms object
+
+    KArgs:
+    radius_arr (np.ndarray): bonding radii of atoms
+                             - if bonding radii overlap, a bond is drawn
+                             - must be same order as atoms object
+                             (Default: None = covalent_radii of atoms)
+    scale (float): scales bonding radii array
+                   (Default: 1.25)
+    """
+    # remove periodic boundaries
+    atoms_object = atoms_object.copy()
+    atoms_object.pbc = False
+
+    # use default radius_arr = covalent_radii
+    if radius_arr is None:
+        radius_arr = covalent_radii[atoms_object.get_atomic_numbers()]
+
+    # create neighborlist object
+    n = ase.neighborlist.NeighborList(radius_arr * scale, skin=0,
+                                      self_interaction=False)
+    n.update(atoms_object)
+    if not n.nneighbors:
+        return []
+
+    bonds = np.zeros((n.nneighbors, 2), int)
+    spot1 = 0
+    for atomi in range(len(atoms_object)):
+        # get neighbors of atomi
+        neighs = n.get_neighbors(atomi)[0]
+
+        # find second cutoff in matrix
+        spot2 = spot1 + len(neighs)
+
+        # add bonds to matrix
+        bonds[spot1:spot2, 0] = atomi
+        bonds[spot1:spot2, 1] = neighs
+
+        # shift down matrix
+        spot1 = spot2
+
+        # once all bonds have been found break loop
+        if spot1 == n.nneighbors:
+            break
+
+    return np.concatenate((bonds, bonds[:, ::-1]))
 
 
 def buildAdjacencyMatrix(atoms_object,
