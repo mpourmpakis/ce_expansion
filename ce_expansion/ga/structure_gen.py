@@ -17,8 +17,7 @@ atompath = os.path.join(datapath, 'atom_objects')
 bondpath = os.path.join(datapath, 'bond_lists')
 
 
-def build_structure_sql(shape, num_shells,
-                        build_bonds_list=True):
+def build_structure_sql(shape, num_shells):
     """
     Creates NP of specified shape and size (based on num_shells)
 
@@ -60,23 +59,25 @@ def build_structure_sql(shape, num_shells,
         # insert nanoparticle into DB
         nanop = db_inter.insert_nanoparticle(atom, shape, num_shells)
 
-    # can return atoms obj and bond list or just atoms obj
-    if build_bonds_list:
-
-        # make sure bond_list directory exists (if not, make one)
-        pathlib.Path(os.path.join(bondpath, shape)).mkdir(parents=True,
-                                                          exist_ok=True)
-
-        # if bond_list file (fname) exists, read it in
-        # else make and save bond_list
-        fname = os.path.join(bondpath, shape, '%i.npy' % num_shells)
-        if os.path.isfile(fname):
-            bonds_list = np.load(fname)
-        else:
-            bonds_list = adjacency.build_bonds_list(atom)
-            np.save(fname, bonds_list)
-        nanop.bonds_list = bonds_list
     return nanop
+
+    # # can return atoms obj and bond list or just atoms obj
+    # if build_bonds_list:
+
+    #     # make sure bond_list directory exists (if not, make one)
+    #     pathlib.Path(os.path.join(bondpath, shape)).mkdir(parents=True,
+    #                                                       exist_ok=True)
+
+    #     # if bond_list file (fname) exists, read it in
+    #     # else make and save bond_list
+    #     fname = os.path.join(bondpath, shape, '%i.npy' % num_shells)
+    #     if os.path.isfile(fname):
+    #         bonds_list = np.load(fname)
+    #     else:
+    #         bonds_list = adjacency.build_bonds_list(atom)
+    #         np.save(fname, bonds_list)
+    #     nanop.bonds_list = bonds_list
+    # return nanop
 
 
 def build_structure(shape, num_shells,
@@ -287,13 +288,25 @@ class NPBuilder(object):
 
 
 if __name__ == '__main__':
+    res = db_inter.get_bimet_result('AgAu', num_atoms=55)[10]
+    res.get_atoms_obj()
+    a1 = res.atoms_obj
+    print(a1.get_chemical_formula())
+    # exit()
+
+    nanop = db_inter.get_nanoparticle(num_atoms=309, shape='icosahedron')
+    # print(nanop.atoms_obj)
+    print(nanop.bonds_list[-1])
+    print(nanop.bonds_list[-1])
+    # exit()
+
     """
     Testing new get_bonds_list function
     """
 
     # atom = NPBuilder.icosahedron(20)
-    nanop = build_structure_sql('icosahedron', 2, False)
-    atom = nanop.get_atoms_obj_skel()
+    nanop = build_structure_sql('icosahedron', 2)
+    atom = nanop.atoms_obj
 
     # 1: original bond list
     # 2: new bond list
@@ -303,7 +316,7 @@ if __name__ == '__main__':
     print(f'{"Original B:":>13} {time.time()-s:.3f}s')
 
     s = time.time()
-    newb = adjacency.build_bonds_list(atom)
+    newb = nanop.bonds_list
     print(f'{"New B:":>13} {time.time()-s:.3f}s')
 
     import ce_expansion.atomgraph as ag

@@ -232,7 +232,7 @@ class Pop(object):
     def __init__(self, atom, bond_list, metals, shape, n_metal2=1,
                  popsize=50, mute_pct=0.8, n_mute_atomswaps=None, spike=False,
                  x_metal2=None, random=False, num_shells=None, atomg=None,
-                 e=1, save_every=100):
+                 e=1, save_every=100, use_metropolis=True):
         """
         Bimetallic nanoparticle genetic algorithm population
         - initialize a population of nanoparticles
@@ -274,6 +274,8 @@ class Pop(object):
                                    (Default: 1 = No effect)
         - save_every (int): choose how often pop CEs are stored in all_data
                             (Default: every 100 generations)
+        - use_metropolis (bool): use metropolis algorithm at end of GA sim
+                                 (Default: True)
         """
         # atoms object
         self.atom = atom
@@ -353,6 +355,9 @@ class Pop(object):
 
         # how often pop data should be saved to all_data
         self.save_every = save_every
+
+        # track whether metropolis should be used at end of GA sim
+        self.use_metropolis = use_metropolis
 
         # population - list of chromosomes
         self.pop = []
@@ -625,7 +630,7 @@ class Pop(object):
 
             # run James' metropolis algorithm function to search for
             # minimum struct near current min
-            if not self.random:
+            if not self.random and self.use_metropolis:
                 best = self[0]
                 best_ordering = best.ordering.copy()
                 opt_order, opt_ce, en_hist = self.atomg.metropolis(
@@ -642,6 +647,8 @@ class Pop(object):
                                        ordering=opt_order)] + self[:-1]
                     assert self.pop == sorted(self.pop, key=lambda i: i.ce)
                     self.update_stats()
+            else:
+                print('NOT running metropolis')
 
         # convert stats to an array
         self.stats = np.array(self.stats)
@@ -1163,12 +1170,9 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
     - (Pop): Pop instance
     """
     assert num_shells > 0, "NP must have at least one shell"
-    # nanop = structure_gen.build_structure(shape, num_shells,
-    #                                           build_bonds_list=True)
-    atoms, bonds = structure_gen.build_structure(shape, num_shells, True)
+    nanop = structure_gen.build_structure_sql(shape, num_shells)
 
-    # p = Pop(nanop.get_atoms_obj_skel(), nanop.bonds_list,
-    p = Pop(atoms, bonds,
+    p = Pop(nanop.atoms_obj, nanop.bonds_list,
             metals, shape, num_shells=num_shells, **kwargs)
     return p
 
