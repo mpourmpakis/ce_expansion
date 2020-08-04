@@ -12,7 +12,7 @@ import numpy as np
 
 data = os.path.join(os.path.realpath(__file__), '..', '..', '..', 'data', 'larson_et_al')
 sys.path.append(data)
-import npdb.db_inter
+import ce_expansion.npdb.db_inter
 
 DEFAULT_DPI = 600  # Dots per inch
 DEFAULT_POINTSIZE = 15
@@ -124,7 +124,7 @@ def get_best(alloy,
     best_results = {}
     for shape in shapes:
         for size in sizes:
-            query = npdb.db_inter.get_bimet_result(metals=alloy, shape=shape, num_atoms=size)
+            query = ce_expansion.npdb.db_inter.get_bimet_result(metals=alloy, shape=shape, num_atoms=size)
             if len(query) > 0:
                 best_results[size] = {}
                 for result in query:

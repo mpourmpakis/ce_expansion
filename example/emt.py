@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ase.calculators import emt
 
-from npdb import db_inter
+from ce_expansion.npdb import db_inter
 
 np_ga = os.path.join('D:\\MCowan', 'Box Sync', 'Michael_Cowan_PhD_research',
                      'np_ga', 'larson_comparison')

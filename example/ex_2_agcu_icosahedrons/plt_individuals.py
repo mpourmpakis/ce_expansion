@@ -2,7 +2,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 
-import npdb.db_inter
+import ce_expansion.npdb.db_inter
 
 DEFAULT_DPI = 600  # Dots per inch
 DEFAULT_SCALE = 8  # Scale in inches
@@ -24,7 +24,7 @@ for alloy in alloys:
         ax = plt.subplot(111)
         for size, coloration in zip(sizes, colors):
             # Perform the database query
-            query = npdb.db_inter.get_bimet_result(metals=alloy, shape=shape, num_atoms=size)
+            query = ce_expansion.npdb.db_inter.get_bimet_result(metals=alloy, shape=shape, num_atoms=size)
             query = sorted(query, key=lambda i: i.n_metal2)
 
             # Calculate the copper content and pull excess energy
@@ -61,7 +61,7 @@ for alloy in alloys:
     ax = plt.subplot(111)
     for size, coloration in zip(sizes, colors):
         # Perform the database query
-        query = npdb.db_inter.get_bimet_result(metals=alloy, shape=shape, num_atoms=size)
+        query = ce_expansion.npdb.db_inter.get_bimet_result(metals=alloy, shape=shape, num_atoms=size)
         query = sorted(query, key=lambda i: i.n_metal2)
 
         # Calculate the copper content and pull excess energy
