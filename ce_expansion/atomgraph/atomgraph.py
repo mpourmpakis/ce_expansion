@@ -209,6 +209,37 @@ class AtomGraph(object):
 
         return mixing_parameter
 
+    def getLocalCE(self, ordering, index):
+        """
+        Claculates the Local cohesive energy of the NP using the BC model,
+        implemented in interface.py and lib.c. The local cohesive energy is
+        the BC model only applied to the atom of interest
+
+        Args:
+            ordering (np.array): Chemical ordering of the NP.
+            index (int): The target atom
+
+        Returns:
+            The local cohesive energy of the atom at <index>.
+        """
+        ordering = ordering.astype(ctypes.c_long)
+        # Make a pointer for the ordering
+        p_ordering = ordering.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+        # Make a new bond-list, just for the local set of atoms
+        bond_list = self._bond_list[np.any(self._bond_list == index, axis=1)].astype(ctypes.c_long)
+        p_bond_list = bond_list.ctypes.data_as(ctypes.POINTER(ctypes.c_long))
+        # Number of atoms should be 1, so we only account for the atom at <index>
+        long_num_atoms = ctypes.c_long(1)
+        # Finally, we only want to iterate over the bonds in the bond list
+        num_bonds = len(bond_list)
+        long_num_bonds = ctypes.c_long(num_bonds)
+        return interface.pointerized_calculate_ce(self._p_bond_energies,
+                                                  long_num_atoms,
+                                                  self._p_cns,
+                                                  long_num_bonds,
+                                                  p_bond_list,
+                                                  p_ordering)
+
     def getTotalCE(self, ordering):
         """
         Calculates the cohesive energy of the NP using the BC model,
@@ -216,6 +247,9 @@ class AtomGraph(object):
 
         Args:
             ordering (np.array): Chemical ordering of the NP.
+
+        Returns:
+            The cohesive energy of the NP.
         """
         ordering = ordering.astype(ctypes.c_long)
         # Pointerize ordering
