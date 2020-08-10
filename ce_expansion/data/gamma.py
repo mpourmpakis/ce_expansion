@@ -2,6 +2,8 @@
 """
 Code dealing with the gamma coefficients
 """
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -23,10 +25,10 @@ class GammaValues(object):
             cnbulk_b: Bulk coordination number of atom B
         """
         # Default locations to search for values
-        self.datafile_cn = "cndata.csv"
-        self.datafile_ce = "bulkdata.csv"
-        self.datafile_experimental_hbe = "experimental_hbe.csv"
-        self.datafile_theoretical_hbe = "estimated_hbe.csv"
+        self.datafile_cn = os.path.join(os.path.dirname(__file__), "cndata.csv")
+        self.datafile_ce = os.path.join(os.path.dirname(__file__), "bulkdata.csv")
+        self.datafile_experimental_hbe = os.path.join(os.path.dirname(__file__), "experimental_hbe.csv")
+        self.datafile_theoretical_hbe = os.path.join(os.path.dirname(__file__), "estimated_hbe.csv")
 
         self.element_a = element_a
         self.element_b = element_b
@@ -150,9 +152,12 @@ class GammaValues(object):
             gamma_a = 1
             gamma_b = 1
         else:
-            # Precalculated solution for the two gamma values after some linear algebra
-            gamma_a = (self.bde_ab - 2 * self.bde_bb) / (self.bde_aa - self.bde_bb)
-            gamma_b = (2 * self.bde_aa - self.bde_ab) / (self.bde_aa - self.bde_bb)
+            # gamma_1 * BDE(A-A) + gamma_2 * BDE(B-B) = 2 * BDE(A-B)
+            # gamma1 + gamma2 = 2
+            gammas = np.linalg.solve([[self.bde_aa, self.bde_bb], [1, 1]],
+                                               [[2 * self.bde_ab], [2]])
+            gamma_a = float(gammas[0])
+            gamma_b = float(gammas[1])
         return gamma_a, gamma_b
 
     def calculate_total_gamma(self, cn, element1, element2):
@@ -192,10 +197,10 @@ class GammaValues(object):
         """
         if max_cn is None:
             max_cn = self.cn_max
-        aa = [self.calculate_total_gamma(cn, self.element_a, self.element_a) for cn in range(0, max_cn + 1)]
-        bb = [self.calculate_total_gamma(cn, self.element_b, self.element_b) for cn in range(0, max_cn + 1)]
-        ab = [self.calculate_total_gamma(cn, self.element_a, self.element_b) for cn in range(0, max_cn + 1)]
-        ba = [self.calculate_total_gamma(cn, self.element_b, self.element_a) for cn in range(0, max_cn + 1)]
+        aa = [self.calculate_total_gamma(cn, self.element_a, self.element_a) for cn in range(0, max_cn)]
+        bb = [self.calculate_total_gamma(cn, self.element_b, self.element_b) for cn in range(0, max_cn)]
+        ab = [self.calculate_total_gamma(cn, self.element_a, self.element_b) for cn in range(0, max_cn)]
+        ba = [self.calculate_total_gamma(cn, self.element_b, self.element_a) for cn in range(0, max_cn)]
         coefs = {self.element_a: {self.element_a: aa,
                                   self.element_b: ab},
                  self.element_b: {self.element_a: ba,
@@ -204,7 +209,6 @@ class GammaValues(object):
 
 
 if __name__ == "__main__":
-    import itertools
-
-    for a, b in itertools.combinations_with_replacement(["Cu", "Ag", "Au", "Pd", "Pt"], 2):
-        gammas = GammaValues(a, b).calc_coeffs_dict()
+    gammas = GammaValues("Ag", "Au")
+    # for a, b in itertools.combinations_with_replacement(["Cu", "Ag", "Au", "Pd", "Pt"], 2):
+    # gammas = GammaValues(a, b).calc_coeffs_dict()
