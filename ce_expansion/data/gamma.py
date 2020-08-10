@@ -3,6 +3,7 @@
 Code dealing with the gamma coefficients
 """
 import numpy as np
+import pandas as pd
 
 
 class GammaValues(object):
@@ -10,53 +11,128 @@ class GammaValues(object):
                  cnbulk_a=None, cnbulk_b=None, cn_max=None):
         """
         An object providing a convenient model for calculating and interacting with gamma values defined by the BCM.
-        :param element_a: Atomic symbol representing atom A
-        :param element_b: Atomic symbol representing atom B
-        :param bde_aa: Gas-phase homolytic bond dissociation energy of an A-A bond
-        :param bde_ab: Gas-phase homolytic bond dissociation energy of an A-B bond
-        :param bde_bb: Gas-phase homolytic bond dissociation energy of a B-B bond
-        :param ce_a: Bulk cohesive energy of atom A
-        :param ce_b: Bulk cohesive energy of atom B
-        :param cnbulk_a: Bulk coordination number of atom A
-        :param cnbulk_b: Bulk coordination number of atom B
+        Args:
+            element_a: Atomic symbol representing atom A
+            element_b: Atomic symbol representing atom B
+            bde_aa: Gas-phase homolytic bond dissociation energy of an A-A bond
+            bde_ab: Gas-phase homolytic bond dissociation energy of an A-B bond
+            bde_bb: Gas-phase homolytic bond dissociation energy of a B-B bond
+            ce_a: Bulk cohesive energy of atom A
+            ce_b: Bulk cohesive energy of atom B
+            cnbulk_a: Bulk coordination number of atom A
+            cnbulk_b: Bulk coordination number of atom B
         """
+        # Default locations to search for values
+        self.datafile_cn = "cndata.csv"
+        self.datafile_ce = "bulkdata.csv"
+        self.datafile_experimental_hbe = "experimental_hbe.csv"
+        self.datafile_theoretical_hbe = "estimated_hbe.csv"
+
         self.element_a = element_a
         self.element_b = element_b
+
+        # Look up CE if we have to
+        if ce_a is None:
+            self.ce_a = self.lookup_cohesive_energy(element_a)
+        else:
+            self.ce_a = ce_a
+        if ce_b is None:
+            self.ce_b = self.lookup_cohesive_energy(element_b)
+        else:
+            self.ce_b = ce_b
+
         # Look up BDE's if we have to
         bde_dict = {element_a: {element_a: bde_aa,
                                 element_b: bde_ab},
                     element_b: {element_a: bde_ab,
                                 element_b: bde_bb}
                     }
-        for a, b in ((element_a, element_a), (element_a, element_b), (element_b, element_a), (element_b, element_b)):
+        for a, b in ((element_a, element_a), (element_a, element_b), (element_b, element_b)):
             if bde_dict[a][b] is None:
                 bde_dict[a][b] = self.lookup_bde(a, b)
         self.bde_aa = bde_dict[element_a][element_a]
         self.bde_ab = bde_dict[element_a][element_b]
         self.bde_bb = bde_dict[element_b][element_b]
-        # Look up CE if we have to
-        self.ce_a = ce_a
-        self.ce_b = ce_b
 
-        self.cnbulk_a = cnbulk_a
-        self.cnbulk_b = cnbulk_b
+        # Look up bulk CNs if we have to
+        if cnbulk_a is None:
+            self.cnbulk_a = self.lookup_bulk_coordination(element_a)
+        else:
+            self.cnbulk_a = cnbulk_a
+        if cnbulk_b is None:
+            self.cnbulk_b = self.lookup_bulk_coordination(element_b)
+        else:
+            self.cnbulk_b = cnbulk_b
+
+        # Figure out what CN_Max should be, if needed
         if cn_max is None:
             self.cn_max = max(self.cnbulk_a, self.cnbulk_b) + 1
         else:
             self.cn_max = cn_max
 
         # Calculate gammas
-        ab_gammas = self.calculate_gamma(element_a, element_b)[0]
+        ab_gamma, ba_gamma = self.calculate_gamma(element_a, element_b)
         self.gamma = {element_a: {element_a: 1,
-                                  element_b: ab_gammas[0]},
-                      element_b: {element_a: ab_gammas[1],
+                                  element_b: ab_gamma},
+                      element_b: {element_a: ba_gamma,
                                   element_b: 1}
                       }
 
-    @staticmethod
-    def lookup_bde(a, b):
-        # Todo: implement
-        return None
+    def lookup_bde(self, a, b):
+        """
+        Looks up the heterolytic bond dissociation energy. Looks first in self.datafile_experimental_hbe. If the value
+        is not found, looks in self.datafile_theoretical_hbe. If the value is still not found, raises a ValueError.
+        Sign convention: Negative is more favorable. Values should be in eV.
+        Args:
+            a: Element A of the A-B bond
+            b: Element B of the A-B bond
+
+        Returns:
+
+        """
+        # First, try experimental data
+        bde_csv = pd.read_csv(self.datafile_experimental_hbe, sep=",")
+        bde = bde_csv[bde_csv.atom1 == a][b].iat[0]
+        if np.isnan(bde):
+            fallback_csv = pd.read_csv(self.datafile_theoretical_hbe, sep=",")
+            fallback_bde = fallback_csv[bde_csv.atom1 == a][b].iat[0]
+            if np.isnan(fallback_bde):
+                raise ValueError(
+                    f"Binding energy for {a} and {b} not found in" +
+                    f"{self.datafile_experimental_hbe} or {self.datafile_theoretical_hbe}")
+            else:
+                result = fallback_bde
+        else:
+            result = bde
+        return result
+
+    def lookup_cohesive_energy(self, element):
+        """
+        Looks up the cohesive energy in the file specified by self.datafile_ce. File is a CSV. First column is the
+        atomic symbol. Second column is the bulk cohesive energy, in eV. Sign convention: negative is favorable.
+        Args:
+            element: Atomic symbol of the element of interest
+
+        Returns:
+            Bulk cohesive energy of <element>
+        """
+        ce_df = pd.read_csv(self.datafile_ce, sep=",", index_col=False)
+        ce = ce_df[ce_df.Atomic_Symbol == element].CE_eV.iat[0]
+        return ce
+
+    def lookup_bulk_coordination(self, element):
+        """
+        Looks up the bulk ccoordination number in the file specified by self.datafile_ce. File is a CSV. First column
+        is the atomic symbol. Second column is the bulk coordination number.
+        Args:
+            element:
+
+        Returns:
+
+        """
+        bulk_cn_csv = pd.read_csv(self.datafile_cn, sep=",", index_col=False)
+        cn = bulk_cn_csv[bulk_cn_csv.Atomic_Symbol == element].CN.iat[0]
+        return cn
 
     def calculate_gamma(self, element1, element2):
         """
@@ -125,3 +201,10 @@ class GammaValues(object):
                  self.element_b: {self.element_a: ba,
                                   self.element_b: bb}}
         return coefs
+
+
+if __name__ == "__main__":
+    import itertools
+
+    for a, b in itertools.combinations_with_replacement(["Cu", "Ag", "Au", "Pd", "Pt"], 2):
+        gammas = GammaValues(a, b).calc_coeffs_dict()
