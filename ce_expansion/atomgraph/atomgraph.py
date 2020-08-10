@@ -6,6 +6,7 @@ import numpy as np
 
 from ce_expansion.bin import interface
 from ce_expansion.npdb import db_inter
+from ce_expansion import data
 
 
 class AtomGraph(object):
@@ -32,6 +33,7 @@ class AtomGraph(object):
                    strings indicating the element of interest. Defaults to the
                    global DFTAULT_BOND_COEFFS. Coefficients can be calculated
                    using /tools/gen_coeffs.py.
+                   ALTERNATIVELY, coeffs can be a data.GammaValues object
     num_atoms (int): The number of atoms in the NP.
     cns (np.array): An array containing the coordination number of each atom.
     unique_cns (np.array): array of unique coordination numbers of NP
@@ -50,7 +52,10 @@ class AtomGraph(object):
         # Public attributes
         self.symbols = (None, None)
         if coeffs is None:
-            self.coeffs = db_inter.build_coefficient_dict(kind0 + kind1)
+            gammas = data.GammaValues(kind1, kind0)
+            self.coeffs = gammas.calc_coeffs_dict()
+        elif isinstance(coeffs, data.GammaValues):
+            self.coeffs = coeffs.calc_coeffs_dict()
         else:
             self.coeffs = coeffs
         self.num_atoms = len(set(bond_list[:, 0]))
@@ -384,25 +389,25 @@ if __name__ == '__main__':
     cohesive_energy = graph.getTotalCE(chemical_ordering)
     print('Cohesive energy = %.2e' % cohesive_energy)
 
-    mixing = graph.countMixing(chemical_ordering)
-    print("[A-A   A-B   B-B] =", mixing)
-    print("Sum of homo/hetero-atomic bonds: ", sum(mixing))
-    num_bonds = len(bond_list) // 2
-    print("True bondcount: ", num_bonds)
-    mixing_parameter = graph.calcMixing(chemical_ordering)
-    print("Mixing Parameter: ", mixing_parameter)
-
-    # Enter global metropolis
-    opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=True)
-    print("Performed 1000 metropolis steps swapping anywhere, yielding CE = %.2e" % opt_energy)
-    plt.plot(energy_history, label="Swap_Global")
-
-    # Enter locally-swapped metropolis
-    opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=False)
-    print("Performed 1000 metropolis steps swapping across bonds, yielding CE = %.2e" % opt_energy)
-    plt.plot(energy_history, label="Swap_Local")
-    plt.legend()
-    plt.xlabel("Step")
-    plt.ylabel("Energy (eV)")
-    plt.show()
-    # Exeunt metropoles
+    # mixing = graph.countMixing(chemical_ordering)
+    # print("[A-A   A-B   B-B] =", mixing)
+    # print("Sum of homo/hetero-atomic bonds: ", sum(mixing))
+    # num_bonds = len(bond_list) // 2
+    # print("True bondcount: ", num_bonds)
+    # mixing_parameter = graph.calcMixing(chemical_ordering)
+    # print("Mixing Parameter: ", mixing_parameter)
+    #
+    # # Enter global metropolis
+    # opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=True)
+    # print("Performed 1000 metropolis steps swapping anywhere, yielding CE = %.2e" % opt_energy)
+    # plt.plot(energy_history, label="Swap_Global")
+    #
+    # # Enter locally-swapped metropolis
+    # opt_order, opt_energy, energy_history = graph.metropolis(chemical_ordering, num_steps=1000, swap_any=False)
+    # print("Performed 1000 metropolis steps swapping across bonds, yielding CE = %.2e" % opt_energy)
+    # plt.plot(energy_history, label="Swap_Local")
+    # plt.legend()
+    # plt.xlabel("Step")
+    # plt.ylabel("Energy (eV)")
+    # plt.show()
+    # # Exeunt metropoles
