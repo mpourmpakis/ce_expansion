@@ -1,4 +1,3 @@
 include ce_expansion/bin/*
-include ce_expansion/makefile
-include ce_expansion/utility/check_datatypes.c
 include ce_expansion/npdb/np.db
+include ce_expansion/data/*csv
