@@ -5,6 +5,9 @@ added or removed easily.
 * bulkdata.csv
     * Contains bulk cohesive energy data
     * Kittel, C. Introduction to Solid State Physics, 8th edition. Hoboken, NJ: John Wiley & Sons, Inc, 2005.
+* cndata.csv
+    * Contains bulk coordination number data.
+    * Currently only for FCC metals, which are CN12 in the bulk.
 * experimental_hbe.csv
   * The preferred source of experimental heterolyitc bond dissociation energy.
   * Morse, M. D., *Clusters of transition-metal atoms.* Chem. Rev. 1986, 86 (6), 1049-1109.
