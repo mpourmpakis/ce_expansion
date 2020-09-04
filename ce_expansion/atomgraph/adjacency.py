@@ -33,7 +33,7 @@ def buildBondsList(atoms_object,
     return np.column_stack((sources, destinations))
 
 
-def build_bonds_list(atoms_object, radius_dictionary):
+def build_bonds_list(atoms_object, radius_dictionary=None):
     """
     ALTERNATIVE FUNCTION WHEN INTERACTING WITH SQLite DB
     Finds bonds between atoms based on bonding radii
