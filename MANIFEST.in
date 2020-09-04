@@ -1,3 +1,4 @@
 include ce_expansion/bin/*
 include ce_expansion/npdb/np.db
 include ce_expansion/data/*csv
+exclude ce_Expansion/data/bond_lists/*
