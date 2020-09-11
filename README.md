@@ -42,8 +42,6 @@ A nanoparticle can be thought of as a graph, with each atom as a vertex and each
 
 In the file `ce_expansion/atomgraph.py` is the AtomGraph class. It takes in a bond list, and information on what a 1 or 0 means (e.g. what element is a 1, what element is a 0, etc), and then exists as a calculator. If the method CalculateTotalCE is called with a chemical ordering, it will then calculate the total CE using the Yan<sup>1</sup> model. In order to speed up the calculation, we wrote a C library (`ce_expansion/lib.c`) to implement this model, along with a python interface (`ce_expansion/interface.py`) which gets called by the AtomGraph. We have libraries compiled already for Linux (.so) and Windows (.dll) in the `bin` directory. We've also included a `makefile` for Linux users.
 
-## The Genetic Algorithm
-Todo: Write this section
 
 ## References
 1. Yan, Z.; Taylor, M. G.; Mascareno, A.; Mpourmpakis, G. Size-, Shape-, and Composition-Dependent Model for Metla Nanoparticle Stability Prediction.  Nano Lett. 2018. 18, 4, 2696-2704. DOI: https://doi.org/10.1021/acs.nanolett.8b00670
