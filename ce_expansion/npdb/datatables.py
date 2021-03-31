@@ -94,10 +94,16 @@ class BimetallicResults(Base):
     n_metal2 = db.Column(db.Integer, nullable=False)
     CE = db.Column(db.Float, nullable=False)
     EE = db.Column(db.Float)
-    ordering = db.Column(db.String(50000), nullable=False)
+    # compressed_ordering string = integer value
+    # assuming ordering string is in binary
+    compressed_ordering = db.Column(db.String, nullable=False)
     structure_id = db.Column(db.Integer, db.ForeignKey('nanoparticles.id'))
     last_updated = db.Column(db.DateTime, default=datetime.now,
                              onupdate=datetime.now)
+
+    # stores actual ordering string
+    # (instead of compressed ordering which is stored in DB)
+    _actual_ordering = None
 
     # attribute to store atoms object once it has been built
     atoms_obj = None
@@ -114,6 +120,19 @@ class BimetallicResults(Base):
         self.CE = CE
         self.EE = EE
         self.ordering = ordering
+
+    @property
+    def ordering(self):
+        # convert compressed_ordering to binary = actual_orderingstr
+        if self._actual_ordering is None:
+            self._actual_ordering = f'{int(self.compressed_ordering):b}'
+            self._actual_ordering = self._actual_ordering.zfill(self.num_atoms)
+        return self._actual_ordering
+
+    @ordering.setter
+    def ordering(self, val):
+        self._actual_ordering = val
+        self.compressed_ordering = str(int(val, 2))
 
     @property
     def atoms_obj(self):
