@@ -4,7 +4,7 @@ with open("README.md", "r") as readme:
     long_description = readme.read()
 
 setuptools.setup(name="ce_expansion",
-                 version="1.0.0b1",
+                 version="1.0.1",
                  author="CANELa",
                  author_email="gmpourmp@pitt.edu",
                  description="Global optimization of ground-state NP chemical ordering",

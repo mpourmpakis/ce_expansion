@@ -5,8 +5,7 @@ __pycache__/
 /data/atom_objects
 /ce_expansion/data/bond_lists
 /ce_expansion/data/atom_objects
-.iml
+*.iml
 /ce_expansion/data
 /ce_expansion.egg-info
 /build
-/ce_expansion.egg-info

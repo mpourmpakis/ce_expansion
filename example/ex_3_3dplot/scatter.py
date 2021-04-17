@@ -1,8 +1,8 @@
 import numpy as np
 
-import npdb.db_inter
-import plots
-from atomgraph import atomgraph
+import ce_expansion.npdb.db_inter
+import ce_expansion.plots
+from ce_expansion.atomgraph import atomgraph
 
 
 def build_atomgraph(bimetallic_result):
@@ -53,7 +53,7 @@ for system, color in zip(systems, system_colors):
             print(size)
 
             # Database query for this alloy/morphology/size
-            testcases = npdb.db_inter.get_bimet_result(metals=system, shape=morph, num_atoms=size)
+            testcases = ce_expansion.npdb.db_inter.get_bimet_result(metals=system, shape=morph, num_atoms=size)
             if len(testcases) == 0:
                 # Check that we actually returned results from the query
                 continue
@@ -79,7 +79,7 @@ for system, color in zip(systems, system_colors):
                 markers.append(marker)
                 marker_sizes.append(pointsize)
 
-plots.plot_bond_types_2D(bondcounts, labels, colors, markers, marker_sizes, projection=["AA", "BB"], verbose=False, scale=True)
+ce_expansion.plots.plot_bond_types_2D(bondcounts, labels, colors, markers, marker_sizes, projection=["AA", "BB"], verbose=False, scale=True)
 
 # for i in [True, False]:
 #     plots.plot_bond_types_2D(systems, system_colors, morphologies, morphology_markers, sizes, point_sizes,

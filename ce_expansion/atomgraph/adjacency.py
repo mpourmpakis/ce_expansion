@@ -10,14 +10,9 @@ import ase.neighborlist
 from ase.data import covalent_radii
 import numpy as np
 
-# Set up globals for defaults
-DEFAULT_ELEMENTS = ("Cu", "Cu")
-DEFAULT_RADIUS = 2.8
-
-
 # Functions below
 def buildBondsList(atoms_object,
-                   radius_dictionary={DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
+                   radius_dictionary=None):
     """
     2D bonds list from an ASE atoms object.
 
@@ -27,16 +22,18 @@ def buildBondsList(atoms_object,
     Args:
     atoms_object (ase.Atoms): An ASE atoms object representing the system of interest
     radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a
-      bond. If no dict is supplied, Cu-Cu bonds of a max-len 2.8 are assumes.
+      bond. If no dict is supplied (default behavior), the bonds are calculated automatically.
 
     Returns:
     np.ndarray : A numpy array representing the bonds list.
     """
+    if radius_dictionary is None:
+        radius_dictionary = ase.neighborlist.natural_cutoffs(atoms_object, 1.2)
     sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
     return np.column_stack((sources, destinations))
 
 
-def build_bonds_list(atoms_object, radius_arr=None, scale=1.25):
+def build_bonds_list(atoms_object, radius_dictionary=None):
     """
     ALTERNATIVE FUNCTION WHEN INTERACTING WITH SQLite DB
     Finds bonds between atoms based on bonding radii
@@ -46,23 +43,19 @@ def build_bonds_list(atoms_object, radius_arr=None, scale=1.25):
     atoms_object (ase.Atoms): atoms object
 
     KArgs:
-    radius_arr (np.ndarray): bonding radii of atoms
-                             - if bonding radii overlap, a bond is drawn
-                             - must be same order as atoms object
-                             (Default: None = covalent_radii of atoms)
-    scale (float): scales bonding radii array
-                   (Default: 1.25)
+    radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a
+      bond. If no dict is supplied (default behavior), the bonds are calculated automatically.
     """
     # remove periodic boundaries
     atoms_object = atoms_object.copy()
     atoms_object.pbc = False
 
     # use default radius_arr = covalent_radii
-    if radius_arr is None:
-        radius_arr = covalent_radii[atoms_object.get_atomic_numbers()]
+    if radius_dictionary is None:
+        radius_dictionary = ase.neighborlist.natural_cutoffs(atoms_object, 1.2)
 
     # create neighborlist object
-    n = ase.neighborlist.NeighborList(radius_arr * scale, skin=0,
+    n = ase.neighborlist.NeighborList(radius_dictionary, skin=0,
                                       self_interaction=False)
     n.update(atoms_object)
     if not n.nneighbors:
@@ -92,18 +85,20 @@ def build_bonds_list(atoms_object, radius_arr=None, scale=1.25):
 
 
 def buildAdjacencyMatrix(atoms_object,
-                         radius_dictionary={DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
+                         radius_dictionary=None):
     """
     Sparse matrix representation from an ase atoms object.
 
     Args:
     atoms_object (ase.Atoms): An ASE atoms object representing the system of interest
     radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a
-                              bond. If no dict is supplied, Cu-Cu bonds of max-len 2.8 are assumed.
+                              bond. If no dict is supplied (default behavior), the bonds are calculated automatically.
 
     Returns:
     np.ndarray : A numpy array representing the sparse matrix of the ase object
     """
+    if radius_dictionary is None:
+        radius_dictionary = ase.neighborlist.natural_cutoffs(atoms_object, 1.2)
     # Construct the list of bonds
     sources, destinations = ase.neighborlist.neighbor_list("ij", atoms_object, radius_dictionary)
     # Generate the matrix
@@ -116,14 +111,14 @@ def buildAdjacencyMatrix(atoms_object,
 
 def buildAdjacencyList(atoms_object,
                        atom_name=None,
-                       radius_dictionary={DEFAULT_ELEMENTS: DEFAULT_RADIUS}):
+                       radius_dictionary=None):
     """
       Adjacency list representation for an ase atoms object.
 
 
       atoms_object (ase.Atoms): An ASE atoms object representing the system of interest
       radius_dictionary (dict): A dictionary with the atom-atom radii at-which a bond is considered a
-                                bond. If no dict is supplied, Cu-Cu bonds of max-len 2.8 are assumed.
+                                bond. If no dict is supplied (default behavior), the bonds are calculated automatically.
 
       Returns:
       np.ndarray : A numpy array representing the adjacency list of the ase object
@@ -137,7 +132,8 @@ def buildAdjacencyList(atoms_object,
     #   |---ce_expansion
     #       |---atomgraph
     #           |----interface.py
-
+    if radius_dictionary is None:
+        radius_dictionary = ase.neighborlist.natural_cutoffs(atoms_object, 1.2)
     path = os.path.realpath(__file__)
     data_directory = os.sep.join(path.split(os.sep)[:-3] + ["data"])
 

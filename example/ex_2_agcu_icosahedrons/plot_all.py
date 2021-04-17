@@ -2,7 +2,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 
-import npdb.db_inter
+import ce_expansion.npdb.db_inter
 
 DEFAULT_DPI = 600  # Dots per inch
 DEFAULT_SCALE = 8  # Scale in inches

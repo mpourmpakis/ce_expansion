@@ -6,7 +6,7 @@ import sys
 import ase.io
 import numpy as np
 
-from atomgraph import atomgraph, adjacency
+from ce_expansion.atomgraph import atomgraph, adjacency
 
 # Tell the program where /ce_expansion/ and /data/ can be found
 data = os.path.join(os.path.realpath(__file__), '..', '..', '..', 'data', 'larson_et_al')
