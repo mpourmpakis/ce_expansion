@@ -301,12 +301,24 @@ def build_coefficient_dict(metals):
                      metal1: list(map(lambda j: j.bond_energy, res_ba))}}
 
 
+def build_metal_pairs_list():
+    """
+    Returns all metal pairs found in BimetallicResults table
+    """
+    return [pair for pair
+            in session.query(tbl.BimetallicResults.metal1,
+                             tbl.BimetallicResults.metal2).distinct()]
+
+
 def build_metals_list():
     """
     Returns list of possible metal combinations for GA sims
     """
-    return [r[0] for r in session.query(tbl.ModelCoefficients.element1)
-            .distinct().order_by(tbl.ModelCoefficients.element1).all()]
+    metals = set()
+    for m in session.query(tbl.BimetallicResults.metal1,
+                           tbl.BimetallicResults.metal2).distinct():
+        metals |= set(m)
+    return list(metals)
 
 
 def build_new_structs_plot(metal_opts, shape_opts, pct=False,
