@@ -13,14 +13,9 @@ import sqlalchemy as db
 from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
 
-if __name__ == "__main__":
-    import db_utils
-    import base
-    import datatables as tbl
-else:
-    from ce_expansion.npdb import db_utils
-    import ce_expansion.npdb.base as base
-    import ce_expansion.npdb.datatables as tbl
+from ce_expansion.npdb import db_utils
+import ce_expansion.npdb.base as base
+import ce_expansion.npdb.datatables as tbl
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))

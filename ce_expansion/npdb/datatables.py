@@ -1,14 +1,7 @@
-if __name__ == "__main__":
-    from base import Base
-    from ce_expansion.atomgraph import adjacency
-else:
-    from ce_expansion.npdb.base import Base
-    from ce_expansion.atomgraph import adjacency
-
 import os
 from datetime import datetime
-
 import json
+
 import ase
 import ase.visualize
 import matplotlib.pyplot as plt
@@ -16,6 +9,9 @@ import numpy as np
 import sqlalchemy as db
 from ase.data import chemical_symbols, covalent_radii
 from ase.data.colors import jmol_colors
+
+from ce_expansion.npdb.base import Base
+from ce_expansion.atomgraph import adjacency
 
 
 class BimetallicResults(Base):
