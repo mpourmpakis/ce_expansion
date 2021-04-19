@@ -8,6 +8,7 @@ else:
 import os
 from datetime import datetime
 
+import json
 import ase
 import ase.visualize
 import matplotlib.pyplot as plt
@@ -393,9 +394,48 @@ class BimetallicResults(Base):
             (bool): True if saved successfully
         """
         atom = self.build_atoms_obj()
+        atom.info['shape'] = self.shape
         atom.info['CE'] = self.CE
         atom.info['EE'] = self.EE
-        atom.write(path)
+        atom.info[f'x_{self.metal1}'] = self.n_metal1 / self.num_atoms
+        atom.info[f'x_{self.metal2}'] = self.n_metal2 / self.num_atoms
+
+        # save a chemical json file
+        if path.endswith('json'):
+            path = path.replace('.json', '.cjson')
+            # create name
+            name = self.get_chemical_formula()
+            name += '_' + self.shape.lower()[:3].replace('elo', 'epb')
+
+            # create chemical JSON formula string
+            formula = f'{self.metal1} {self.n_metal1} '
+            formula += f'{self.metal2} {self.n_metal2}'
+
+            # get ase.Atoms object
+            atoms_obj = self.get_atoms_obj()
+
+            # create list of atomic numbers
+            numbers = atoms_obj.numbers.tolist()
+
+            symbols = list(atoms_obj.symbols)
+
+            positions = atoms_obj.positions.flatten().tolist()
+
+            data = {'chemical json': 0,
+                    'name': name,
+                    'formula': formula,
+                    'atoms': {'elements': {'number': numbers,
+                                           'type': symbols},
+                              'coords': {'3d': positions}
+                              },
+                    'properties': {'cohesive energy': self.CE,
+                                   'excess energy': self.EE,
+                                   'shape': self.shape.lower()}
+                    }
+            with open(path, 'w') as fidw:
+                json.dump(data, fidw, indent=4)
+        else:
+            atom.write(path)
         return True
 
     def show(self):
