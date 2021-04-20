@@ -1,12 +1,6 @@
-if __name__ == "__main__":
-    from base import Base
-    from ce_expansion.atomgraph import adjacency
-else:
-    from ce_expansion.npdb.base import Base
-    from ce_expansion.atomgraph import adjacency
-
 import os
 from datetime import datetime
+import json
 
 import ase
 import ase.visualize
@@ -15,6 +9,9 @@ import numpy as np
 import sqlalchemy as db
 from ase.data import chemical_symbols, covalent_radii
 from ase.data.colors import jmol_colors
+
+from ce_expansion.npdb.base import Base
+from ce_expansion.atomgraph import adjacency
 
 
 class BimetallicResults(Base):
@@ -94,10 +91,16 @@ class BimetallicResults(Base):
     n_metal2 = db.Column(db.Integer, nullable=False)
     CE = db.Column(db.Float, nullable=False)
     EE = db.Column(db.Float)
-    ordering = db.Column(db.String(50000), nullable=False)
+    # compressed_ordering string = integer value
+    # assuming ordering string is in binary
+    compressed_ordering = db.Column(db.String, nullable=False)
     structure_id = db.Column(db.Integer, db.ForeignKey('nanoparticles.id'))
     last_updated = db.Column(db.DateTime, default=datetime.now,
                              onupdate=datetime.now)
+
+    # stores actual ordering string
+    # (instead of compressed ordering which is stored in DB)
+    _actual_ordering = None
 
     # attribute to store atoms object once it has been built
     atoms_obj = None
@@ -114,6 +117,19 @@ class BimetallicResults(Base):
         self.CE = CE
         self.EE = EE
         self.ordering = ordering
+
+    @property
+    def ordering(self):
+        # convert compressed_ordering to binary = actual_orderingstr
+        if self._actual_ordering is None:
+            self._actual_ordering = f'{int(self.compressed_ordering):b}'
+            self._actual_ordering = self._actual_ordering.zfill(self.num_atoms)
+        return self._actual_ordering
+
+    @ordering.setter
+    def ordering(self, val):
+        self._actual_ordering = val
+        self.compressed_ordering = str(int(val, 2))
 
     @property
     def atoms_obj(self):
@@ -374,9 +390,48 @@ class BimetallicResults(Base):
             (bool): True if saved successfully
         """
         atom = self.build_atoms_obj()
+        atom.info['shape'] = self.shape
         atom.info['CE'] = self.CE
         atom.info['EE'] = self.EE
-        atom.write(path)
+        atom.info[f'x_{self.metal1}'] = self.n_metal1 / self.num_atoms
+        atom.info[f'x_{self.metal2}'] = self.n_metal2 / self.num_atoms
+
+        # save a chemical json file
+        if path.endswith('json'):
+            path = path.replace('.json', '.cjson')
+            # create name
+            name = self.get_chemical_formula()
+            name += '_' + self.shape.lower()[:3].replace('elo', 'epb')
+
+            # create chemical JSON formula string
+            formula = f'{self.metal1} {self.n_metal1} '
+            formula += f'{self.metal2} {self.n_metal2}'
+
+            # get ase.Atoms object
+            atoms_obj = self.get_atoms_obj()
+
+            # create list of atomic numbers
+            numbers = atoms_obj.numbers.tolist()
+
+            symbols = list(atoms_obj.symbols)
+
+            positions = atoms_obj.positions.flatten().tolist()
+
+            data = {'chemical json': 0,
+                    'name': name,
+                    'formula': formula,
+                    'atoms': {'elements': {'number': numbers,
+                                           'type': symbols},
+                              'coords': {'3d': positions}
+                              },
+                    'properties': {'cohesive energy': self.CE,
+                                   'excess energy': self.EE,
+                                   'shape': self.shape.lower()}
+                    }
+            with open(path, 'w') as fidw:
+                json.dump(data, fidw, indent=4)
+        else:
+            atom.write(path)
         return True
 
     def show(self):

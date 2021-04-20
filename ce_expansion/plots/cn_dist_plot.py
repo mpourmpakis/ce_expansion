@@ -3,7 +3,6 @@ import numpy as np
 from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
 
-import atomgraph
 from ce_expansion.atomgraph import atomgraph
 from ce_expansion.ga import structure_gen
 from ce_expansion.npdb import datatables as dt
