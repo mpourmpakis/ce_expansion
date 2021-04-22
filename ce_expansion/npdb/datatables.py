@@ -1,10 +1,6 @@
-if __name__ == "__main__":
-    from base import Base
-else:
-    from ce_expansion.npdb.base import Base
-
 import os
 from datetime import datetime
+import json
 
 import ase
 import ase.visualize
@@ -13,6 +9,9 @@ import numpy as np
 import sqlalchemy as db
 from ase.data import chemical_symbols, covalent_radii
 from ase.data.colors import jmol_colors
+
+from ce_expansion.npdb.base import Base
+from ce_expansion.atomgraph import adjacency
 
 
 class BimetallicResults(Base):
@@ -56,9 +55,13 @@ class BimetallicResults(Base):
     -------
     METHODS
     -------
-    build_atoms_obj: Returns atoms object of nanoparticle using ordering
+    build_atoms_obj: DEPRECATED: use get_atoms_obj method or atoms_obj attr
+                     (Returns atoms object of nanoparticle using ordering)
 
-    build_chem_formula: Returns chemical formula of string e.g. 'Au23_Cu32'
+    build_chem_formula: DEPRECATED: use get_chemical_formula
+                        (Returns chemical formula of string e.g. 'Au23_Cu32')
+
+    get_chemical_formula: Returns chemical formula as string, e.g. 'Au23Cu32'
 
     build_prdf: returns data of partial radial distribution function
         Args:
@@ -88,10 +91,20 @@ class BimetallicResults(Base):
     n_metal2 = db.Column(db.Integer, nullable=False)
     CE = db.Column(db.Float, nullable=False)
     EE = db.Column(db.Float)
-    ordering = db.Column(db.String(50000), nullable=False)
+    # compressed_ordering string = integer value
+    # assuming ordering string is in binary
+    compressed_ordering = db.Column(db.String, nullable=False)
     structure_id = db.Column(db.Integer, db.ForeignKey('nanoparticles.id'))
     last_updated = db.Column(db.DateTime, default=datetime.now,
                              onupdate=datetime.now)
+
+    # stores actual ordering string
+    # (instead of compressed ordering which is stored in DB)
+    _actual_ordering = None
+
+    # attribute to store atoms object once it has been built
+    atoms_obj = None
+    _atoms_obj = None
 
     def __init__(self, metal1, metal2, shape, num_atoms, diameter,
                  n_metal1, n_metal2, CE, EE, ordering):
@@ -105,10 +118,24 @@ class BimetallicResults(Base):
         self.EE = EE
         self.ordering = ordering
 
-        # attribute to store atoms object once it has been built
-        self.atoms_obj = None
+    @property
+    def ordering(self):
+        # convert compressed_ordering to binary = actual_orderingstr
+        if self._actual_ordering is None:
+            self._actual_ordering = f'{int(self.compressed_ordering):b}'
+            self._actual_ordering = self._actual_ordering.zfill(self.num_atoms)
+        return self._actual_ordering
 
-    def build_atoms_obj(self):
+    @ordering.setter
+    def ordering(self, val):
+        self._actual_ordering = val
+        self.compressed_ordering = str(int(val, 2))
+
+    @property
+    def atoms_obj(self):
+        return self.get_atoms_obj()
+
+    def get_atoms_obj(self):
         """
         Returns ase.Atoms object of stable NP found
         - NP built with Nanoparticle.get_atoms_obj_skel
@@ -118,14 +145,45 @@ class BimetallicResults(Base):
             (ase.Atoms): NP from entry
         """
 
-        atom = self.nanoparticle.get_atoms_obj_skel().copy()
-        for i, a in zip(self.ordering, atom):
-            a.symbol = self.metal1 if i == '0' else self.metal2
-        self.atoms_obj = atom.copy()
-        return atom
+        if self._atoms_obj is None:
+            atom = self.nanoparticle.atoms_obj.copy()
+            syms = np.array([self.metal1, self.metal2])
+            atom.symbols = syms[[*map(int, self.ordering)]]
+            self._atoms_obj = atom.copy()
+        return self._atoms_obj
+
+    def build_atoms_obj(self):
+        """
+        DEPRECATED: use get_atoms_obj method
+        """
+        return self.get_atoms_obj()
+
+    def get_chemical_formula(self, latex=False, bold=False):
+        """
+        Returns chemical formula of bimetallic NP
+        in alphabetical order (similar to ase's Atoms.get_chemical_formula)
+        - e.g. Ag6Au7
+
+        KArgs:
+        latex (bool): if True, chemical formula is returned in Latex Math form
+                      (Default: False)
+
+        Returns:
+            (str)
+        """
+        if latex:
+            form = '$\\rm %s_{%i}%s_{%i}$' % (self.metal1, self.n_metal1,
+                                              self.metal2, self.n_metal2)
+            if bold:
+                form = form.replace('\\rm', '\\rm \\bf')
+            return form
+        return '%s%i%s%i' % (self.metal1, self.n_metal1,
+                             self.metal2, self.n_metal2)
 
     def build_chem_formula(self, latex=False, bold=False):
         """
+        DEPRECATED: use get_chemical_formula
+
         Returns chemical formula of bimetallic NP
         in alphabetical order
         - e.g. Ag6_Au7
@@ -332,9 +390,48 @@ class BimetallicResults(Base):
             (bool): True if saved successfully
         """
         atom = self.build_atoms_obj()
+        atom.info['shape'] = self.shape
         atom.info['CE'] = self.CE
         atom.info['EE'] = self.EE
-        atom.write(path)
+        atom.info[f'x_{self.metal1}'] = self.n_metal1 / self.num_atoms
+        atom.info[f'x_{self.metal2}'] = self.n_metal2 / self.num_atoms
+
+        # save a chemical json file
+        if path.endswith('json'):
+            path = path.replace('.json', '.cjson')
+            # create name
+            name = self.get_chemical_formula()
+            name += '_' + self.shape.lower()[:3].replace('elo', 'epb')
+
+            # create chemical JSON formula string
+            formula = f'{self.metal1} {self.n_metal1} '
+            formula += f'{self.metal2} {self.n_metal2}'
+
+            # get ase.Atoms object
+            atoms_obj = self.get_atoms_obj()
+
+            # create list of atomic numbers
+            numbers = atoms_obj.numbers.tolist()
+
+            symbols = list(atoms_obj.symbols)
+
+            positions = atoms_obj.positions.flatten().tolist()
+
+            data = {'chemical json': 0,
+                    'name': name,
+                    'formula': formula,
+                    'atoms': {'elements': {'number': numbers,
+                                           'type': symbols},
+                              'coords': {'3d': positions}
+                              },
+                    'properties': {'cohesive energy': self.CE,
+                                   'excess energy': self.EE,
+                                   'shape': self.shape.lower()}
+                    }
+            with open(path, 'w') as fidw:
+                json.dump(data, fidw, indent=4)
+        else:
+            atom.write(path)
         return True
 
     def show(self):
@@ -383,8 +480,10 @@ class Nanoparticles(Base):
     # used to attach bond_list to data entry
     # does not store bond_list in DB
     bonds_list = None
+    _bonds_list = None
     num_bonds = None
     atoms_obj = None
+    _atoms_obj = None
 
     def __init__(self, shape, num_atoms, num_shells=None):
         self.shape = shape
@@ -394,39 +493,65 @@ class Nanoparticles(Base):
     def __len__(self):
         return self.num_atoms
 
-    def get_atoms_obj_skel(self):
+    @property
+    def atoms_obj(self):
+        return self.get_atoms_obj()
+
+    @property
+    def bonds_list(self):
+        return self.get_bonds_list()
+
+    def get_atoms_obj(self):
         """
         Builds NP in the form of a Cu NP ase.Atoms object
         - stores under self.atoms_obj property
         - returns atoms_obj
         """
-        if not self.atoms_obj:
-            self.atoms_obj = ase.Atoms([ase.Atom('Cu', (i.x, i.y, i.z))
-                                        for i in self.atoms])
-        return self.atoms_obj
+        if self._atoms_obj is None:
+            self._atoms_obj = ase.Atoms([ase.Atom('Cu', (i.x, i.y, i.z))
+                                         for i in self.atoms])
+        return self._atoms_obj
+
+    def get_atoms_obj_skel(self):
+        """
+        DEPRECATED: use get_atoms_obj method
+        Builds NP in the form of a Cu NP ase.Atoms object
+        - stores under self.atoms_obj property
+        - returns atoms_obj
+        """
+        return self.get_atoms_obj()
 
     def get_diameter(self):
         """
         """
-        self.get_atoms_obj_skel()
         return abs(self.atoms_obj.positions[:, 0].max() -
                    self.atoms_obj.positions[:, 0].min()) / 10
 
+    def get_bonds_list(self):
+        if self._bonds_list is None:
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                '..', 'data', 'bond_lists',
+                                self.shape, '%i.npy' % self.num_shells)
+
+            if os.path.isfile(path):
+                self._bonds_list = np.load(path)
+            else:
+                # Ensure directory actually exists before we save to it
+                if not os.path.exists(os.path.dirname(path)):
+                    os.makedirs(os.path.dirname(path))
+                self._bonds_list = adjacency.build_bonds_list(self.atoms_obj)
+                np.save(path, self._bonds_list)
+
+        if self.num_bonds is None:
+            self.num_bonds = len(self._bonds_list) // 2
+
+        return self._bonds_list
+
     def load_bonds_list(self):
-        if isinstance(self.bonds_list, np.ndarray):
-            self.num_bonds = len(self.bonds_list)
-            return self.bonds_list
-
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            '..', '..', 'data', 'bond_lists',
-                            self.shape, '%i.npy' % self.num_shells)
-
-        if os.path.isfile(path):
-            self.bonds_list = np.load(path)
-            self.num_bonds = len(self.bonds_list)
-            return self.bonds_list
-        else:
-            return None
+        """
+        DEPRECATED: use get_bonds_list
+        """
+        return self.get_bonds_list()
 
 
 class Atoms(Base):

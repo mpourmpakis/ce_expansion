@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 
-from atomgraph import atomgraph
-from npdb import db_inter
+from ce_expansion.atomgraph import atomgraph
+from ce_expansion.npdb import db_inter
 
 # GLOBAL fontsize of axis labels and text
 FS = 40

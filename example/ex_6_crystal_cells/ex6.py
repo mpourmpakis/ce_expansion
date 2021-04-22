@@ -5,8 +5,8 @@ import os
 import ase.lattice.cubic
 import ase.neighborlist
 
-from atomgraph import adjacency, atomgraph
-from ga import ga
+from ce_expansion.atomgraph import adjacency, atomgraph
+from ce_expansion.ga import ga
 
 # Make a generic FCC cell
 for cell_size in range(5, 10):

@@ -13,14 +13,9 @@ import sqlalchemy as db
 from ase.data import chemical_symbols
 from ase.data.colors import jmol_colors
 
-if __name__ == "__main__":
-    import db_utils
-    import base
-    import datatables as tbl
-else:
-    from ce_expansion.npdb import db_utils
-    import ce_expansion.npdb.base as base
-    import ce_expansion.npdb.datatables as tbl
+from ce_expansion.npdb import db_utils
+import ce_expansion.npdb.base as base
+import ce_expansion.npdb.datatables as tbl
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -301,12 +296,24 @@ def build_coefficient_dict(metals):
                      metal1: list(map(lambda j: j.bond_energy, res_ba))}}
 
 
+def build_metal_pairs_list():
+    """
+    Returns all metal pairs found in BimetallicResults table
+    """
+    return [pair for pair
+            in session.query(tbl.BimetallicResults.metal1,
+                             tbl.BimetallicResults.metal2).distinct()]
+
+
 def build_metals_list():
     """
     Returns list of possible metal combinations for GA sims
     """
-    return [r[0] for r in session.query(tbl.ModelCoefficients.element1)
-            .distinct().order_by(tbl.ModelCoefficients.element1).all()]
+    metals = set()
+    for m in session.query(tbl.BimetallicResults.metal1,
+                           tbl.BimetallicResults.metal2).distinct():
+        metals |= set(m)
+    return list(metals)
 
 
 def build_new_structs_plot(metal_opts, shape_opts, pct=False,

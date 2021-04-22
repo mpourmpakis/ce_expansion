@@ -231,7 +231,8 @@ class Chromo(object):
 class Pop(object):
     def __init__(self, atom, bond_list, metals, shape, n_metal2=1,
                  popsize=50, mute_pct=0.8, n_mute_atomswaps=None, spike=False,
-                 x_metal2=None, random=False, num_shells=None, atomg=None):
+                 x_metal2=None, random=False, num_shells=None, atomg=None,
+                 e=1, save_every=100, use_metropolis=True):
         """
         Bimetallic nanoparticle genetic algorithm population
         - initialize a population of nanoparticles
@@ -268,6 +269,13 @@ class Pop(object):
                          does not perform a GA optimization
         - num_shells (int): number of shells in nanoparticle
                             - used when saving nanoparticle to database
+        - e (float): exploration - exploitation factor used to bias parent
+                                   selection probabilities
+                                   (Default: 1 = No effect)
+        - save_every (int): choose how often pop CEs are stored in all_data
+                            (Default: every 100 generations)
+        - use_metropolis (bool): use metropolis algorithm at end of GA sim
+                                 (Default: True)
         """
         # atoms object
         self.atom = atom
@@ -338,6 +346,18 @@ class Pop(object):
         self.prev_results = None
 
         self.random = random
+
+        # exploration-exploitation factor
+        self.e = e
+
+        # store CEs of pops during simulation
+        self.all_data = {}
+
+        # how often pop data should be saved to all_data
+        self.save_every = save_every
+
+        # track whether metropolis should be used at end of GA sim
+        self.use_metropolis = use_metropolis
 
         # population - list of chromosomes
         self.pop = []
@@ -471,7 +491,7 @@ class Pop(object):
           to help mitigate lack of diversity in population
         """
         ces = np.array([abs(p.ce) for p in self])
-        fitness = (ces - ces.min())
+        fitness = (ces - ces.min())**self.e
         totfit = fitness.sum()
         probs = np.zeros(self.popsize)
         for i in range(self.popsize):
@@ -574,11 +594,15 @@ class Pop(object):
 
         # no GA required for monometallic systems
         if self.n_metal2 not in [0, self.atomg.num_atoms]:
+            """ALL DATA ADDED"""
+            self.all_data[self.generation] = [i.ce for i in self]
             start = time.time()
 
             while self.generation != self.max_gens:
                 # step to next generation
                 self.step()
+                if self.generation % self.save_every == 0:
+                    self.all_data[self.generation] = [i.ce for i in self]
 
                 # track if there was a change (if min_gens has been passed)
                 if (max_nochange and min_gens and
@@ -592,6 +616,9 @@ class Pop(object):
                     if nochange == max_nochange:
                         break
 
+            """Get info for last generation"""
+            self.all_data[self.generation] = [i.ce for i in self]
+
             # print status of final generation
             self.print_status(end='\n')
 
@@ -603,7 +630,7 @@ class Pop(object):
 
             # run James' metropolis algorithm function to search for
             # minimum struct near current min
-            if not self.random:
+            if not self.random and self.use_metropolis:
                 best = self[0]
                 best_ordering = best.ordering.copy()
                 opt_order, opt_ce, en_hist = self.atomg.metropolis(
@@ -620,6 +647,8 @@ class Pop(object):
                                        ordering=opt_order)] + self[:-1]
                     assert self.pop == sorted(self.pop, key=lambda i: i.ce)
                     self.update_stats()
+            else:
+                print('NOT running metropolis')
 
         # convert stats to an array
         self.stats = np.array(self.stats)
@@ -1141,10 +1170,9 @@ def build_pop_obj(metals, shape, num_shells, **kwargs):
     - (Pop): Pop instance
     """
     assert num_shells > 0, "NP must have at least one shell"
-    nanop = structure_gen.build_structure_sql(shape, num_shells,
-                                              build_bonds_list=True)
+    nanop = structure_gen.build_structure_sql(shape, num_shells)
 
-    p = Pop(nanop.get_atoms_obj_skel(), nanop.bonds_list,
+    p = Pop(nanop.atoms_obj, nanop.bonds_list,
             metals, shape, num_shells=num_shells, **kwargs)
     return p
 
@@ -1369,8 +1397,7 @@ def run_ga(metals, shape, save_data=True,
             batch_run_num=batch_runinfo)
 
 
-def check_db_values(update_db=False, metal_opts=None,
-                    shape_opts=None):
+def check_db_values(update_db=False, metal_opts=None):
     """
     Checks CE values in database to ensure CE and EE match their ordering
 
@@ -1379,85 +1406,93 @@ def check_db_values(update_db=False, metal_opts=None,
                         updated to the correct CE and EE
                         (Default: False)
     - metal_opts (list): can pass in list of metal combination options to check
-                         (Default: [('Ag', 'Au'), ('Ag', 'Cu'), ('Au', 'Cu')])
-    - shape_opts (list): can pass in list of nanoparticle shapes to check
-                         (Default: ['icosahedron', 'cuboctahedron', 'fcc-cube',
-                                    'elongated-pentagonal-bipyramid'])
+                         (Default: all metal pairs from results in DB)
 
     Returns:
     - (np.ndarray): CE's and EE's of mismatches found
                     - each row contains: [CE-db, CE-actual, EE-db, EE-actual]
 
     """
+    # if None, get all metal pairs found in BimetallicResults table in DB
     if metal_opts is None:
-        metal_opts = [['Ag', 'Au'],
-                      ['Ag', 'Cu'],
-                      ['Au', 'Cu']]
-        ms = db_inter.build_metals_list()
-        metal_opts = list([sorted(i) for i in it.combinations(ms, 2)])
+        metal_opts = db_inter.build_metal_pairs_list()
 
-    if shape_opts is None:
-        shape_opts = ['icosahedron',
-                      'cuboctahedron',
-                      'elongated-pentagonal-bipyramid',
-                      'fcc-cube']
-    elif isinstance(shape_opts, str):
-        shape_opts = [shape_opts]
-
+    # track systems that failed test
     fails = []
-    for shape in shape_opts:
-        for shell in range(2, 11):
-            nanop = structure_gen.build_structure_sql(shape, shell,
-                                                      build_bonds_list=True)
-            for metals in metal_opts:
-                # ensure metal types are sorted
-                metals = sorted(metals)
-                try:
-                    atomg = atomgraph.AtomGraph(nanop.bonds_list,
-                                                metals[0], metals[1])
-                except:
-                    continue
 
-                # find all bimetallic results matching shape, size, and metals
-                results = db_inter.get_bimet_result(metals, shape=shape,
-                                                    num_shells=shell)
-                for res in results:
-                    try:
-                        ordering = np.array(list(map(int, res.ordering)))
-                        actual_ce = atomg.getTotalCE(ordering)
-                        actual_ee = atomg.getEE(ordering)
-                    except:
-                        pass
+    # get all nanoparticle (shape, num_shell) pairs in database
+    nanoparticles = set([(r.shape, r.num_shells)
+                         for r in db_inter.get_nanoparticle()])
 
-                    outp = '%s %s' % (res.shape[:3].upper(),
-                                      res.build_chem_formula())
+    # tracked number of results checked
+    num_checked = 0
+    print('Checking results...')
+    for shape, num_shells in nanoparticles:
+        nanop = structure_gen.build_structure_sql(shape, num_shells)
+        for metals in metal_opts:
+            # ensure metal types are sorted
+            metals = sorted(metals)
 
-                    print(outp.rjust(20), end='')
-                    if abs(actual_ce - res.CE) > 1E-10:
-                        fails.append([res.CE, actual_ce, res.EE, actual_ee])
-                        print(res.num_atoms)
-                        if update_db:
-                            db_inter.update_bimet_result(
-                                metals=metals,
-                                shape=res.shape,
-                                num_atoms=res.num_atoms,
-                                diameter=res.diameter,
-                                n_metal1=res.n_metal1,
-                                CE=actual_ce,
-                                ordering=res.ordering,
-                                EE=actual_ee,
-                                nanop=res.nanoparticle,
-                                allow_insert=False,
-                                ensure_ce_min=False)
+            # find all bimetallic results matching shape, size, and metals
+            results = db_inter.get_bimet_result(metals, shape=shape,
+                                                num_shells=num_shells)
 
-                        # print(res.build_chem_formula())
-                        print(' WRONG VALUE!')
-                    else:
-                        print('')
+            # if no results found, continue to next metal combination
+            if not results:
+                continue
+
+            # else create AtomGraph object
+            atomg = atomgraph.AtomGraph(nanop.bonds_list,
+                                        metals[0], metals[1])
+
+            # iterate over results to compare CE in databse vs.
+            # CE calculated with ordering
+            for res in results:
+                ordering = np.array(list(map(int, res.ordering)))
+                n_metal2 = ordering.sum()
+                actual_ce = atomg.getTotalCE(ordering)
+                actual_ee = atomg.getEE(ordering)
+
+                # increment number of results checkered
+                num_checked += 1
+
+                # create output string
+                outp = (f'{res.shape[:3].upper():>4}',
+                        f'{res.num_atoms:<7,}',
+                        f'{res.build_chem_formula():<15}')
+
+                # if deviation, add info to fails list
+                if abs(actual_ce - res.CE) > 1E-10:
+                    # print system with problem
+                    print(*outp, f'WRONG VALUE! ({actual_ce - res.CE:.3e} eV)')
+
+                    fails.append([metals, shape, num_shells, n_metal2, res.CE,
+                                  actual_ce, res.EE, actual_ee])
+
+                    # if update_db, correct the CE value
+                    # NOTE: this most likely means that CE is not optimized
+                    if update_db:
+                        db_inter.update_bimet_result(
+                            metals=metals,
+                            shape=res.shape,
+                            num_atoms=res.num_atoms,
+                            diameter=res.diameter,
+                            n_metal1=res.n_metal1,
+                            CE=actual_ce,
+                            ordering=res.ordering,
+                            EE=actual_ee,
+                            nanop=res.nanoparticle,
+                            allow_insert=False,
+                            ensure_ce_min=False)
+                else:
+                    print(*outp, end='\r')
 
     fails = np.array(fails)
     nfail = len(fails)
-    print('%i issue%s found' % (nfail, ['s', ''][nfail == 1]))
+    issue_str = 'issue' if nfail == 1 else 'issues'
+    print(' ' * 50, end='\r')
+    print(f'{nfail:,} {issue_str} found.')
+    print(f'{num_checked:,} results checked.')
     return fails
 
 
