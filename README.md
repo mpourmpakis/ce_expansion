@@ -6,8 +6,11 @@ James Dean, Michael Cowan, Jonathan Estes, Mahmoud Ramadan, Giannis Mpourmpakis
 
 Explore bimetallic nanoparticles with our program, which implements the bond-centric model of Yan<sup>1</sup> in conjunction with a genetic algorithm.
 
-© 2019 [CANELa Lab](https://mpourmpakis.com/), University of Pittsburgh
+For more details or to cite this work, please see our paper in ACS Nano:
 
+Dean, J.\*; Cowan, M. J.\*, Estes, J.; Ramadan, M.; Mpourmpakis, G. Rapid Prediction of Bimetallic Mixing Behavior at the Nanoscale. ACS Nano. 2020. 14, 7, 8171–8180. DOI: https://doi.org/10.1021/acsnano.0c01586
+
+© 2021 [CANELa Lab](https://mpourmpakis.com/), University of Pittsburgh
 
 ## Installation
 
