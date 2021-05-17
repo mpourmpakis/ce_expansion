@@ -13,6 +13,7 @@ import ase.io
 import matplotlib.pyplot as plt
 import numpy as np
 from ase.data.colors import jmol_colors
+from ase.visualize import view
 
 from ce_expansion.atomgraph import atomgraph
 from ce_expansion.ga import structure_gen
@@ -898,6 +899,36 @@ class Pop(object):
             nanop=nanop,
             allow_insert=False)
         print('New min NP added to database.')
+
+    def make_atoms_object(self, tested_generation=0, view_atoms=False):
+        """
+            Makes atoms object of the calculated optimized atom
+
+            Args:
+            - tested_generation (int): Creates atoms object of the desired generation
+                                       (0 being the most optimized generation)
+            - view_atoms (boolean):    Option to view optimized atom
+
+            Returns:
+            (ase.Atoms): Returns the desired atoms object
+            """
+        # Get atom ordering and number of unique atoms
+        element_ordering = self.pop[tested_generation].ordering
+        # makes new array of strings which can be used with ASE's ".symbols"
+
+        elements = np.array(self.metals)[element_ordering]
+
+        atoms = self.atom.copy()
+        atoms.symbols = elements
+
+        return atoms
+
+    def view_atoms(self, tested_generation=0):
+        """
+        Args:
+            tested_generation: The generation desired to view
+        """
+        view(self.make_atoms_object(tested_generation, view_atoms=True))
 
 
 def load_pop(path):
