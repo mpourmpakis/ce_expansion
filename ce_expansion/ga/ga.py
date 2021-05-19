@@ -13,7 +13,7 @@ import ase.io
 import matplotlib.pyplot as plt
 import numpy as np
 from ase.data.colors import jmol_colors
-import ase.visualize as view
+import ase.visualize
 
 from ce_expansion.atomgraph import atomgraph
 from ce_expansion.ga import structure_gen
@@ -930,7 +930,7 @@ class Pop(object):
             - np_index (int): Creates atoms object of the desired nanoparticle
                                        (0 being the most optimized nanoparticle)
         """
-        view(self.make_atoms_object(np_index))
+        ase.visualize.view(self.make_atoms_object(np_index))
 
 
 def load_pop(path):
