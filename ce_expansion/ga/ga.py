@@ -13,6 +13,7 @@ import ase.io
 import matplotlib.pyplot as plt
 import numpy as np
 from ase.data.colors import jmol_colors
+import ase.visualize as view
 
 from ce_expansion.atomgraph import atomgraph
 from ce_expansion.ga import structure_gen
@@ -786,6 +787,28 @@ class Pop(object):
             print(res)
         return res
 
+    def make_atoms_object(self, np_index=0):
+        """
+            Makes atoms object of the calculated optimized atom
+
+            KArgs:
+            - np_index (int): Creates atoms object of the desired nanoparticle
+                                       (0 being the most optimized nanoparticle)
+
+            Returns:
+            (ase.Atoms): Returns the desired atoms object
+            """
+        # Get atom ordering and number of unique atoms
+        element_ordering = self.pop[np_index].ordering
+        # makes new array of strings which can be used with ASE's ".symbols"
+
+        elements = np.array(self.metals)[element_ordering]
+
+        atoms = self.atom.copy()
+        atoms.symbols = elements
+
+        return atoms
+
     def plot_results(self, savepath=None, ax=None):
         """
         Method to create a plot of GA simulation
@@ -898,6 +921,16 @@ class Pop(object):
             nanop=nanop,
             allow_insert=False)
         print('New min NP added to database.')
+
+    def view_atoms(self, np_index=0):
+        """
+            Views the selected nanoparticle of the last genenration
+
+        KArgs:
+            - np_index (int): Creates atoms object of the desired nanoparticle
+                                       (0 being the most optimized nanoparticle)
+        """
+        view(self.make_atoms_object(np_index))
 
 
 def load_pop(path):
