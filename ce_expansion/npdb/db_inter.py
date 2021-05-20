@@ -688,8 +688,12 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
     Returns:
     - (BimetallicResults)(s) if match is found else []
     """
-    if not num_atoms and (num_shells and shape):
-        num_atoms = get_shell2num(shape, num_shells)
+    if not num_atoms and num_shells:
+        if shape:
+            num_atoms = get_shell2num(shape, num_shells)
+        # if shape not defined, assume icosahedron shell->atoms mapping
+        else:
+            num_atoms = get_shell2num('icosahedron', num_shells)
 
     if only_bimet:
         only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
