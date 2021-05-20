@@ -890,15 +890,35 @@ def update_bimet_result(metals, shape, num_atoms,
 # REMOVE FUNCTIONS
 
 
-def remove_entry(entry_inst):
+def remove_entry(datatable, **kwargs):
     """
     GENERIC FUNCTION
     Deletes entry (and its children if applicable) from DB
 
     Args:
-    - entry_inst (DataTable instance): datarow to be deleted
+    - datatable (Datatable class): datatable to query
+
+    Kargs:
+    - **kwargs: arguments whose name(s) matches a column in the datatable
+                (used to find a single entry)
+
+    Raises:
+    - NPDatabaseError: query results != 1
+
+    Returns:
+    - True if successfully deleted entry
     """
-    session.delete(entry_inst)
+    entry = get_entry(datatable, **kwargs)
+
+    if not entry:
+        raise db_utils.NPDatabaseError('Unable to find matching entry '
+                                       f'in {datatable.__name__}.')
+    elif isinstance(entry, list):
+        raise db_utils.NPDatabaseError('Mulitple matches. Can only remove one '
+                                       f'entry from {datatable.__name__}.')
+
+    # if single entry, delete it and its children
+    session.delete(entry)
     return db_utils.commit_changes(session)
 
 
@@ -916,13 +936,10 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
     Returns:
     - True if successful
     """
-    res = get_nanoparticle(shape, num_atoms, num_shells)
-    if isinstance(res, list):
-        raise db_utils.NPDatabaseError('Can only remove one Nanoparticle')
-    elif not res:
-        raise db_utils.NPDatabaseError('Unable to find matching Nanoparticle')
-    else:
-        return remove_entry(res)
+    return remove_entry(tbl.Nanoparticles, shape=shape, num_atoms=num_atoms,
+                        num_shells=num_shells)
+
+
 
 
 # HELPER FUNCTIONS
