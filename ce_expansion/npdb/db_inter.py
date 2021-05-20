@@ -936,13 +936,13 @@ def update_polymet_result(metals: Iterable[str], composition: Iterable[int],
 # REMOVE FUNCTIONS
 
 
-def remove_entry(datatable, **kwargs):
+def remove_entry(get_func, **kwargs):
     """
     GENERIC FUNCTION
     Deletes entry (and its children if applicable) from DB
 
     Args:
-    - datatable (Datatable class): datatable to query
+    - get_func (function): get_* function used to query datatable of interest
 
     Kargs:
     - **kwargs: arguments whose name(s) matches a column in the datatable
@@ -952,16 +952,15 @@ def remove_entry(datatable, **kwargs):
     - NPDatabaseError: query results != 1
 
     Returns:
-    - True if successfully deleted entry
+    - True if successfully deleted entry from datatable of interest
     """
-    entry = get_entry(datatable, **kwargs)
+    entry = get_func(**kwargs)
 
     if not entry:
-        raise db_utils.NPDatabaseError('Unable to find matching entry '
-                                       f'in {datatable.__name__}.')
+        raise db_utils.NPDatabaseError('Unable to find matching entry.')
     elif isinstance(entry, list):
-        raise db_utils.NPDatabaseError('Mulitple matches. Can only remove one '
-                                       f'entry from {datatable.__name__}.')
+        raise db_utils.NPDatabaseError('Mulitple matches. '
+                                       'Can only remove one entry.')
 
     # if single entry, delete it and its children
     session.delete(entry)
@@ -982,7 +981,7 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
     Returns:
     - True if successful
     """
-    return remove_entry(tbl.Nanoparticles, shape=shape, num_atoms=num_atoms,
+    return remove_entry(get_nanoparticle, shape=shape, num_atoms=num_atoms,
                         num_shells=num_shells)
 
 
@@ -1002,7 +1001,7 @@ def remove_polymet_result(metals: Iterable[str] = None,
     Returns:
     - True if successful
     """
-    return remove_entry(tbl.PolymetallicResults, metals=metals,
+    return remove_entry(get_polymet_result, metals=metals,
                         composition=composition, num_atoms=num_atoms)
 
 
