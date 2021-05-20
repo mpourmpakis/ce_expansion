@@ -592,7 +592,7 @@ def build_shapes_list():
 
 
 def get_entry(datatable, lim=None, custom_filter=None,
-              return_query=False, **kwargs):
+              return_query=False, return_list=False, **kwargs):
     """
     GENERIC FUNCTION
     Returns entry/entries from table if criteria is matched
@@ -610,6 +610,8 @@ def get_entry(datatable, lim=None, custom_filter=None,
                     (default: None = no added filter)
     - return_query (bool): if True, return query and
                            not results
+    - return_list (bool): if True, function always returns list, else
+                          will only return list if (# results) != 1
     - **kwargs: arguments whose name(s) matches a column in the datatable
 
     Returns:
@@ -620,14 +622,20 @@ def get_entry(datatable, lim=None, custom_filter=None,
         if kwargs[attr] is not None:
             match_ls.append(getattr(datatable, attr) == kwargs[attr])
 
-    if type(custom_filter) != type(None):
+    if custom_filter is not None:
         match_ls.append(custom_filter)
     match = db.and_(*match_ls)
     qry = session.query(datatable).filter(match).limit(lim)
     if return_query:
         return qry
     res = qry.all()
-    return res if len(res) != 1 else res[0]
+
+    # return single result if return_list == False
+    if len(res) == 1 and not return_list:
+        return res[0]
+
+    # else return empty list or list of multiple reuslts
+    return res
 
 
 def get_bimet_log(metals=None, shape=None, date=None, lim=None,
@@ -658,7 +666,8 @@ def get_bimet_log(metals=None, shape=None, date=None, lim=None,
 
 def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
                      n_metal1=None, only_bimet=False,
-                     lim=None, return_query=False, custom_filter=None):
+                     lim=None, return_query=False, custom_filter=None,
+                     return_list=False):
     """
     Returns BimetallicResults entry that matches criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -673,9 +682,11 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
                  (default: None = no limit)
     - return_query (bool): if True, return query and
                            not results
+    - return_list (bool): if True, function always returns list, else
+                          will only return list if (# results) != 1
 
     Returns:
-    - (BimetallicResults)(s) if match is found else (None)
+    - (BimetallicResults)(s) if match is found else []
     """
     if not num_atoms and (num_shells and shape):
         num_atoms = get_shell2num(shape, num_shells)
@@ -691,7 +702,7 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
     return get_entry(tbl.BimetallicResults, metal1=metal1, metal2=metal2,
                      shape=shape, num_atoms=num_atoms, n_metal1=n_metal1,
                      lim=lim, return_query=return_query,
-                     custom_filter=custom_filter)
+                     custom_filter=custom_filter, return_list=return_list)
 
 
 def get_model_coefficient(element1=None, element2=None, cn=None,
@@ -718,7 +729,7 @@ def get_model_coefficient(element1=None, element2=None, cn=None,
 
 
 def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
-                     lim=None, return_query=False):
+                     lim=None, return_query=False, return_list=False):
     """
     Returns tbl.Nanoparticles entries that match criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -733,22 +744,44 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
                  (default: None = no limit)
     - return_query (bool): if True, returns just the query
                            and not the results
+    - return_list (bool): if True, function always returns list, else
+                          will only return list if (# results) != 1
 
     Returns:
-    - (tbl.Nanoparticles)(s) if match else (None)
+    - (tbl.Nanoparticles)(s) if match else []
     """
     return get_entry(tbl.Nanoparticles, **locals())
 
 
 def get_polymet_result(metals=None, composition=None, num_atoms=None, lim=None,
-                       return_query=None):
+                       return_query=None, return_list=False):
+    """
+    Returns tbl.PolyMetallicResult entries that match criteria
+    - if no criteria given, all data (up to <lim> amount)
+      returned
+
+    KArgs:
+    - metals (Iterable[str]): ordered list of metal types
+    - composition (Iterable[int]): atomic counts (sums to num_atoms)
+    - num_atoms (int): total number of atoms in NP
+    - lim (int): max number of entries returned
+                 (default: None = no limit)
+    - return_query (bool): if True, returns just the query
+                           and not the results
+    - return_list (bool): if True, function always returns list, else
+                          will only return list if (# results) != 1
+
+    Returns:
+    - (tbl.PolymetallicResult)(s) if match else []
+    """
     if metals is not None:
         metals = ','.join(metals)
     if composition is not None:
         composition = ','.join(map(str, composition))
     return get_entry(tbl.PolymetallicResults, metals_list=metals,
                      composition_list=composition, num_atoms=num_atoms,
-                     lim=lim, return_query=return_query)
+                     lim=lim, return_query=return_query,
+                     return_list=return_list)
 
 
 def get_shell2num(shape, num_shells):
