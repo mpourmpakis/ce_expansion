@@ -2,6 +2,7 @@ import datetime
 import os
 import pickle
 import sys
+from typing import Iterable
 
 import ase
 import matplotlib
@@ -617,12 +618,7 @@ def get_entry(datatable, lim=None, custom_filter=None,
     match_ls = []
     for attr in kwargs:
         if kwargs[attr] is not None:
-            if attr == 'metals':
-                metal1, metal2 = db_utils.sort_metals(kwargs[attr])
-                match_ls.append(datatable.metal1 == metal1)
-                match_ls.append(datatable.metal2 == metal2)
-            else:
-                match_ls.append(getattr(datatable, attr) == kwargs[attr])
+            match_ls.append(getattr(datatable, attr) == kwargs[attr])
 
     if type(custom_filter) != type(None):
         match_ls.append(custom_filter)
@@ -653,7 +649,11 @@ def get_bimet_log(metals=None, shape=None, date=None, lim=None,
     Returns:
     - (BimetallicResults)(s) if match is found else (None)
     """
-    return get_entry(tbl.BimetallicLog, **locals())
+    # get sorted metals
+    metal1, metal2 = db_utils.sort_metals(metals)
+    return get_entry(tbl.BimetallicLog, metal1=metal1, metal2=metal2,
+                     shape=shape, date=date, lim=lim,
+                     return_query=return_query)
 
 
 def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
@@ -685,9 +685,13 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
                              tbl.BimetallicResults.n_metal2 != 0)
         custom_filter = only_bimet
 
-    return get_entry(tbl.BimetallicResults, metals=metals, shape=shape,
-                     num_atoms=num_atoms, n_metal1=n_metal1, lim=lim,
-                     return_query=return_query, custom_filter=custom_filter)
+    # get sorted metals
+    metal1, metal2 = db_utils.sort_metals(metals)
+
+    return get_entry(tbl.BimetallicResults, metal1=metal1, metal2=metal2,
+                     shape=shape, num_atoms=num_atoms, n_metal1=n_metal1,
+                     lim=lim, return_query=return_query,
+                     custom_filter=custom_filter)
 
 
 def get_model_coefficient(element1=None, element2=None, cn=None,
@@ -734,6 +738,17 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
     - (tbl.Nanoparticles)(s) if match else (None)
     """
     return get_entry(tbl.Nanoparticles, **locals())
+
+
+def get_polymet_result(metals=None, composition=None, num_atoms=None, lim=None,
+                       return_query=None):
+    if metals is not None:
+        metals = ','.join(metals)
+    if composition is not None:
+        composition = ','.join(map(str, composition))
+    return get_entry(tbl.PolymetallicResults, metals_list=metals,
+                     composition_list=composition, num_atoms=num_atoms,
+                     lim=lim, return_query=return_query)
 
 
 def get_shell2num(shape, num_shells):
@@ -887,6 +902,37 @@ def update_bimet_result(metals, shape, num_atoms,
     return res
 
 
+def update_polymet_result(metals: Iterable[str], composition: Iterable[int],
+                          CE: float, EE: float, ordering: Iterable[int],
+                          nanop: tbl.Nanoparticles, allow_insert=True):
+    """Update GA result of a polymetallic NP (3+ metal types)
+       or Insert new result (if no match is found)
+    """
+    if len(ordering) != nanop.num_atoms:
+        raise ValueError("Invalid ordering length.")
+
+    res = get_polymet_result(metals, composition, nanop.num_atoms)
+    # Update result if matching NP is found
+    if res:
+        # only update if new NP has lower CE
+        if CE < res.CE:
+            res.CE = CE
+            res.EE = EE
+            res.ordering = ordering
+    # else insert new result if allow_insert is True
+    elif allow_insert:
+        res = tbl.PolymetallicResults(metals, composition, CE, EE, ordering)
+        nanop.polymetallic_results.append(res)
+        session.add(nanop)
+    # else do not change DB and return False
+    else:
+        return False
+
+    session.add(res)
+    db_utils.commit_changes(session)
+    return True
+
+
 # REMOVE FUNCTIONS
 
 
@@ -940,6 +986,24 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
                         num_shells=num_shells)
 
 
+def remove_polymet_result(metals: Iterable[str] = None,
+                          composition: Iterable[int] = None,
+                          num_atoms: int = None):
+    """
+    Removes a single polymetallic result from DB
+    - only commits if query matches a single result
+
+    Kargs:
+    - shape (str): shape of NP
+    - num_atoms (int): number of atoms in NP
+    - num_shells (int): number of shells used to build NP
+                        from structure_gen module
+
+    Returns:
+    - True if successful
+    """
+    return remove_entry(tbl.PolymetallicResults, metals=metals,
+                        composition=composition, num_atoms=num_atoms)
 
 
 # HELPER FUNCTIONS

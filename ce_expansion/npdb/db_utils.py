@@ -48,6 +48,9 @@ def sort_metals(metals):
     Returns:
         (tuple): element names in alphabetical order
     """
+    # return None's if metals is None
+    if metals is None:
+        return None, None
     if isinstance(metals, str):
         metal1, metal2 = sorted([metals[:2], metals[2:]])
     else:
