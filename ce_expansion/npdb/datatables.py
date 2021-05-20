@@ -444,40 +444,46 @@ class BimetallicResults(Base):
 
 class PolymetallicResults(Base):
     """
-    Bimetallic GA Simulation Results Datatable
+    Polymetallic GA Simulation Results Datatable
     - contains data for most stable structure found
       (based on CE) at a given shape, size, and metal composition
     - GA varies chemical ordering to find stable NP
 
-    Columns:
-    metal1 and metal2 (string(2)): metal element names that are always
-                                   converted to alphabetical order
-                                   - e.g. metal1 = Ag, metal2 = Cu
-    diameter (float): "diameter" of NP measured using (atom.cell.max() / 10)
-                      - units = nm
-                      - measured in ga.run_ga
-                      - NOTE: std measuring, but there might be a better way
-    n_metal1, n_metal2 (int): number of metal(1)(2) in NP
-                              - must add up to num_atoms
-                              - constrains composition of NP
+    -------
+    COLUMNS
+    -------
+    metals_list (str): comma-separated list of unique metal types
+                       - order should match ordering numbers
+    composition_list (str): comma-separated list of metal counts
+                            - must match length of metals_list
     CE (float): cohesive energy of NP (in ev / atom)
     EE (float): excess energy of NP (in ev / atom)
-    ordering (string): string of 1's and 0's mapping atom type
-                       to Atoms skeleton
-                       - 1: metal2
-                       - 0: metal1
-                       - atoms of each NP are ordered with an index to
-                         ensure ordering maps correctly
+    ordering_string (str): string of ints mapping metal type
+                           to ase.Atoms skeleton
+                           - atoms of each NP are ordered with an index to
+                             ensure ordering maps correctly
 
-    Autofilled Columns:
-    id: primary key (unique)
+    ------------------
+    AUTOFILLED COLUMNS
+    ------------------
+    id (int): primary key (unique)
     num_atoms (int): number of atoms in NP (computed from ordering array)
     structure_id (int): Foreign key from Nanoparticles to link GA result
                         to a single NP
+    last_updated (datetime): tracks the last time the data was created/updated
 
     Mapped Properties:
     nanoparticle: (Nanoparticle Datatable entry) links to NP skeleton used
                   in GA sim (size, and shape constraints)
+
+    ----------
+    PROPERTIES
+    ----------
+    metals (np.ndarray): array[str] of unique metal types
+                         (metal order matches ordering numbers)
+    composition (np.ndarray): array[int] of metal counts (sum == num_atoms)
+    ordering (np.ndarray): array[int] of chemical ordering (maps to Atoms obj)
+    atoms_obj (ase.Atoms): atoms object representation of polymetallic NP
 
     -------
     METHODS
@@ -487,7 +493,7 @@ class PolymetallicResults(Base):
 
     save_np: saves atoms object of nanoparticle
         Args:
-            - path (str): path to save Atoms object (*.xyz, *.pdb, etc.)
+        path (str): path to save Atoms object (*.xyz, *.pdb, etc.)
 
     show: opens ase gui to visualize NP
     """
@@ -523,6 +529,14 @@ class PolymetallicResults(Base):
 
     def __init__(self, metals: Iterable[str], composition: Iterable[int],
                  CE: float, EE: float, ordering: Iterable[int]):
+        """
+        Args:
+        metals (Iterable[str]): ordered list of unique metal types
+        composition (Iterable[int]): metal counts (length >= (len(metals) - 1)
+        CE (float): cohesive energy of NP (eV / atom)
+        EE (float): excess energy of NP (eV / atom)
+        ordering (Iterable[int]): chemical ordering that maps metals to Atoms
+        """
         # DB column should be a string of comma-separated metals
         self.metals_list = ','.join(metals)
 
@@ -564,12 +578,24 @@ class PolymetallicResults(Base):
 
     @property
     def metals(self):
+        """
+        Read-only metals property
+
+        Returns:
+        (np.ndarray[str]): array of unique metal types
+        """
         if self._metals is None:
             self._metals = np.array([*map(str, self.metals_list.split(','))])
         return self._metals
 
     @property
     def composition(self):
+        """
+        Read-only metal composition property (i.e. metal counts)
+
+        Returns:
+        (np.ndarray[int]): array of metal counts
+        """
         if self._composition is None:
             self._composition = np.array(
                                     [*map(int,
@@ -579,6 +605,12 @@ class PolymetallicResults(Base):
 
     @property
     def ordering(self):
+        """
+        Chemical ordering property
+
+        Returns:
+        (np.ndarray[int]): ordering array
+        """
         # convert compressed_ordering to binary = actual_orderingstr
         if self._ordering is None:
             self._ordering = np.array([int(i) for i in self.ordering_string])
@@ -586,6 +618,15 @@ class PolymetallicResults(Base):
 
     @ordering.setter
     def ordering(self, ordering: Iterable):
+        """
+        Set chemical ordering property and update ordering_string column
+
+        Args:
+        ordering (Iterable): new chemical ordering list
+
+        Raises:
+        ValueError: invalid ordering array (wrong length | wrong values)
+        """
         if len(ordering) != self.num_atoms:
             raise ValueError("Invalid ordering length.")
         if int(max(ordering)) != len(self.metals) - 1:
@@ -598,12 +639,12 @@ class PolymetallicResults(Base):
     @property
     def atoms_obj(self):
         """
-        Returns ase.Atoms object of stable NP found
+        Read-only ase.Atoms object property
         - NP built with Nanoparticle.atoms_obj
-          and atom type added in using self.ordering
+          and atom type added in using metals and ordering arrays
 
         Returns:
-            (ase.Atoms): NP from entry
+        (ase.Atoms): NP from entry
         """
         if self._atoms_obj is None:
             self._atoms_obj = self.nanoparticle.atoms_obj.copy()
