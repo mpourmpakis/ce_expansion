@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import json
+from typing import Iterable
 
 import ase
 import ase.visualize
@@ -441,6 +442,260 @@ class BimetallicResults(Base):
         ase.visualize.view(self.build_atoms_obj())
 
 
+class PolymetallicResults(Base):
+    """
+    Bimetallic GA Simulation Results Datatable
+    - contains data for most stable structure found
+      (based on CE) at a given shape, size, and metal composition
+    - GA varies chemical ordering to find stable NP
+
+    Columns:
+    metal1 and metal2 (string(2)): metal element names that are always
+                                   converted to alphabetical order
+                                   - e.g. metal1 = Ag, metal2 = Cu
+    diameter (float): "diameter" of NP measured using (atom.cell.max() / 10)
+                      - units = nm
+                      - measured in ga.run_ga
+                      - NOTE: std measuring, but there might be a better way
+    n_metal1, n_metal2 (int): number of metal(1)(2) in NP
+                              - must add up to num_atoms
+                              - constrains composition of NP
+    CE (float): cohesive energy of NP (in ev / atom)
+    EE (float): excess energy of NP (in ev / atom)
+    ordering (string): string of 1's and 0's mapping atom type
+                       to Atoms skeleton
+                       - 1: metal2
+                       - 0: metal1
+                       - atoms of each NP are ordered with an index to
+                         ensure ordering maps correctly
+
+    Autofilled Columns:
+    id: primary key (unique)
+    num_atoms (int): number of atoms in NP (computed from ordering array)
+    structure_id (int): Foreign key from Nanoparticles to link GA result
+                        to a single NP
+
+    Mapped Properties:
+    nanoparticle: (Nanoparticle Datatable entry) links to NP skeleton used
+                  in GA sim (size, and shape constraints)
+
+    -------
+    METHODS
+    -------
+    get_chemical_formula: Returns chemical formula as string
+                          e.g. 'Ag12Au11Cu32'
+
+    save_np: saves atoms object of nanoparticle
+        Args:
+            - path (str): path to save Atoms object (*.xyz, *.pdb, etc.)
+
+    show: opens ase gui to visualize NP
+    """
+    __tablename__ = 'polymetallic_results'
+
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    metals_list = db.Column(db.String, nullable=False)
+    num_atoms = db.Column(db.Integer, nullable=False)
+    composition_list = db.Column(db.Integer, nullable=False)
+    CE = db.Column(db.Float, nullable=False)
+    EE = db.Column(db.Float)
+    structure_id = db.Column(db.Integer, db.ForeignKey('nanoparticles.id'),
+                             nullable=False)
+    ordering_string = db.Column(db.VARCHAR, nullable=False)
+    last_updated = db.Column(db.DateTime, default=datetime.now,
+                             onupdate=datetime.now)
+
+    # metals and composition array
+    # init _ attrs for use of getter-setters
+    metals = None
+    _metals = None
+
+    composition = None
+    _composition = None
+
+    # ordering array
+    ordering = None
+    _ordering = None
+
+    # attribute to store atoms object once it has been built
+    atoms_obj = None
+    _atoms_obj = None
+
+    def __init__(self, metals: Iterable[str], composition: Iterable[int],
+                 CE: float, EE: float, ordering: Iterable[int]):
+        # DB column should be a string of comma-separated metals
+        self.metals_list = ','.join(metals)
+
+        # metals attr is an array of metal strings
+        self._metals = np.array(list(metals))
+
+        # get num_atoms from length of ordering
+        self.num_atoms = len(ordering)
+
+        # cast composition to list
+        composition = list(composition)
+
+        # must give all compositions or len(metals) - 1 (due to DOF)
+        if len(self.metals) == len(composition):
+            # ensure composition is equal to number of atoms
+            if self.num_atoms != sum(composition):
+                raise ValueError("Composition does not match number of atoms")
+        elif len(self.metals) - len(composition) == 1:
+            # add the last composition based on total number of atoms
+            composition += [self.num_atoms - sum(composition)]
+        else:
+            raise ValueError("Invalid composition.")
+
+        # set composition attribute as np array
+        self._composition = np.array(list(composition))
+
+        # DB column is a comma-separated string of comps
+        self.composition_list = ','.join(map(str, composition))
+
+        # set CE and EE
+        self.CE = CE
+        self.EE = EE
+
+        # DB column is a string of ordering characters
+        self.ordering_string = ''.join(map(str, ordering))
+
+        # set ordering attr as np array
+        self._ordering = np.array(list(ordering))
+
+    @property
+    def metals(self):
+        if self._metals is None:
+            self._metals = np.array([*map(str, self.metals_list.split(','))])
+        return self._metals
+
+    @property
+    def composition(self):
+        if self._composition is None:
+            self._composition = np.array(
+                                    [*map(int,
+                                          self.composition_list.split(','))
+                                     ])
+        return self._composition
+
+    @property
+    def ordering(self):
+        # convert compressed_ordering to binary = actual_orderingstr
+        if self._ordering is None:
+            self._ordering = np.array([int(i) for i in self.ordering_string])
+        return self._ordering
+
+    @ordering.setter
+    def ordering(self, ordering: Iterable):
+        if len(ordering) != self.num_atoms:
+            raise ValueError("Invalid ordering length.")
+        if int(max(ordering)) != len(self.metals) - 1:
+            raise ValueError("Invalid ordering numbers. "
+                             f"Cannot exceed {len(self.metals) - 1}.")
+
+        self._ordering = np.array([int(i) for i in ordering])
+        self.ordering_string = ''.join(map(str, self._ordering))
+
+    @property
+    def atoms_obj(self):
+        """
+        Returns ase.Atoms object of stable NP found
+        - NP built with Nanoparticle.atoms_obj
+          and atom type added in using self.ordering
+
+        Returns:
+            (ase.Atoms): NP from entry
+        """
+        if self._atoms_obj is None:
+            self._atoms_obj = self.nanoparticle.atoms_obj.copy()
+            self._atoms_obj.symbols = self.metals[self.ordering]
+        return self._atoms_obj
+
+    def get_chemical_formula(self, latex=False, bold=False):
+        """
+        Returns chemical formula of polymetallic NP
+        in alphabetical order (similar to ase's Atoms.get_chemical_formula)
+        - e.g. Ag6Au7
+
+        KArgs:
+        latex (bool): if True, chemical formula is returned in Latex Math form
+                      (Default: False)
+        bold (bool): if True, latex string will have bold font key
+                     (Default: False)
+
+        Returns:
+            (str): chemical formula
+        """
+        if latex:
+            form = '$\\rm '
+            form += ''.join([f'{m}_{{{n}}}' for m, n
+                             in zip(self.metals, self.composition)])
+            form += '$'
+            if bold:
+                form = form.replace('\\rm', '\\rm \\bf')
+            return form
+        return ''.join([f'{m}{n}' for m, n
+                        in zip(self.metals, self.composition)])
+
+    def save_np(self, path):
+        """
+        Saves stable NP to desired path
+        - uses ase to save
+        - supports all ase save types
+          e.g. xyz, pdb, png, etc.
+
+        Returns:
+            (bool): True if saved successfully
+        """
+        # save a chemical json file
+        if path.endswith('json'):
+            path = path.replace('.json', '.cjson')
+            # create name
+            name = self.get_chemical_formula()
+            name += '_' + self.nanoparticle \
+                              .shape.lower()[:3].replace('elo', 'epb')
+
+            # create chemical JSON formula string
+            formula = ' '.join(f'{n} {m}' for n, m
+                               in zip(self.metals, self.composition))
+
+            # create list of atomic numbers
+            numbers = self.atoms_obj.numbers.tolist()
+
+            symbols = list(self.atoms_obj.symbols)
+
+            positions = self.atoms_obj.positions.flatten().tolist()
+
+            data = {'chemical json': 0,
+                    'name': name,
+                    'formula': formula,
+                    'atoms': {'elements': {'number': numbers,
+                                           'type': symbols},
+                              'coords': {'3d': positions}
+                              },
+                    'properties': {'cohesive energy': self.CE,
+                                   'excess energy': self.EE,
+                                   'shape': self.shape.lower()}
+                    }
+            with open(path, 'w') as fidw:
+                json.dump(data, fidw, indent=4)
+        # else save geometry file
+        else:
+            # get ase Atoms object
+            atom = self.atoms_obj.copy()
+            atom.info['shape'] = self.nanoparticle.shape
+            atom.info['CE'] = self.CE
+            atom.info['EE'] = self.EE
+            atom.info['composition'] = self.composition
+            atom.write(path)
+        return True
+
+    def show(self):
+        """
+        Shows nanoparticle using ase.visualize.view
+        """
+        ase.visualize.view(self.atoms_obj)
+
+
 class Nanoparticles(Base):
     """
     Nanoparticles (NP) Skeleton Datatable
@@ -477,6 +732,8 @@ class Nanoparticles(Base):
     bimetallic_results = db.orm.relationship('BimetallicResults',
                                              backref='nanoparticle')
 
+    polymetallic_results = db.orm.relationship('PolymetallicResults',
+                                               backref='nanoparticle')
     # used to attach bond_list to data entry
     # does not store bond_list in DB
     bonds_list = None
