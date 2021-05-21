@@ -37,9 +37,9 @@ def commit_changes(session, raise_exception=False):
         return False
 
 
-def sort_metals(metals):
+def sort_2metals(metals):
     """
-    Handles iterable or string of metals and returns them
+    Handles iterable or string of 2 metals and returns them
     in alphabetical order
 
     Args:
@@ -52,6 +52,8 @@ def sort_metals(metals):
     if metals is None:
         return None, None
     if isinstance(metals, str):
+        if len(metals) != 4:
+            raise ValueError('str can only have two elements.')
         metal1, metal2 = sorted([metals[:2], metals[2:]])
     else:
         metal1, metal2 = sorted(metals)

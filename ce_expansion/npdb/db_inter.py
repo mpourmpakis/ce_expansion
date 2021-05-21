@@ -270,7 +270,7 @@ def build_coefficient_dict(metals):
     Returns:
     - (dict): coefficient dictionary for GA sim
     """
-    metal1, metal2 = db_utils.sort_metals(metals)
+    metal1, metal2 = db_utils.sort_2metals(metals)
 
     # homoatomic half bond energies
     res_aa = get_model_coefficient(metal1, metal1)
@@ -353,7 +353,7 @@ def build_new_structs_plot(metal_opts, shape_opts, pct=False,
     i = 0
     tot_lines = len(metal_opts) * len(shape_opts)
     for j, m in enumerate(metal_opts):
-        metal1, metal2 = db_utils.sort_metals(m)
+        metal1, metal2 = db_utils.sort_2metals(m)
         for point, shape in zip(['o', 'x', '^', 's'], shape_opts):
             # use abbreviated names for shapes
             lbl_shape = shape.upper()[:3]
@@ -456,7 +456,7 @@ def build_srf_plot(metals, shape, T=None):
     Returns:
     - (plt.figure): figure of 3D surface plot
     """
-    metal1, metal2 = db_utils.sort_metals(metals)
+    metal1, metal2 = db_utils.sort_2metals(metals)
 
     # build pd.DataFrame of all results that match criteria
     runs = session.query(tbl.BimetallicResults.diameter,
@@ -658,7 +658,7 @@ def get_bimet_log(metals=None, shape=None, date=None, lim=None,
     - (BimetallicResults)(s) if match is found else (None)
     """
     # get sorted metals
-    metal1, metal2 = db_utils.sort_metals(metals)
+    metal1, metal2 = db_utils.sort_2metals(metals)
     return get_entry(tbl.BimetallicLog, metal1=metal1, metal2=metal2,
                      shape=shape, date=date, lim=lim,
                      return_query=return_query)
@@ -701,7 +701,7 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
         custom_filter = only_bimet
 
     # get sorted metals
-    metal1, metal2 = db_utils.sort_metals(metals)
+    metal1, metal2 = db_utils.sort_2metals(metals)
 
     return get_entry(tbl.BimetallicResults, metal1=metal1, metal2=metal2,
                      shape=shape, num_atoms=num_atoms, n_metal1=n_metal1,
@@ -917,7 +917,7 @@ def update_bimet_result(metals, shape, num_atoms,
     elif not allow_insert:
         return
     else:
-        metal1, metal2 = db_utils.sort_metals(metals)
+        metal1, metal2 = db_utils.sort_2metals(metals)
         res = tbl.BimetallicResults(
             metal1=metal1,
             metal2=metal2,
