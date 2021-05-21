@@ -677,6 +677,8 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
     - metals (str || iterable): two metal elements
     - shape (str): shape of NP
     - num_atoms (int): number of atoms in NP
+    - num_shells (int): number of shells used to build NP
+                        from structure_gen module
     - n_metal1 (int): number of metal1 atoms in NP
     - lim (int): max number of entries returned
                  (default: None = no limit)
