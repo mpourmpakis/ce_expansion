@@ -7,7 +7,21 @@ import ase.units
 
 
 def recursive_update(d, u):
-    #Function found by team to update Gamma and Bulk Values
+    """
+    recursively updates 'dict of dicts'
+    Ex)
+    d = {0: {1: 2}}
+    u = {0: {3: 4}, 8: 9}
+
+    recursive_update(d, u) == {0: {1: 2, 3: 4}, 8: 9}
+
+    Args:
+    d (dict): the nested dict object to update
+    u (dict): the nested dict that contains new key-value pairs
+
+    Returns:
+    d (dict): the final updated dict
+    """
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
             d[k] = recursive_update(d.get(k, {}), v)
@@ -26,10 +40,12 @@ class BCModel:
             bond_list: a CSV containing the bond data
         KArgs:
             metal_types: List of metals found within the nano-particle
+                - If not passed, will use elements provided by the atoms object
         """
 
         self.atoms = atoms
         self.bond_list = bond_list
+        self.cn = np.bincount(self.bond_list[:, 0])
 
         if metal_types is None:
             # get metal_types from atoms object
@@ -37,9 +53,6 @@ class BCModel:
         else:
             # ensure metal_types to unique, sorted list of metals
             self.metal_types = sorted(set(metal_types))
-
-        self.metal_pairs = list(itertools.combinations_with_replacement(
-                                    self.metal_types, 2))
 
         # creating gamma list for every possible atom pairing
         self.gamma = None
@@ -49,6 +62,7 @@ class BCModel:
         # Calculate and set the precomps matrix
         self.precomps = None
         self.precomps = self._calc_precomps()
+        self.CN_precomps = np.sqrt(self.cn * 12)
 
     def __len__(self):
         return len(self.atoms)
@@ -63,7 +77,7 @@ class BCModel:
         """
         gamma = {}
         ce_bulk = {}
-        for item in self.metal_pairs:
+        for item in itertools.combinations_with_replacement(self.metal_types, 2):
             # Casting metals and setting keys for dictionary
             metal_1, metal_2 = item
 
@@ -117,17 +131,12 @@ class BCModel:
 
         """
 
-        # determine CN Values
-        (atom_CN, bond_CN) = np.hsplit(self.bond_list, 2)
-        (CN_Vals, CN) = np.unique(bond_CN, return_counts=True)
-
         a1 = self.bond_list[:, 0]
         a2 = self.bond_list[:, 1]
 
         # creating bond orderings
-        return (self.precomps[orderings[a1], orderings[a2]] / np.sqrt(12 * CN[a1])).sum() / len(self.atoms)
-
-    def calc_ee(self, orderings=None):
+        return (self.precomps[orderings[a1], orderings[a2]] / self.CN_precomps[a1]).sum() / len(self.atoms)
+    def calc_ee(self, orderings):
         """
             Calculates the Excess energy of the ordering given or of the default ordering of the NP
 
@@ -135,15 +144,10 @@ class BCModel:
 
         Args:
             orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
-                - Will use ardering defined by atom if not given an ordering
 
         Returns: Excess Energy
 
         """
-
-        # If orderings = none, ensure tested atoms object contains desired orderings to test
-        if orderings is None:
-            orderings = [test_of_bcm.metal_types.index(x) for x in atoms.symbols]
 
         metals = np.bincount(orderings)
 
@@ -161,24 +165,17 @@ class BCModel:
             ee -= self.calc_ce(o_mono_x) * x_ele
         return(ee)
 
-    def calc_smix(self, orderings=None):
+    def calc_smix(self, orderings):
         """
-        compositions = np.bincount(ordering) / len(ordering)
 
-        kb = ase.units.Kb
-        smix = -kb * sum(xi * ln(xi) for xi in compositions)
-        sum(compositions) == 1
+        Uses boltzman constant, orderings, and element compositions to determine the smix of the nanoparticle
 
-        Boltzmann constant
-
-        smix units = eV / (K * atom)
+        Args:
+            orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
 
         Returns: entropy of mixing (smix)
 
         """
-        # If orderings = none, ensure tested atoms object contains desired orderings to test
-        if orderings is None:
-            orderings = [test_of_bcm.metal_types.index(x) for x in atoms.symbols]
 
         x_i = np.bincount(orderings) / len(orderings)
 
@@ -193,9 +190,12 @@ class BCModel:
 
     def calc_gmix(self, orderings, T=298):
         """
+
         gmix = self.ee - T * self.calc_smix(ordering)
+
         Args:
             T: Temperature of the system in Kelvin; Defaults at room temp of 25 C
+            orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
 
         Returns: free energy of mixing (gmix)
 

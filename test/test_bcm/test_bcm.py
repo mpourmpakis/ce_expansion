@@ -4,7 +4,6 @@ from ce_expansion.atomgraph.bcm import BCModel
 import numpy as np
 import os
 from pprint import pprint
-
 import ase.units as units
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,9 +13,6 @@ res = db_inter.get_bimet_result('AuCu', 'icosahedron', 55, n_metal1=22)
 atoms = res.atoms_obj
 bond_list = res.nanoparticle.bonds_list
 metal_types = ['Cu', 'Au', "Ag"]
-
-import ase.visualize
-#ase.visualize.view(atoms)
 
 # STEP 1
 # create a BCModel object
