@@ -52,7 +52,7 @@ class BCModel:
             self.metal_types = sorted(set(atoms.symbols))
         else:
             # ensure metal_types to unique, sorted list of metals
-            self.metal_types = sorted(set(metal_types))
+            self.metal_types = sorted(set(m.title() for m in metal_types))
 
         # creating gamma list for every possible atom pairing
         self.gamma = None
@@ -62,7 +62,7 @@ class BCModel:
         # Calculate and set the precomps matrix
         self.precomps = None
         self.precomps = self._calc_precomps()
-        self.CN_precomps = np.sqrt(self.cn * 12)
+        self.cn_precomps = np.sqrt(self.cn * 12)
 
     def __len__(self):
         return len(self.atoms)
@@ -135,7 +135,7 @@ class BCModel:
         a2 = self.bond_list[:, 1]
 
         # creating bond orderings
-        return (self.precomps[orderings[a1], orderings[a2]] / self.CN_precomps[a1]).sum() / len(self.atoms)
+        return (self.precomps[orderings[a1], orderings[a2]] / self.cn_precomps[a1]).sum() / len(self.atoms)
     def calc_ee(self, orderings):
         """
             Calculates the Excess energy of the ordering given or of the default ordering of the NP

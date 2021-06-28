@@ -57,7 +57,7 @@ import ase.io as io
 
 ordering1 = np.zeros(len(bcm),int)
 ordering2 = np.ones(len(bcm),int)
-ordering3 = (atoms.symbols == metal_types[1]).astype(int)
+ordering3 = (atoms.symbols == bcm.metal_types[1]).astype(int)
 ce1 = bcm.calc_ce(ordering1)
 ce2 = bcm.calc_ce(ordering2)
 ce3 = bcm.calc_ce(ordering3)
