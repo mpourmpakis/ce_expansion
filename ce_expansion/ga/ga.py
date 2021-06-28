@@ -15,7 +15,7 @@ import numpy as np
 from ase.data.colors import jmol_colors
 import ase.visualize
 
-from ce_expansion.atomgraph import atomgraph
+from ce_expansion.atomgraph.bcm import BCModel
 from ce_expansion.ga import structure_gen
 from ce_expansion.npdb import db_inter
 
@@ -26,13 +26,13 @@ CENTER = 50
 
 
 class Chromo(object):
-    def __init__(self, atomg, n_metal2=0, ordering=None, x_metal2=None):
+    def __init__(self, bcm, n_metal2=0, ordering=None, x_metal2=None):
         """
         Chromosome object for GA simulations
         Represents a single structure with a given chemical ordering (arr)
 
         Args:
-        - atomg:
+        - bcm:
 
         Kargs:
         - n_metal2 (int): number of metal2 (atom depicted by 1 in ordering)
@@ -48,8 +48,8 @@ class Chromo(object):
         Raises:
                 ValueError: n_metal2 is greater than total atoms
         """
-        self.atomg = atomg
-        self.num_atoms = atomg.num_atoms
+        self.bcm = bcm
+        self.num_atoms = len(self.bcm)
         if x_metal2 is not None:
             assert 0 <= x_metal2 <= 1, "x_metal2: [0, 1]"
             self.n_metal2 = np.array([self.num_atoms * x_metal2]
@@ -87,7 +87,7 @@ class Chromo(object):
         Returns:
         - (Chromo): exact copy of the Chromo object
         """
-        return Chromo(self.atomg, self.n_metal2, ordering=self.ordering.copy())
+        return Chromo(self.bcm, self.n_metal2, ordering=self.ordering.copy())
 
     def mutate(self, n_swaps=1):
         """
@@ -99,10 +99,10 @@ class Chromo(object):
                          (Default: 1)
 
         Raises:
-        - ValueError: if not AtomGraph, Chromo can not and
+        - ValueError: if not bcmraph, Chromo can not and
                       should not be mutated
         """
-        if not self.atomg:
+        if not self.bcm:
             raise ValueError("Mutating Chromo should only be done through"
                              "Pop simulations")
 
@@ -215,9 +215,9 @@ class Chromo(object):
         assert (child1.sum() == child2.sum() ==
                 self.n_metal2 == chromo2.n_metal2)
 
-        children = [Chromo(self.atomg, n_metal2=self.n_metal2,
+        children = [Chromo(self.bcm, n_metal2=self.n_metal2,
                            ordering=child1.copy()),
-                    Chromo(self.atomg, n_metal2=self.n_metal2,
+                    Chromo(self.bcm, n_metal2=self.n_metal2,
                            ordering=child2.copy())]
         return children
 
@@ -226,13 +226,13 @@ class Chromo(object):
         Returns CE of structure based on Bond-Centric Model
         - Yan, Z. et al., Nano Lett. 2018, 18 (4), 2696-2704.
         """
-        self.ce = self.atomg.getTotalCE(self.ordering)
+        self.ce = self.bcm.calc_ce(self.ordering)
 
 
 class Pop(object):
     def __init__(self, atom, bond_list, metals, shape, n_metal2=1,
                  popsize=50, mute_pct=0.8, n_mute_atomswaps=None, spike=False,
-                 x_metal2=None, random=False, num_shells=None, atomg=None,
+                 x_metal2=None, random=False, num_shells=None, bcm=None,
                  e=1, save_every=100, use_metropolis=True):
         """
         Bimetallic nanoparticle genetic algorithm population
@@ -301,8 +301,11 @@ class Pop(object):
         self.metal1 = self.metals[0]
         self.metal2 = self.metals[1]
 
-        # create AtomGraph instance
-        self.atomg = atomg if atomg is not None else self.__make_atomg__()
+        # create bcmraph instance
+        if bcm is None:
+            self.bcm = self.__make_bcm__()
+        else:
+            self.bcm = bcm
 
         # determine number of metal2
         # use x_metal2 if passed in
@@ -370,28 +373,24 @@ class Pop(object):
     def __getitem__(self, i):
         return self.pop[i]
 
-    def __make_atomg__(self):
+    def __make_bcm__(self):
         """
-        Initializes AtomGraph object (used to calc fitness)
+        Initializes BCM object (used to calc fitness)
 
         Returns:
-        - (AtomGraph)
+        - (BCModel)
         """
-        return atomgraph.AtomGraph(self.bond_list,
-                                   self.metal1,
-                                   self.metal2)
+        return BCModel(self.atom, self.bond_list, self.metals)
 
-    def reload_atomg(self):
+    def reload_bcm(self):
         """
-        Used to reinitialize AtomGraph objects
+        Used to reinitialize bcmraph objects
         in self and two lists of Chromos
         """
 
-        self.atomg = self.__make_atomg__()
+        self.bcm = self.__make_bcm__()
         for c in self.pop:
-            c.atomg = self.__make_atomg__()
-        # for c2 in self.min_struct_ls:
-        #     c2.atomg = self.__make_atomg__()
+            c.bcm = self.__make_bcm__()
 
     def initialize_new_run(self):
         """
@@ -452,12 +451,12 @@ class Pop(object):
         # also check to see if current min xyz path was given
         elif not self.random and self.spike:
             # min CN
-            mincn = Chromo(self.atomg, n_metal2=self.n_metal2,
-                           ordering=fill_cn(self.atomg, self.n_metal2,
+            mincn = Chromo(self.bcm, n_metal2=self.n_metal2,
+                           ordering=fill_cn(self.bcm, self.n_metal2,
                                             low_first=True, return_n=1)[0])
             # max CN
-            maxcn = Chromo(self.atomg, n_metal2=self.n_metal2,
-                           ordering=fill_cn(self.atomg, self.n_metal2,
+            maxcn = Chromo(self.bcm, n_metal2=self.n_metal2,
+                           ordering=fill_cn(self.bcm, self.n_metal2,
                                             low_first=False, return_n=1)[0])
 
             self.pop.append(min([mincn, maxcn], key=lambda i: i.ce))
@@ -465,14 +464,14 @@ class Pop(object):
             # add current min CE structure if path exists not monometallic
             if self.prev_results and self.n_metal2 not in [0, self.num_atoms]:
                 self.pop += [Chromo(
-                    self.atomg,
+                    self.bcm,
                     self.n_metal2,
                     ordering=np.array(
                         [int(i) for i
                          in self.prev_results.ordering]))]
 
         # create random structures for remaining popsize
-        self.pop += [Chromo(self.atomg, n_metal2=self.n_metal2)
+        self.pop += [Chromo(self.bcm, n_metal2=self.n_metal2)
                      for i in range(self.popsize - len(self.pop))]
 
     def get_min(self):
@@ -505,7 +504,7 @@ class Pop(object):
             mates += m[0].mate(m[1])
         # keep the previous minimum
         self.pop = [self[0]] + mates
-        self.pop += [Chromo(self[0].atomg, n_metal2=self.n_metal2)
+        self.pop += [Chromo(self[0].bcm, n_metal2=self.n_metal2)
                      for z in range(self.popsize - len(self.pop))]
         self.pop = self[:self.popsize]
 
@@ -583,9 +582,9 @@ class Pop(object):
             raise ValueError("max_gens and max_nochange cannot both be "
                              "turned off (equal: -1)")
 
-        # atomg might be None from loading a pickled Pop object
-        if self.atomg is None:
-            self.reload_atomg()
+        # bcm might be None from loading a pickled Pop object
+        if self.bcm is None:
+            self.reload_bcm()
 
         self.max_gens = max_gens
 
@@ -594,7 +593,7 @@ class Pop(object):
         nochange = 0
 
         # no GA required for monometallic systems
-        if self.n_metal2 not in [0, self.atomg.num_atoms]:
+        if self.n_metal2 not in [0, len(self.bcm)]:
             """ALL DATA ADDED"""
             self.all_data[self.generation] = [i.ce for i in self]
             start = time.time()
@@ -634,7 +633,7 @@ class Pop(object):
             if not self.random and self.use_metropolis:
                 best = self[0]
                 best_ordering = best.ordering.copy()
-                opt_order, opt_ce, en_hist = self.atomg.metropolis(
+                opt_order, opt_ce, en_hist = self.bcm.metropolis(
                     best_ordering,
                     num_steps=5000,
                     swap_any=False)
@@ -643,7 +642,7 @@ class Pop(object):
                 # drop bottom one from pop
                 if opt_ce < best.ce:
                     print('Found new min with Metropolis!')
-                    self.pop = [Chromo(self.atomg,
+                    self.pop = [Chromo(self.bcm,
                                        n_metal2=self.n_metal2,
                                        ordering=opt_order)] + self[:-1]
                     assert self.pop == sorted(self.pop, key=lambda i: i.ce)
@@ -673,9 +672,9 @@ class Pop(object):
                           -1: no minimum
                           (Default: -1)
         """
-        # remake AtomGraph objects
-        if not self.atomg:
-            self.reload_atomg()
+        # remake bcmraph objects
+        if not self.bcm:
+            self.reload_bcm()
 
         self.has_run = False
         self.stats = list(self.stats)
@@ -701,7 +700,7 @@ class Pop(object):
         self.stats.append([s.min(),  # minimum CE
                            s.mean(),  # mean CE
                            s.std()])  # STD CE
-        # self.min_struct_ls.append(Chromo(self.atomg, self.n_metal2,
+        # self.min_struct_ls.append(Chromo(self.bcm, self.n_metal2,
         #                                  ordering=self[0].ordering.copy()))
 
     def is_new_min(self, check_db=True):
@@ -730,14 +729,14 @@ class Pop(object):
         path (str): path to save pickle file
                     - can include filename
         """
-        # Pop cannot be pickled with an AtomGraph instance
-        self.atomg = None
+        # Pop cannot be pickled with an bcmraph instance
+        self.bcm = None
 
-        # remove AtomGraph from Chromos
+        # remove bcmraph from Chromos
         for c in self.pop:
-            c.atomg = None
+            c.bcm = None
         # for c2 in self.min_struct_ls:
-        #     c2.atomg = None
+        #     c2.bcm = None
 
         # if path doesn't include a filename, make one
         if not path.endswith('.pickle'):
@@ -748,8 +747,8 @@ class Pop(object):
         with open(path, 'wb') as fidw:
             pickle.dump(self, fidw, protocol=pickle.HIGHEST_PROTOCOL)
 
-        # reload AtomGraph after saving pickle
-        self.reload_atomg()
+        # reload bcmraph after saving pickle
+        self.reload_bcm()
 
     def summ_results(self, disp=False):
         """
@@ -904,9 +903,9 @@ class Pop(object):
                                                  self.num_shells)
 
         ce = best.ce
-        assert ce == best.atomg.getTotalCE(best.ordering)
+        assert ce == best.bcm.getTotalCE(best.ordering)
 
-        ee = best.atomg.getEE(best.ordering)
+        ee = best.bcm.getEE(best.ordering)
 
         # update DB
         db_inter.update_bimet_result(
@@ -947,8 +946,8 @@ def load_pop(path):
         unpickler = pickle.Unpickler(fid)
         pop = unpickler.load()
 
-    # reload AtomGraph object
-    pop.reload_atomg()
+    # reload bcmraph object
+    pop.reload_bcm()
     return pop
 
 
@@ -969,9 +968,9 @@ def make_file(atom, chrom, path, verbose=False, filetype="xyz"):
     Returns: None
     """
     atom = atom.copy()
-    metal1, metal2 = chrom.atomg.symbols
+    metal1, metal2 = chrom.bcm.metal_types
     atom.info['CE'] = chrom.ce
-    atom.info['EE'] = chrom.atomg.getEE(chrom.ordering)
+    atom.info['EE'] = chrom.bcm.calc_ee(chrom.ordering)
     atom.set_tags(None)
     for i, dope in enumerate(chrom.ordering):
         atom[i].symbol = metal2 if dope else metal1
@@ -994,13 +993,13 @@ def make_file(atom, chrom, path, verbose=False, filetype="xyz"):
     return atom
 
 
-def xyz_to_chrom(atomg, path):
+def xyz_to_chrom(bcm, path):
     """
     Method used to create Chromo of *.xyz
-    using AtomGraph and *.xyz path
+    using bcmraph and *.xyz path
 
     Args:
-    - atomg (atomgraph.AtomGraph): AtomGraph obj
+    - bcm (bcmraph.bcmraph): bcmraph obj
     - path (str): path to *.xyz file
 
     Returns:
@@ -1016,16 +1015,16 @@ def xyz_to_chrom(atomg, path):
     # 1-0 ordering of structure
     ordering = np.array([int(i.symbol == metal2) for i in atom_obj])
 
-    return Chromo(atomg, n_metal2=sum(arr), ordering=ordering)
+    return Chromo(bcm, n_metal2=sum(arr), ordering=ordering)
 
 
-def gen_random(atomg, n_metal2, n=500):
+def gen_random(bcm, n_metal2, n=500):
     """
     Generates random structures (constrained by size, shape, and concentration)
     and returns minimum structure and stats on CEs
 
     Args:
-    - atomg (atomgraph.AtomGraph): AtomGraph object
+    - bcm (bcmraph.bcmraph): bcmraph object
     - n_metal2 (int): number of metal2 in nanoparticle
     - n (int): sample size
 
@@ -1033,7 +1032,7 @@ def gen_random(atomg, n_metal2, n=500):
     - (Chrom), (np.ndarray): Chrom object of minimum structure found
                              1D array of all CEs calculated in sample
     """
-    if n_metal2 in [0, atomg.num_atoms]:
+    if n_metal2 in [0, bcm.num_atoms]:
         n = 1
     scores = np.zeros(n)
 
@@ -1041,10 +1040,10 @@ def gen_random(atomg, n_metal2, n=500):
     min_struct = None
     min_ce = 10
     for i in range(n):
-        c = Chromo(atomg, n_metal2=n_metal2)
+        c = Chromo(bcm, n_metal2=n_metal2)
         scores[i] = c.ce
         if c.ce < min_ce:
-            min_struct = Chromo(atomg, n_metal2=n_metal2,
+            min_struct = Chromo(bcm, n_metal2=n_metal2,
                                 ordering=c.ordering.copy())
             min_ce = min_struct.ce
     return min_struct, scores
@@ -1067,13 +1066,13 @@ def ncr(n, r):
     return numer // denom
 
 
-def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
+def fill_cn(bcm, n_metal2, max_search=50, low_first=True, return_n=None,
             verbose=False):
     """
     Algorithm to fill the lowest (or highest) coordination sites with 'metal2'
 
     Args:
-    - atomg (atomgraph.AtomGraph): AtomGraph object
+    - bcm (bcmraph.bcmraph): bcmraph object
     - n_metal2 (int): number of dopants
 
     Kargs:
@@ -1100,18 +1099,18 @@ def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
     - ValueError: not enough options to produce <return_n> sample size
     """
     # handle monometallic cases efficiently
-    if n_metal2 in [0, atomg.num_atoms]:
+    if n_metal2 in [0, bcm.num_atoms]:
         # all '0's if no metal2, else all '1' since all metal2
-        struct_min = [np.zeros, np.ones][bool(n_metal2)](atomg.num_atoms)
+        struct_min = [np.zeros, np.ones][bool(n_metal2)](bcm.num_atoms)
         struct_min = struct_min.astype(int)
-        ce = atomg.getTotalCE(struct_min)
+        ce = bcm.getTotalCE(struct_min)
         checkall = True
     else:
-        cn_list = atomg.cns
+        cn_list = bcm.cns
         cnset = sorted(set(cn_list))
         if not low_first:
             cnset = cnset[::-1]
-        struct_min = np.zeros(atomg.num_atoms).astype(int)
+        struct_min = np.zeros(bcm.num_atoms).astype(int)
         ce = None
         for cn in cnset:
             spots = np.where(cn_list == cn)[0]
@@ -1159,7 +1158,7 @@ def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
                     else:
                         pick = random.sample(list(spots), n_metal2)
                     base[pick] = 1
-                    checkce = atomg.getTotalCE(base)
+                    checkce = bcm.getTotalCE(base)
                     if checkce < low:
                         low = checkce
                         low_struct = base.copy()
@@ -1170,7 +1169,7 @@ def fill_cn(atomg, n_metal2, max_search=50, low_first=True, return_n=None,
                 struct_min[spots] = 1
                 n_metal2 -= len(spots)
     if not ce:
-        ce = atomg.getTotalCE(struct_min)
+        ce = bcm.getTotalCE(struct_min)
     if return_n:
         return [struct_min]
     return struct_min, ce
@@ -1312,14 +1311,14 @@ def run_ga(metals, shape, save_data=True,
     tot_structs = 0
 
     for struct_i, nshells in enumerate(range(*nshell_range)):
-        # build atom, adjacency list, and atomgraph
+        # build atom, adjacency list, and bcmraph
         nanop = structure_gen.build_structure_sql(shape, nshells,
                                                   build_bonds_list=True)
         num_atoms = len(nanop)
 
         diameter = nanop.get_diameter()
 
-        ag = atomgraph.AtomGraph(nanop.bonds_list, metal1, metal2)
+        ag = bcmraph.bcmraph(nanop.bonds_list, metal1, metal2)
 
         # check to see if monometallic results exist
         # if not, calculate them
@@ -1474,8 +1473,8 @@ def check_db_values(update_db=False, metal_opts=None):
             if not results:
                 continue
 
-            # else create AtomGraph object
-            atomg = atomgraph.AtomGraph(nanop.bonds_list,
+            # else create bcmraph object
+            bcm = bcmraph.bcmraph(nanop.bonds_list,
                                         metals[0], metals[1])
 
             # iterate over results to compare CE in databse vs.
@@ -1483,8 +1482,8 @@ def check_db_values(update_db=False, metal_opts=None):
             for res in results:
                 ordering = np.array(list(map(int, res.ordering)))
                 n_metal2 = ordering.sum()
-                actual_ce = atomg.getTotalCE(ordering)
-                actual_ee = atomg.getEE(ordering)
+                actual_ce = bcm.getTotalCE(ordering)
+                actual_ee = bcm.getEE(ordering)
 
                 # increment number of results checkered
                 num_checked += 1
@@ -1791,7 +1790,7 @@ def vis_FePt_results(pcty=False):
     shape = 'fept'
 
     # initialize atom graph
-    ag = atomgraph.AtomGraph(bonds.copy(), 'Fe', 'Pt')
+    ag = bcmraph.bcmraph(bonds.copy(), 'Fe', 'Pt')
 
     # get ordering
     orig_order = (orig.symbols == 'Pt').astype(int)
@@ -1884,7 +1883,7 @@ def test_FePt_nanop():
     shape = 'fept'
 
     # initialize atom graph
-    ag = atomgraph.AtomGraph(bonds.copy(), 'Fe', 'Pt')
+    ag = bcmraph.bcmraph(bonds.copy(), 'Fe', 'Pt')
 
     # number of Platinum (metal 2) atoms
     n_metal2 = sum(atom.symbols == 'Pt')
@@ -1899,7 +1898,7 @@ def test_FePt_nanop():
 
     # initialize and run GA
     pop = Pop(atom, bonds.copy(), metals, shape,
-              n_metal2=n_metal2, atomg=ag)
+              n_metal2=n_metal2, bcm=ag)
 
     # GA simulation
     max_nochange = 500
@@ -1914,13 +1913,13 @@ def test_FePt_nanop():
         fid.write('    Runtime: %.3f\n' % pop.runtime)
         fid.write('     N Gens: %i\n' % pop.max_gens)
         fid.write('         CE: %.5f\n' % pop[0].ce)
-        fid.write('         EE: %.5f' % pop.atomg.getEE(pop[0].ordering))
+        fid.write('         EE: %.5f' % pop.bcm.getEE(pop[0].ordering))
 
     # simulate random pop for same gens as GA
     max_gens = pop.max_gens
 
     randpop = Pop(atom, bonds.copy(), metals, shape,
-                  n_metal2=n_metal2, atomg=ag, random=True)
+                  n_metal2=n_metal2, bcm=ag, random=True)
     randpop.run(max_gens=max_gens, max_nochange=-1)
 
     make_file(randpop.atom, randpop[0], os.path.join(fept_path, 'random.xyz'))
@@ -1935,8 +1934,17 @@ def test_FePt_nanop():
 
 
 if __name__ == '__main__':
-    check_db_values()
-    for r in plt.rcParams:
-        if plt.rcParams[r] == 'bold':
-            plt.rcParams[r] = 'normal'
-    # vis_FePt_results(True)
+    # pop = build_pop_obj(['Ag', 'Cu'], shape='icosahedron', num_shells=9, n_metal2=1635)
+    # pop.run()
+    # pop.plot_results()
+    # plt.show()
+
+    # import pathlib
+    desk = pathlib.Path.home() / 'Desktop'
+    # benchmark_plot(path=desk, save=True, max_gens=200)
+    # plt.show()
+
+    fig , ax = scaling_plot()
+    fig.savefig(desk / "Hello.png")
+    plt.show()
+
