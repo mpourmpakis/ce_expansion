@@ -10,6 +10,7 @@ import numpy as np
 import sqlalchemy as db
 from ase.data import chemical_symbols, covalent_radii
 from ase.data.colors import jmol_colors
+import ase.units as units
 
 from ce_expansion.npdb.base import Base
 from ce_expansion.atomgraph import adjacency
@@ -107,6 +108,10 @@ class BimetallicResults(Base):
     atoms_obj = None
     _atoms_obj = None
 
+    # store Smix
+    smix = None
+    _smix = None
+
     def __init__(self, metal1, metal2, shape, num_atoms, diameter,
                  n_metal1, n_metal2, CE, EE, ordering):
         self.metal1, self.metal2 = sorted([metal1, metal2])
@@ -125,16 +130,36 @@ class BimetallicResults(Base):
         if self._actual_ordering is None:
             self._actual_ordering = f'{int(self.compressed_ordering):b}'
             self._actual_ordering = self._actual_ordering.zfill(self.num_atoms)
+            self._actual_ordering = np.array(list(self._actual_ordering), int)
         return self._actual_ordering
 
     @ordering.setter
-    def ordering(self, val):
-        self._actual_ordering = val
-        self.compressed_ordering = str(int(val, 2))
+    def ordering(self, ordering):
+        # ordering must be str or iterable
+        if isinstance(ordering, str):
+            ordering_str = ordering
+            ordering = np.array(list(ordering), int)
+        elif isinstance(ordering, Iterable):
+            ordering_str = ''.join(map(str, ordering))
+        else:
+            raise ValueError("Invalid ordering! Must be array of ints or str.")
+
+        # set compressed ordering using str representation
+        self.compressed_ordering = str(int(ordering_str, 2))
+        # set actual ordering attr to array of ints
+        self._actual_ordering = ordering
 
     @property
     def atoms_obj(self):
         return self.get_atoms_obj()
+
+    @property
+    def smix(self):
+        if self._smix is None:
+            # get atomic percent, x
+            x = np.bincount(self.ordering) / self.num_atoms
+            self._smix = -units.kB * (x * np.log(x)).sum()
+        return self._smix
 
     def get_atoms_obj(self):
         """
@@ -180,6 +205,9 @@ class BimetallicResults(Base):
             return form
         return '%s%i%s%i' % (self.metal1, self.n_metal1,
                              self.metal2, self.n_metal2)
+
+    def get_gmix(self, T=298):
+        return self.EE - T * self.smix
 
     def build_chem_formula(self, latex=False, bold=False):
         """
@@ -456,8 +484,9 @@ class PolymetallicResults(Base):
                        - order should match ordering numbers
     composition_list (str): comma-separated list of metal counts
                             - must match length of metals_list
-    CE (float): cohesive energy of NP (in ev / atom)
-    EE (float): excess energy of NP (in ev / atom)
+    CE (float): cohesive energy of NP (in eV / atom)
+    EE (float): excess energy of NP (in eV / atom)
+    smix (float): ideal entropy of mixing (in eV / K atom)
     ordering_string (str): string of ints mapping metal type
                            to ase.Atoms skeleton
                            - atoms of each NP are ordered with an index to
@@ -505,6 +534,7 @@ class PolymetallicResults(Base):
     composition_list = db.Column(db.Integer, nullable=False)
     CE = db.Column(db.Float, nullable=False)
     EE = db.Column(db.Float)
+    smix = db.Column(db.Float)
     structure_id = db.Column(db.Integer, db.ForeignKey('nanoparticles.id'),
                              nullable=False)
     ordering_string = db.Column(db.VARCHAR, nullable=False)
@@ -528,13 +558,14 @@ class PolymetallicResults(Base):
     _atoms_obj = None
 
     def __init__(self, metals: Iterable[str], composition: Iterable[int],
-                 CE: float, EE: float, ordering: Iterable[int]):
+                 CE: float, EE: float, smix: float, ordering: Iterable[int]):
         """
         Args:
         metals (Iterable[str]): ordered list of unique metal types
         composition (Iterable[int]): metal counts (length >= (len(metals) - 1)
         CE (float): cohesive energy of NP (eV / atom)
         EE (float): excess energy of NP (eV / atom)
+        smix (float): ideal entropy of mixing (eV / K atom)
         ordering (Iterable[int]): chemical ordering that maps metals to Atoms
         """
         # DB column should be a string of comma-separated metals
@@ -566,9 +597,10 @@ class PolymetallicResults(Base):
         # DB column is a comma-separated string of comps
         self.composition_list = ','.join(map(str, composition))
 
-        # set CE and EE
+        # set CE and EE, and smix
         self.CE = CE
         self.EE = EE
+        self.smix = smix
 
         # DB column is a string of ordering characters
         self.ordering_string = ''.join(map(str, ordering))
@@ -613,7 +645,7 @@ class PolymetallicResults(Base):
         """
         # convert compressed_ordering to binary = actual_orderingstr
         if self._ordering is None:
-            self._ordering = np.array([int(i) for i in self.ordering_string])
+            self._ordering = np.array(list(self.ordering_string), int)
         return self._ordering
 
     @ordering.setter
@@ -676,6 +708,9 @@ class PolymetallicResults(Base):
             return form
         return ''.join([f'{m}{n}' for m, n
                         in zip(self.metals, self.composition)])
+
+    def get_gmix(self, T=298):
+        return self.EE - T * self.smix
 
     def save_np(self, path):
         """
@@ -889,26 +924,6 @@ class Atoms(Base):
         self.nanoparticle = nanoparticle
 
 
-class ModelCoefficients(Base):
-    """
-        Bond-Centric Model Coefficients (gamma) precalculated
-        based on atom types and coordination number
-    """
-    __tablename__ = 'model_coefficients'
-
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    element1 = db.Column(db.String(2), nullable=False)
-    element2 = db.Column(db.String(2), nullable=False)
-    cn = db.Column(db.Integer, nullable=False)
-    bond_energy = db.Column(db.Float)
-
-    def __init__(self, element1, element2, cn, bond_energy):
-        self.element1 = element1
-        self.element2 = element2
-        self.cn = cn
-        self.bond_energy = bond_energy
-
-
 class BimetallicLog(Base):
     """
     Table to log batch GA sims
@@ -940,70 +955,3 @@ class BimetallicLog(Base):
         self.new_min_structs = new_min_structs
         self.tot_structs = tot_structs
         self.batch_run_num = batch_run_num
-
-
-class PartialRadialDists(Base):
-    """
-    Holds partial radial distribution functions.
-
-    Columns:
-        prdf_type (str) : The type of PRDF being calculated here (atom or NP centered)
-                          The type can be one of the two following values:
-                                Atom_Centered
-                                NP_Centered
-                          and will raise a ValueError if one of these two values is not used.
-        element_center (str[2]) : The element at the center of the distribution (if atomic prdf being used)
-                                  If this is supplied for an NP-centered PRDF, the program will raise a ValueError.
-        element_tracked (str[2]) : The element whose radial distribution we are following
-        distance (float) : How far away from the center of the distribution we are
-        frequency (float) : Frequency of element_tracked found at that particular distance
-        np_id (int) : The NP this radial distribution function corresponds to
-
-    """
-    __tablename__ = "PartialRadialDists"
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    prdf_type = db.Column(db.String, nullable=False)
-    element_center = db.Column(db.String(2))
-    element_tracked = db.Column(db.String(2), nullable=False)
-    distance = db.Column(db.Float, nullable=False)
-    frequency = db.Column(db.Float, nullable=False)
-    np_id = db.Column(db.Integer, nullable=False)
-
-    def __init__(self, np_id, prdf_type, element_tracked, distance, frequency, element_center=None):
-        if prdf_type in ["Atom_Centered", "NP_Centered"]:
-            self.prdf_type = prdf_type
-        else:
-            raise ValueError("Expected either Atom_Centered or NP_Centered for prdf_type")
-        self.element_tracked = element_tracked
-        self.distance = distance
-        self.frequency = frequency
-        self.np_id = np_id
-        if element_center:
-            if prdf_type == "Atom_Centered":
-                self.element_center = element_center
-            else:
-                raise ValueError("Element_center only makes sense for atom-centered PRDFs.")
-
-
-class PostProcessing(Base):
-    """
-    Logs post-processed data for a NP.
-
-    Currently we have:
-        - Chemical Ordering Parameter
-        - Partial Radial Distribution Function (atom-centric)
-        - Partial Radial Distribution Function (NP-centric)
-
-    Colunns:
-    """
-    __tablename__ = "PostProcessing"
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    chemical_ordering_parameter = db.Column(db.Float)
-    atomic_prdf_pointer = db.Column(db.Integer)
-    np_prdf_pointer = db.Column(db.Integer)
-    np_id = db.Column(db.Integer, nullable=False)  # Corresponds to the Nanoparticle Class's ID
-
-    def __init__(self, chemical_ordering_parameter = None,
-                 atomic_prdf_pointer = None,
-                 np_prdf_pointer = None):
-        self.np_id = np_id

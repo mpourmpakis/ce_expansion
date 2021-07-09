@@ -260,43 +260,6 @@ def build_shell_dist_fig(bimet, show=False):
     return fig
 
 
-def build_coefficient_dict(metals):
-    """
-    Creates coefficient dictionary used to calc CE
-
-    Args:
-    - metals (string || iterable): string(s) containing two metal elements
-
-    Returns:
-    - (dict): coefficient dictionary for GA sim
-    """
-    metal1, metal2 = db_utils.sort_2metals(metals)
-
-    # homoatomic half bond energies
-    res_aa = get_model_coefficient(metal1, metal1)
-    res_bb = get_model_coefficient(metal2, metal2)
-
-    # heteroatomic half bond energies
-    res_ab = get_model_coefficient(metal1, metal2)
-    res_ba = get_model_coefficient(metal2, metal1)
-
-    # raise error if coefficients are not found
-    errors = []
-    for res, ms in zip([res_aa, res_bb, res_ab, res_bb],
-                       ((metal1, metal1), (metal2, metal2),
-                        (metal1, metal2), (metal2, metal1))):
-        if not res:
-            errors.append("no info for %s - %s coefficients" % ms)
-    if errors:
-        raise db_utils.NPDatabaseError('\n'.join(errors))
-
-    # return back coefficients as dictionary of dictionaries
-    return {metal1: {metal1: list(map(lambda i: i.bond_energy, res_aa)),
-                     metal2: list(map(lambda i: i.bond_energy, res_ab))},
-            metal2: {metal2: list(map(lambda j: j.bond_energy, res_bb)),
-                     metal1: list(map(lambda j: j.bond_energy, res_ba))}}
-
-
 def build_metal_pairs_list():
     """
     Returns all metal pairs found in BimetallicResults table
@@ -711,29 +674,6 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
                      custom_filter=custom_filter, return_list=return_list)
 
 
-def get_model_coefficient(element1=None, element2=None, cn=None,
-                          lim=None, return_query=False):
-    """
-    Returns tbl.ModelCoefficients entries that match criteria
-    - if no criteria given, all data (up to <lim> amount)
-      returned
-    - query is always ordered by cn
-
-    Kargs:
-    - element1 (str): first element
-    - element2 (str): second element
-    - cn (int): coordination number of element 1
-    - lim (int): max number of entries returned
-                 (default: None = no limit)
-    - return_query (bool): if True, returns just the query
-                           and not the results
-
-    Returns:
-    - (tbl.ModelCoefficients)(s) if match else (None)
-    """
-    return get_entry(tbl.ModelCoefficients, **locals())
-
-
 def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
                      lim=None, return_query=False, return_list=False):
     """
@@ -808,35 +748,6 @@ def get_shell2num(shape, num_shells):
 
 
 # INSERT FUNCTIONS
-
-
-def insert_model_coefficients(coeffs_dict=None):
-    """
-    Inserts model coefficients into ModelCoefficients
-    - checks DB to ensure entry does not already exist
-
-    Kargs:
-    - coeffs_dict (dict): dictionary of coefficients
-                          if None, read in from data directory
-                          (default: None)
-
-    Returns:
-    - (bool): True if successful insertion else False
-    """
-    if not coeffs_dict:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            '..', '..', 'data', 'coefs_set.pickle')
-        with open(path, 'rb') as fid:
-            coeffs_dict = pickle.load(fid)
-
-    # dict(element1=dict(element2=[bond_energies where index = cn]))
-    for e1 in coeffs_dict:
-        for e2 in coeffs_dict[e1]:
-            for cn in range(len(coeffs_dict[e1][e2])):
-                if not get_model_coefficient(e1, e2, cn, lim=1):
-                    session.add(tbl.ModelCoefficients(e1, e2, cn,
-                                                      coeffs_dict[e1][e2][cn]))
-    return db_utils.commit_changes(session)
 
 
 def insert_nanoparticle(atom, shape, num_shells=None):
@@ -1042,63 +953,6 @@ def remove_polymet_result(metals: Iterable[str] = None,
     """
     return remove_entry(get_polymet_result, metals=metals,
                         composition=composition, num_atoms=num_atoms)
-
-
-# HELPER FUNCTIONS
-
-
-def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
-                             homo_bde_m1, homo_bde_m2, hetero_bde, cnmax=12):
-    """
-        Generates the Bond-Centric half bond energy terms for a bimetallic
-        pair AB. Coordination number 0 is given the value None. Dictionary is
-        used with AtomGraph to calculate total CE of bimetallic nanoparticles.
-        Relies on raw data arguments to create dictionary.
-
-        Args:
-        - metal1 (str): atomic symbol of metal 1
-        - metal2 (str): atomic symbol of metal 2
-        - bulkce_m1 (float): bulk cohesive energy (in eV / atom) of metal1
-        - bulkce_m2 (float): bulk cohesive energy (in eV / atom) of metal2
-        - homo_bde_m1 (float): m1-m1 (homoatomic) bond dissociation energy
-        - homo_bde_m2 (float): m2-m2 (homoatomic) bond dissociation energy
-        - hetero_bde (float): m1-m2 (heteroatomic) bond dissociation energy
-
-        KArgs:
-        - cnmax: maximum bulk coordination number (CN) of metals
-                 (Default: 12)
-
-        Returns:
-        - (dict): form dict[m1][m2][CN] = half bond energy term
-    """
-    metals = [metal1, metal2]
-
-    # calculate gammas
-    gamma_m1 = (2 * (hetero_bde - homo_bde_m2)) / (homo_bde_m1 - homo_bde_m2)
-    gamma_m2 = 2 - gamma_m1
-
-    # create bulkce and gamma dictionaries
-    bulkce = {metal1: bulkce_m1,
-              metal2: bulkce_m2}
-    gammas = {metal1: {metal1: 1, metal2: gamma_m1},
-              metal2: {metal2: 1, metal1: gamma_m2}}
-
-    # calculate "total gamma" params (part of BC model that is independent of
-    # current atomic CN)
-    totgamma = {}
-    for m in metals:
-        totgamma[m] = {}
-        for m2 in metals:
-            totgamma[m][m2] = gammas[m][m2] * bulkce[m] / np.sqrt(cnmax)
-
-    # create coefficient dictionary
-    coeffs = {}
-    for m in metals:
-        coeffs[m] = {}
-        for m2 in metals:
-            coeffs[m][m2] = [None if cn == 0 else totgamma[m][m2] / np.sqrt(cn)
-                             for cn in range(cnmax + 1)]
-    return coeffs
 
 
 if __name__ == '__main__':
