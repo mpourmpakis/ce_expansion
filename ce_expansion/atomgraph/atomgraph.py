@@ -84,8 +84,8 @@ class AtomGraph(object):
             ctypes.POINTER(ctypes.c_long))
 
         # calculate monometallic CEs
-        self.mono_ce0 = self.getTotalCE(np.zeros(self.num_atoms))
-        self.mono_ce1 = self.getTotalCE(np.ones(self.num_atoms))
+        self.mono_ce0 = self.calc_ce(np.zeros(self.num_atoms))
+        self.mono_ce1 = self.calc_ce(np.ones(self.num_atoms))
 
     def __len__(self):
         return self._num_bonds
@@ -245,7 +245,7 @@ class AtomGraph(object):
                                                   p_bond_list,
                                                   p_ordering)
 
-    def getTotalCE(self, ordering):
+    def calc_ce(self, ordering):
         """
         Calculates the cohesive energy of the NP using the BC model,
         as implemented in interface.py and lib.c
@@ -266,7 +266,7 @@ class AtomGraph(object):
                                                   self._p_bond_list,
                                                   p_ordering)
 
-    def getEE(self, ordering):
+    def calc_ee(self, ordering):
         """
         Calculates the excess energy in eV / atom of a given ordering
 
@@ -285,7 +285,7 @@ class AtomGraph(object):
         x0 = n0 / self.num_atoms
 
         # excess energy
-        ee = self.getTotalCE(ordering) - \
+        ee = self.calc_ce(ordering) - \
              (x0 * self.mono_ce0 + x1 * self.mono_ce1)
         return ee
 
@@ -323,7 +323,7 @@ class AtomGraph(object):
         # create new instance of ordering array
         ordering = ordering.copy()
         best_ordering = ordering.copy()
-        best_energy = self.getTotalCE(ordering)
+        best_energy = self.calc_ce(ordering)
         prev_energy = best_energy
         energy_history = np.zeros(num_steps)
         energy_history[0] = best_energy
@@ -353,7 +353,7 @@ class AtomGraph(object):
             prev_ordering = ordering.copy()
             ordering[chosen_one] = 0
             ordering[chosen_zero] = 1
-            energy = self.getTotalCE(ordering)
+            energy = self.calc_ce(ordering)
 
             # Metropolis-related stuff
             ratio = energy / prev_energy
@@ -386,7 +386,7 @@ if __name__ == '__main__':
     chemical_ordering = np.random.choice([0, 1], size=graph.num_atoms)
 
     # Calculate cohesive energy
-    cohesive_energy = graph.getTotalCE(chemical_ordering)
+    cohesive_energy = graph.calc_ce(chemical_ordering)
     print('Cohesive energy = %.2e' % cohesive_energy)
 
     # mixing = graph.countMixing(chemical_ordering)
