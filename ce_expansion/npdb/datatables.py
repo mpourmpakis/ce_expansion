@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import json
+from typing import Iterable
 
 import ase
 import ase.visualize
@@ -9,8 +10,10 @@ import numpy as np
 import sqlalchemy as db
 from ase.data import chemical_symbols, covalent_radii
 from ase.data.colors import jmol_colors
+import ase.units as units
 
 from ce_expansion.npdb.base import Base
+import ce_expansion.npdb.db_utils as db_utils
 from ce_expansion.atomgraph import adjacency
 
 
@@ -106,6 +109,10 @@ class BimetallicResults(Base):
     atoms_obj = None
     _atoms_obj = None
 
+    # store Smix
+    smix = None
+    _smix = None
+
     def __init__(self, metal1, metal2, shape, num_atoms, diameter,
                  n_metal1, n_metal2, CE, EE, ordering):
         self.metal1, self.metal2 = sorted([metal1, metal2])
@@ -124,16 +131,36 @@ class BimetallicResults(Base):
         if self._actual_ordering is None:
             self._actual_ordering = f'{int(self.compressed_ordering):b}'
             self._actual_ordering = self._actual_ordering.zfill(self.num_atoms)
+            self._actual_ordering = np.array(list(self._actual_ordering), int)
         return self._actual_ordering
 
     @ordering.setter
-    def ordering(self, val):
-        self._actual_ordering = val
-        self.compressed_ordering = str(int(val, 2))
+    def ordering(self, ordering):
+        # ordering must be str or iterable
+        if isinstance(ordering, str):
+            ordering_str = ordering
+            ordering = np.array(list(ordering), int)
+        elif isinstance(ordering, Iterable):
+            ordering_str = ''.join(map(str, ordering))
+        else:
+            raise ValueError("Invalid ordering! Must be array of ints or str.")
+
+        # set compressed ordering using str representation
+        self.compressed_ordering = str(int(ordering_str, 2))
+        # set actual ordering attr to array of ints
+        self._actual_ordering = ordering
 
     @property
     def atoms_obj(self):
         return self.get_atoms_obj()
+
+    @property
+    def smix(self):
+        if self._smix is None:
+            # get atomic percent, x
+            x = np.bincount(self.ordering) / self.num_atoms
+            self._smix = -units.kB * (x * np.log(x)).sum()
+        return self._smix
 
     def get_atoms_obj(self):
         """
@@ -179,6 +206,9 @@ class BimetallicResults(Base):
             return form
         return '%s%i%s%i' % (self.metal1, self.n_metal1,
                              self.metal2, self.n_metal2)
+
+    def get_gmix(self, T=298):
+        return self.EE - T * self.smix
 
     def build_chem_formula(self, latex=False, bold=False):
         """
@@ -441,6 +471,317 @@ class BimetallicResults(Base):
         ase.visualize.view(self.build_atoms_obj())
 
 
+class PolymetallicResults(Base):
+    """
+    Polymetallic GA Simulation Results Datatable
+    - contains data for most stable structure found
+      (based on CE) at a given shape, size, and metal composition
+    - GA varies chemical ordering to find stable NP
+
+    -------
+    COLUMNS
+    -------
+    metals_list (str): comma-separated list of unique metal types
+                       - order should match ordering numbers
+    composition_list (str): comma-separated list of metal counts
+                            - must match length of
+    shape (str): shape of NP (defined by user)
+    CE (float): cohesive energy of NP (in eV / atom)
+    EE (float): excess energy of NP (in eV / atom)
+    smix (float): ideal entropy of mixing (in eV / K atom)
+    ordering_string (str): string of ints mapping metal type
+                           to ase.Atoms skeleton
+                           - atoms of each NP are ordered with an index to
+                             ensure ordering maps correctly
+
+    ------------------
+    AUTOFILLED COLUMNS
+    ------------------
+    id (int): primary key (unique)
+    num_atoms (int): number of atoms in NP (computed from ordering array)
+    structure_id (int): Foreign key from Nanoparticles to link GA result
+                        to a single NP
+    last_updated (datetime): tracks the last time the data was created/updated
+
+    Mapped Properties:
+    nanoparticle: (Nanoparticle Datatable entry) links to NP skeleton used
+                  in GA sim (size, and shape constraints)
+
+    ----------
+    PROPERTIES
+    ----------
+    metals (np.ndarray): array[str] of unique metal types
+                         (metal order matches ordering numbers)
+    composition (np.ndarray): array[int] of metal counts (sum == num_atoms)
+    ordering (np.ndarray): array[int] of chemical ordering (maps to Atoms obj)
+    atoms_obj (ase.Atoms): atoms object representation of polymetallic NP
+
+    -------
+    METHODS
+    -------
+    get_chemical_formula: Returns chemical formula as string
+                          e.g. 'Ag12Au11Cu32'
+
+    save_np: saves atoms object of nanoparticle
+        Args:
+        path (str): path to save Atoms object (*.xyz, *.pdb, etc.)
+
+    show: opens ase gui to visualize NP
+    """
+    __tablename__ = 'polymetallic_results'
+
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    metals_list = db.Column(db.String, nullable=False)
+    num_atoms = db.Column(db.Integer, nullable=False)
+    composition_list = db.Column(db.Integer, nullable=False)
+    shape = db.Column(db.String, nullable=False)
+    CE = db.Column(db.Float, nullable=False)
+    EE = db.Column(db.Float)
+    smix = db.Column(db.Float)
+    structure_id = db.Column(db.Integer, db.ForeignKey('nanoparticles.id'),
+                             nullable=False)
+    ordering_string = db.Column(db.VARCHAR, nullable=False)
+    last_updated = db.Column(db.DateTime, default=datetime.now,
+                             onupdate=datetime.now)
+
+    # metals and composition array
+    # init _ attrs for use of getter-setters
+    metals = None
+    _metals = None
+
+    composition = None
+    _composition = None
+
+    # ordering array
+    ordering = None
+    _ordering = None
+
+    # attribute to store atoms object once it has been built
+    atoms_obj = None
+    _atoms_obj = None
+
+    def __init__(self, metals: Iterable[str], composition: Iterable[int],
+                 shape: str, CE: float, EE: float, ordering: Iterable[int],
+                 smix: float = None):
+        """
+        Args:
+        metals (Iterable[str]): ordered list of unique metal types
+        composition (Iterable[int]): metal counts (length >= (len(metals) - 1)
+        CE (float): cohesive energy of NP (eV / atom)
+        EE (float): excess energy of NP (eV / atom)
+        smix (float): ideal entropy of mixing (eV / K atom)
+        ordering (Iterable[int]): chemical ordering that maps metals to Atoms
+        """
+        # DB column should be a string of comma-separated metals
+        self.metals_list = ','.join(metals)
+
+        # metals attr is an array of metal strings
+        self._metals = np.array(list(metals))
+
+        # get num_atoms from length of ordering
+        self.num_atoms = len(ordering)
+
+        # cast composition to list
+        composition = list(composition)
+
+        # must give all compositions or len(metals) - 1 (due to DOF)
+        if len(self.metals) == len(composition):
+            # ensure composition is equal to number of atoms
+            if self.num_atoms != sum(composition):
+                raise ValueError("Composition does not match number of atoms")
+        elif len(self.metals) - len(composition) == 1:
+            # add the last composition based on total number of atoms
+            composition += [self.num_atoms - sum(composition)]
+        else:
+            raise ValueError("Invalid composition.")
+
+        # set composition attribute as np array
+        self._composition = np.array(list(composition))
+
+        # DB column is a comma-separated string of comps
+        self.composition_list = ','.join(map(str, composition))
+
+        # set shape, CE and EE
+        self.shape = shape
+        self.CE = CE
+        self.EE = EE
+
+        # if smix is None, compute configurational entropy
+        # using db_utils.smix
+        self.smix = smix
+        if self.smix is None:
+            self.smix = db_utils.smix(self.composition)
+
+        # DB column is a string of ordering characters
+        self.ordering_string = ''.join(map(str, ordering))
+
+        # set ordering attr as np array
+        self._ordering = np.array(list(ordering))
+
+    @property
+    def metals(self):
+        """
+        Read-only metals property
+
+        Returns:
+        (np.ndarray[str]): array of unique metal types
+        """
+        if self._metals is None:
+            self._metals = np.array([*map(str, self.metals_list.split(','))])
+        return self._metals
+
+    @property
+    def composition(self):
+        """
+        Read-only metal composition property (i.e. metal counts)
+
+        Returns:
+        (np.ndarray[int]): array of metal counts
+        """
+        if self._composition is None:
+            self._composition = np.array(
+                                    [*map(int,
+                                          self.composition_list.split(','))
+                                     ])
+        return self._composition
+
+    @property
+    def ordering(self):
+        """
+        Chemical ordering property
+
+        Returns:
+        (np.ndarray[int]): ordering array
+        """
+        # convert compressed_ordering to binary = actual_orderingstr
+        if self._ordering is None:
+            self._ordering = np.array(list(self.ordering_string), int)
+        return self._ordering
+
+    @ordering.setter
+    def ordering(self, ordering: Iterable):
+        """
+        Set chemical ordering property and update ordering_string column
+
+        Args:
+        ordering (Iterable): new chemical ordering list
+
+        Raises:
+        ValueError: invalid ordering array (wrong length | wrong values)
+        """
+        if len(ordering) != self.num_atoms:
+            raise ValueError("Invalid ordering length.")
+        if int(max(ordering)) != len(self.metals) - 1:
+            raise ValueError("Invalid ordering numbers. "
+                             f"Cannot exceed {len(self.metals) - 1}.")
+
+        self._ordering = np.array([int(i) for i in ordering])
+        self.ordering_string = ''.join(map(str, self._ordering))
+
+    @property
+    def atoms_obj(self):
+        """
+        Read-only ase.Atoms object property
+        - NP built with Nanoparticle.atoms_obj
+          and atom type added in using metals and ordering arrays
+
+        Returns:
+        (ase.Atoms): NP from entry
+        """
+        if self._atoms_obj is None:
+            self._atoms_obj = self.nanoparticle.atoms_obj.copy()
+            self._atoms_obj.symbols = self.metals[self.ordering]
+        return self._atoms_obj
+
+    def get_chemical_formula(self, latex=False, bold=False):
+        """
+        Returns chemical formula of polymetallic NP
+        in alphabetical order (similar to ase's Atoms.get_chemical_formula)
+        - e.g. Ag6Au7
+
+        KArgs:
+        latex (bool): if True, chemical formula is returned in Latex Math form
+                      (Default: False)
+        bold (bool): if True, latex string will have bold font key
+                     (Default: False)
+
+        Returns:
+            (str): chemical formula
+        """
+        if latex:
+            form = '$\\rm '
+            form += ''.join([f'{m}_{{{n}}}' for m, n
+                             in zip(self.metals, self.composition)])
+            form += '$'
+            if bold:
+                form = form.replace('\\rm', '\\rm \\bf')
+            return form
+        return ''.join([f'{m}{n}' for m, n
+                        in zip(self.metals, self.composition)])
+
+    def get_gmix(self, T=298):
+        return self.EE - T * self.smix
+
+    def save_np(self, path):
+        """
+        Saves stable NP to desired path
+        - uses ase to save
+        - supports all ase save types
+          e.g. xyz, pdb, png, etc.
+
+        Returns:
+            (bool): True if saved successfully
+        """
+        # save a chemical json file
+        if path.endswith('json'):
+            path = path.replace('.json', '.cjson')
+            # create name
+            name = self.get_chemical_formula()
+            name += '_' + self.nanoparticle \
+                              .shape.lower()[:3].replace('elo', 'epb')
+
+            # create chemical JSON formula string
+            formula = ' '.join(f'{n} {m}' for n, m
+                               in zip(self.metals, self.composition))
+
+            # create list of atomic numbers
+            numbers = self.atoms_obj.numbers.tolist()
+
+            symbols = list(self.atoms_obj.symbols)
+
+            positions = self.atoms_obj.positions.flatten().tolist()
+
+            data = {'chemical json': 0,
+                    'name': name,
+                    'formula': formula,
+                    'atoms': {'elements': {'number': numbers,
+                                           'type': symbols},
+                              'coords': {'3d': positions}
+                              },
+                    'properties': {'cohesive energy': self.CE,
+                                   'excess energy': self.EE,
+                                   'shape': self.shape.lower()}
+                    }
+            with open(path, 'w') as fidw:
+                json.dump(data, fidw, indent=4)
+        # else save geometry file
+        else:
+            # get ase Atoms object
+            atom = self.atoms_obj.copy()
+            atom.info['shape'] = self.nanoparticle.shape
+            atom.info['CE'] = self.CE
+            atom.info['EE'] = self.EE
+            atom.info['composition'] = self.composition
+            atom.write(path)
+        return True
+
+    def show(self):
+        """
+        Shows nanoparticle using ase.visualize.view
+        """
+        ase.visualize.view(self.atoms_obj)
+
+
 class Nanoparticles(Base):
     """
     Nanoparticles (NP) Skeleton Datatable
@@ -477,6 +818,8 @@ class Nanoparticles(Base):
     bimetallic_results = db.orm.relationship('BimetallicResults',
                                              backref='nanoparticle')
 
+    polymetallic_results = db.orm.relationship('PolymetallicResults',
+                                               backref='nanoparticle')
     # used to attach bond_list to data entry
     # does not store bond_list in DB
     bonds_list = None
@@ -591,26 +934,6 @@ class Atoms(Base):
         self.nanoparticle = nanoparticle
 
 
-class ModelCoefficients(Base):
-    """
-        Bond-Centric Model Coefficients (gamma) precalculated
-        based on atom types and coordination number
-    """
-    __tablename__ = 'model_coefficients'
-
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    element1 = db.Column(db.String(2), nullable=False)
-    element2 = db.Column(db.String(2), nullable=False)
-    cn = db.Column(db.Integer, nullable=False)
-    bond_energy = db.Column(db.Float)
-
-    def __init__(self, element1, element2, cn, bond_energy):
-        self.element1 = element1
-        self.element2 = element2
-        self.cn = cn
-        self.bond_energy = bond_energy
-
-
 class BimetallicLog(Base):
     """
     Table to log batch GA sims
@@ -642,70 +965,3 @@ class BimetallicLog(Base):
         self.new_min_structs = new_min_structs
         self.tot_structs = tot_structs
         self.batch_run_num = batch_run_num
-
-
-class PartialRadialDists(Base):
-    """
-    Holds partial radial distribution functions.
-
-    Columns:
-        prdf_type (str) : The type of PRDF being calculated here (atom or NP centered)
-                          The type can be one of the two following values:
-                                Atom_Centered
-                                NP_Centered
-                          and will raise a ValueError if one of these two values is not used.
-        element_center (str[2]) : The element at the center of the distribution (if atomic prdf being used)
-                                  If this is supplied for an NP-centered PRDF, the program will raise a ValueError.
-        element_tracked (str[2]) : The element whose radial distribution we are following
-        distance (float) : How far away from the center of the distribution we are
-        frequency (float) : Frequency of element_tracked found at that particular distance
-        np_id (int) : The NP this radial distribution function corresponds to
-
-    """
-    __tablename__ = "PartialRadialDists"
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    prdf_type = db.Column(db.String, nullable=False)
-    element_center = db.Column(db.String(2))
-    element_tracked = db.Column(db.String(2), nullable=False)
-    distance = db.Column(db.Float, nullable=False)
-    frequency = db.Column(db.Float, nullable=False)
-    np_id = db.Column(db.Integer, nullable=False)
-
-    def __init__(self, np_id, prdf_type, element_tracked, distance, frequency, element_center=None):
-        if prdf_type in ["Atom_Centered", "NP_Centered"]:
-            self.prdf_type = prdf_type
-        else:
-            raise ValueError("Expected either Atom_Centered or NP_Centered for prdf_type")
-        self.element_tracked = element_tracked
-        self.distance = distance
-        self.frequency = frequency
-        self.np_id = np_id
-        if element_center:
-            if prdf_type == "Atom_Centered":
-                self.element_center = element_center
-            else:
-                raise ValueError("Element_center only makes sense for atom-centered PRDFs.")
-
-
-class PostProcessing(Base):
-    """
-    Logs post-processed data for a NP.
-
-    Currently we have:
-        - Chemical Ordering Parameter
-        - Partial Radial Distribution Function (atom-centric)
-        - Partial Radial Distribution Function (NP-centric)
-
-    Colunns:
-    """
-    __tablename__ = "PostProcessing"
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    chemical_ordering_parameter = db.Column(db.Float)
-    atomic_prdf_pointer = db.Column(db.Integer)
-    np_prdf_pointer = db.Column(db.Integer)
-    np_id = db.Column(db.Integer, nullable=False)  # Corresponds to the Nanoparticle Class's ID
-
-    def __init__(self, chemical_ordering_parameter = None,
-                 atomic_prdf_pointer = None,
-                 np_prdf_pointer = None):
-        self.np_id = np_id
