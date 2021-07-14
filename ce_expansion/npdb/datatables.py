@@ -13,6 +13,7 @@ from ase.data.colors import jmol_colors
 import ase.units as units
 
 from ce_expansion.npdb.base import Base
+import ce_expansion.npdb.db_utils as db_utils
 from ce_expansion.atomgraph import adjacency
 
 
@@ -600,7 +601,12 @@ class PolymetallicResults(Base):
         # set CE and EE, and smix
         self.CE = CE
         self.EE = EE
+
+        # if smix is None, compute configurational entropy
+        # using db_utils.smix
         self.smix = smix
+        if self.smix is None:
+            self.smix = db_utils.smix(self.composition)
 
         # DB column is a string of ordering characters
         self.ordering_string = ''.join(map(str, ordering))

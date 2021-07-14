@@ -1,7 +1,10 @@
 import traceback
+from typing import Iterable
+
+import numpy as np
 
 """
-Helper functions/classes used in db_inter.py
+Helper functions/classes used in ce_expansion.npdb
 """
 
 
@@ -58,6 +61,26 @@ def sort_2metals(metals):
     else:
         metal1, metal2 = sorted(metals)
     return metal1.title(), metal2.title()
+
+
+def smix(composition: Iterable) -> float:
+    """Entropy of mixing with units: (eV / atom K)
+
+    Args:
+    composition: array of metal counts or % compositions
+    """
+    # convert composition to <x> = array of floats
+    x = np.array(composition).astype(float)
+
+    # if x does not sum to 1, assume it's atom counts
+    if not np.isclose(x.sum(), 1):
+        x /= x.sum()
+
+    # drop 0 comps to avoid 0 * log(0) error
+    x = x[x != 0]
+
+    # return smix in units of (eV / atom K)
+    return -8.617333262145E-5 * (x * np.log(x)).sum()
 
 
 class NPDatabaseError(Exception):
