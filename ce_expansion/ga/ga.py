@@ -16,6 +16,7 @@ from ase.data.colors import jmol_colors
 import ase.visualize
 
 from ce_expansion.atomgraph.bcm import BCModel
+from ce_expansion.atomgraph.atomgraph import AtomGraph
 from ce_expansion.ga import structure_gen
 from ce_expansion.npdb import db_inter
 
@@ -26,7 +27,7 @@ CENTER = 50
 
 
 class Chromo(object):
-    def __init__(self, bcm, n_metal2=0, ordering=None, x_metal2=None):
+    def __init__(self, bcm, n_metals, ordering=None, x_metals=None):
         """
         Chromosome object for GA simulations
         Represents a single structure with a given chemical ordering (arr)
@@ -48,27 +49,29 @@ class Chromo(object):
         Raises:
                 ValueError: n_metal2 is greater than total atoms
         """
+
         self.bcm = bcm
         self.num_atoms = len(self.bcm)
-        if x_metal2 is not None:
+
+        if x_metals is not None:
             assert 0 <= x_metal2 <= 1, "x_metal2: [0, 1]"
-            self.n_metal2 = np.array([self.num_atoms * x_metal2]
+            self.n_metals = np.array([self.num_atoms * x_metals]
                                      ).astype(int)[0]
         else:
-            self.n_metal2 = n_metal2
+            self.n_metals = np.array(n_metals)
 
-        self.x_metal2 = self.n_metal2 / self.num_atoms
+        self.x_metals = self.n_metals / self.num_atoms
 
-        if self.n_metal2 > self.num_atoms:
+        if np.sum(self.n_metals) > self.num_atoms:
             raise ValueError("Can't dope more atoms than there are atoms...")
 
         # if an array is given, use it - else random generate ordering
         if isinstance(ordering, np.ndarray) or isinstance(ordering, list):
             self.ordering = np.array(ordering)
-            self.n_metal2 = self.ordering.sum()
+            self.n_metals = np.bincount(self.ordering)
         else:
             self.ordering = np.zeros(self.num_atoms).astype(int)
-            self.ordering[:self.n_metal2] = 1
+            self.ordering = np.repeat(np.arange(self.n_metals.size), self.n_metals)
             np.random.shuffle(self.ordering)
 
         # calculate initial CE
@@ -98,6 +101,27 @@ class Chromo(object):
         - n_swaps (int): number of swaps to make
                          (Default: 1)
 
+        """
+
+        indices = np.arange(self.num_atoms)
+
+        pos = np.random.choice(indices, size=(n_swaps, 2), replace=False)
+
+        i, j = np.hsplit(pos, 2)
+
+        self.ordering[i], self.ordering[j] = self.ordering[j], self.ordering[i]
+
+        self.calc_score()
+
+    def bimetallic_mutate(self, n_swaps=1):
+        """
+        Algorithm to randomly switch a '1' & a '0' within ordering array
+        - about O(n) scaling
+
+        Args:
+        - n_swaps (int): number of swaps to make
+                         (Default: 1)
+
         Raises:
         - ValueError: if not bcmraph, Chromo can not and
                       should not be mutated
@@ -106,7 +130,7 @@ class Chromo(object):
             raise ValueError("Mutating Chromo should only be done through"
                              "Pop simulations")
 
-        if not self.n_metal2 or self.n_metal2 == self.num_atoms:
+        if self.n_metals.size == 1:
             print('Warning: attempting to mutate, but system is monometallic')
             return
 
@@ -230,10 +254,10 @@ class Chromo(object):
 
 
 class Pop(object):
-    def __init__(self, atom, bond_list, metals, shape, n_metal2=1,
+    def __init__(self, atom, bond_list, metals, shape, n_metals,
                  popsize=50, mute_pct=0.8, n_mute_atomswaps=None, spike=False,
-                 x_metal2=None, random=False, num_shells=None, bcm=None,
-                 e=1, save_every=100, use_metropolis=True):
+                 x_metals=None, random=False, num_shells=None, bcm=None,
+                 e=1, save_every=100, use_metropolis=True, bcm_object='BCModel'):
         """
         Bimetallic nanoparticle genetic algorithm population
         - initialize a population of nanoparticles
@@ -301,27 +325,24 @@ class Pop(object):
         self.metal1 = self.metals[0]
         self.metal2 = self.metals[1]
 
-        # create bcmraph instance
+        # create bcmgraph instance
         if bcm is None:
-            self.bcm = self.__make_bcm__()
+            self.bcm = self.__make_bcm__(bcm_object)
         else:
             self.bcm = bcm
 
         # determine number of metal2
         # use x_metal2 if passed in
-        if x_metal2 is not None:
-            self.n_metal2 = np.array([self.num_atoms * x_metal2]
+        if x_metals is not None:
+            self.n_metals = np.array([self.num_atoms * x_metals]
                                      ).astype(int)[0]
         else:
-            self.n_metal2 = n_metal2
+            self.n_metals = np.array(n_metals)
 
-        self.n_metal2 = int(self.n_metal2)
+        self.n_metals = np.array(self.n_metals)
 
-        # calculate exact x_metal2
-        self.x_metal2 = self.n_metal2 / self.num_atoms
-
-        # set n_metal1
-        self.n_metal1 = int(self.num_atoms - self.n_metal2)
+        # calculate exact x_metals
+        self.x_metals = self.n_metals / self.num_atoms
 
         self.popsize = popsize
 
@@ -330,6 +351,9 @@ class Pop(object):
         self.n_mute = min(int(popsize * mute_pct), popsize - 1)
         self.mute_pct = self.n_mute / self.popsize
 
+        print(self.n_mute)
+        print(self.mute_pct)
+
         # determine number of atom swaps to apply to a chromo
         # when it's getting mutated
         self.n_mute_atomswaps = n_mute_atomswaps
@@ -337,7 +361,7 @@ class Pop(object):
         # if no specific atomswap number given, choose half of the
         # minimum atom type (min(n_mute_atomswaps) is 1)
         if self.n_mute_atomswaps is None:
-            self.n_mute_atomswaps = max(min(self.n_metal1, self.n_metal2) // 50,
+            self.n_mute_atomswaps = max(min(self.n_metals) // 50,
                                         1)
 
         # spike ga with previous run and structures from fill_cn
@@ -373,14 +397,17 @@ class Pop(object):
     def __getitem__(self, i):
         return self.pop[i]
 
-    def __make_bcm__(self):
+    def __make_bcm__(self, bcm_object='BCModel'):
         """
         Initializes BCM object (used to calc fitness)
 
         Returns:
         - (BCModel)
         """
-        return BCModel(self.atom, self.bond_list, self.metals)
+        if bcm_object == 'BCModel':
+            return BCModel(self.atom, self.bond_list,
+                           self.metals)
+        return AtomGraph(self.bond_list, self.metals[0], self.metals[1])
 
     def reload_bcm(self):
         """
@@ -399,18 +426,26 @@ class Pop(object):
           then running this method
         """
         # search for previous bimetallic result
-        self.prev_results = db_inter.get_bimet_result(
-            metals=self.metals,
-            shape=self.shape,
-            num_atoms=self.num_atoms,
-            n_metal1=int(self.num_atoms - self.n_metal2),
-            lim=1)
+        # self.prev_results = db_inter.get_bimet_result(
+        #     metals=self.metals,
+        #     shape=self.shape,
+        #     num_atoms=self.num_atoms,
+        #     n_metal1=int(self.num_atoms - self.n_metal2),
+        #     lim=1)
 
-        self.x_metal2 = self.n_metal2 / self.num_atoms
-        self.formula = '%s%i-%s%i' % (self.metal1,
-                                      self.num_atoms - self.n_metal2,
-                                      self.metal2,
-                                      self.n_metal2)
+        self.x_metals = self.n_metals / self.num_atoms
+
+        formula = ""
+
+        print(self.n_metals)
+
+        for i in range(len(self.n_metals)):
+            if i < (len(self.n_metals)-1):
+                formula += '%s%i-' % (self.metals[i],self.n_metals[i])
+            else:
+                formula += '%s%i' % (self.metals[i], self.n_metals[i])
+
+        self.formula = formula
 
         self.initialize_pop()
         self.sort_pop()
@@ -471,7 +506,7 @@ class Pop(object):
                          in self.prev_results.ordering]))]
 
         # create random structures for remaining popsize
-        self.pop += [Chromo(self.bcm, n_metal2=self.n_metal2)
+        self.pop += [Chromo(self.bcm, n_metals=self.n_metals)
                      for i in range(self.popsize - len(self.pop))]
 
     def get_min(self):
@@ -520,7 +555,7 @@ class Pop(object):
             self.initialize_pop()
         else:
             # MATE
-            self.roulette_mate()
+            #self.roulette_mate()
 
             # MUTATE - does not mutate most fit nanoparticle
             for j in range(self.n_mute):
@@ -554,7 +589,7 @@ class Pop(object):
         self.last_min = self.stats[-1][0]
         print(val.center(CENTER), end=end)
 
-    def run(self, max_gens=-1, max_nochange=50, min_gens=-1):
+    def run(self, max_gens=-1, max_nochange=750, min_gens=-1):
         """
         Runs a GA simulation
 
@@ -593,7 +628,7 @@ class Pop(object):
         nochange = 0
 
         # no GA required for monometallic systems
-        if self.n_metal2 not in [0, len(self.bcm)]:
+        if self.n_metals.size != 1:
             """ALL DATA ADDED"""
             self.all_data[self.generation] = [i.ce for i in self]
             start = time.time()
@@ -643,7 +678,7 @@ class Pop(object):
                 if opt_ce < best.ce:
                     print('Found new min with Metropolis!')
                     self.pop = [Chromo(self.bcm,
-                                       n_metal2=self.n_metal2,
+                                       n_metals=self.n_metals,
                                        ordering=opt_order)] + self[:-1]
                     assert self.pop == sorted(self.pop, key=lambda i: i.ce)
                     self.update_stats()
@@ -852,6 +887,10 @@ class Pop(object):
 
         # plot mean as a solid line and minimum as a dotted line
         ax.plot(mean, color=color, label='_nolabel_')
+
+        for i in self.all_data:
+            ax.scatter([i] * len(self.all_data[i]), self.all_data[i], color='gray', alpha=0.7, edgecolor='k')
+
         if not secondary:
             # create legend
             ax.plot([], [], ':', color='gray', label='MIN')
@@ -1649,13 +1688,15 @@ def scaling_plot(metals=('Ag', 'Cu'), shape='icosahedron',
 
     for num_shells in num_shells_range:
         newp = build_pop_obj(metals, shape, num_shells,
-                             x_metal2=x_metal2)
+                             x_metal2=x_metal2, use_metropolis=False)
         newp.run(max_gens=500, max_nochange=-1)
         natoms.append(len(newp.atom))
         times.append(newp.runtime)
         if newp.is_new_min():
             print('New min.')
         # newp.save_to_db()
+
+    return natoms, times
 
     fig, ax = plt.subplots()
     ax.plot(natoms, times, 'o-', color='green',
@@ -1934,17 +1975,55 @@ def test_FePt_nanop():
 
 
 if __name__ == '__main__':
-    # pop = build_pop_obj(['Ag', 'Cu'], shape='icosahedron', num_shells=9, n_metal2=1635)
-    # pop.run()
-    # pop.plot_results()
+    #
+    # # number of runs per size
+    # n_runs = 2
+    #
+    # # max shell size
+    # max_n_shells = 3
+    #
+    # fig, ax = plt.subplots()
+    #
+    # all_runs = {}
+    # for bcm_object, color in zip(['BCModel', 'AtomGraph'], ['dodgerblue', 'orange']):
+    #     print(f'Runnning {bcm_object}.')
+    #     runs = []
+    #     np.random.seed(15213)
+    #     for i in range(n_runs):
+    #         natoms, times = scaling_plot(['Ag', 'Cu'], num_shells_range=range(1, max_n_shells), x_metal2=0.5)
+    #         runs.append(times)
+    #     # average the runs
+    #     runs = np.array(runs)
+    #     runs_avg = runs.mean(0)
+    #     runs_std = runs.std(0)
+    #     all_runs[bcm_object] = (runs_avg, runs_std)
+    #     ax.plot(natoms, runs_avg, '--', color=color, zorder=-300, alpha=0.5)
+    #     ax.scatter(natoms, runs_avg, s=50, edgecolor='k', label=bcm_object, color=color)
+    #     ax.errorbar(natoms, runs_avg, linestyle='', yerr=runs_std, zorder=-100, capsize=5, color=color)
+    # from pprint import pprint
+    # pprint(all_runs)
+    # ax.legend()
+    # ax.set_ylabel('Time (s / 500 Generations)')
+    # ax.set_xlabel('$\\rm N_{atoms}$')
     # plt.show()
+
+
+
+    pop = build_pop_obj(['Ag', 'Cu','Au'], shape='icosahedron',
+                        num_shells=2, n_metals=[18,18,19],
+                        use_metropolis=False, save_every=50)
+
+    pop.run()
+    pop.plot_results()
+    plt.show()
 
     # import pathlib
-    desk = pathlib.Path.home() / 'Desktop'
-    # benchmark_plot(path=desk, save=True, max_gens=200)
+    # # benchmark_plot(path=desk, save=True, max_gens=200)
+    # # plt.show()
+    #
+    # desk = pathlib.Path.home() / 'Desktop'
+    #
+    # fig , ax = scaling_plot()
+    # fig.savefig(desk / "Hello.png")
     # plt.show()
-
-    fig , ax = scaling_plot()
-    fig.savefig(desk / "Hello.png")
-    plt.show()
 
