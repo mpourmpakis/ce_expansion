@@ -699,8 +699,9 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
     return get_entry(tbl.Nanoparticles, **locals())
 
 
-def get_polymet_result(metals=None, composition=None, num_atoms=None, lim=None,
-                       return_query=None, return_list=False):
+def get_polymet_result(metals=None, composition=None, num_atoms=None,
+                       shape=None, lim=None, return_query=None,
+                       return_list=False):
     """
     Returns tbl.PolyMetallicResult entries that match criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -726,7 +727,7 @@ def get_polymet_result(metals=None, composition=None, num_atoms=None, lim=None,
         composition = ','.join(map(str, composition))
     return get_entry(tbl.PolymetallicResults, metals_list=metals,
                      composition_list=composition, num_atoms=num_atoms,
-                     lim=lim, return_query=return_query,
+                     shape=shape, lim=lim, return_query=return_query,
                      return_list=return_list)
 
 
@@ -853,15 +854,16 @@ def update_bimet_result(metals, shape, num_atoms,
 
 
 def update_polymet_result(metals: Iterable[str], composition: Iterable[int],
-                          CE: float, EE: float, ordering: Iterable[int],
-                          nanop: tbl.Nanoparticles, allow_insert=True):
+                          shape: str, CE: float, EE: float,
+                          ordering: Iterable[int], nanop: tbl.Nanoparticles,
+                          allow_insert=True, force_update=False):
     """Update GA result of a polymetallic NP (3+ metal types)
        or Insert new result (if no match is found)
     """
     if len(ordering) != nanop.num_atoms:
         raise ValueError("Invalid ordering length.")
 
-    res = get_polymet_result(metals, composition, nanop.num_atoms)
+    res = get_polymet_result(metals, composition, nanop.num_atoms, shape)
     # Update result if matching NP is found
     if res:
         # only update if new NP has lower CE
@@ -869,9 +871,13 @@ def update_polymet_result(metals: Iterable[str], composition: Iterable[int],
             res.CE = CE
             res.EE = EE
             res.ordering = ordering
+        elif not force_update:
+            return False
+
     # else insert new result if allow_insert is True
     elif allow_insert:
-        res = tbl.PolymetallicResults(metals, composition, CE, EE, ordering)
+        res = tbl.PolymetallicResults(metals, composition, shape, CE, EE,
+                                      ordering)
         nanop.polymetallic_results.append(res)
         session.add(nanop)
     # else do not change DB and return False
@@ -937,6 +943,7 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
 
 def remove_polymet_result(metals: Iterable[str] = None,
                           composition: Iterable[int] = None,
+                          shape: str = None,
                           num_atoms: int = None):
     """
     Removes a single polymetallic result from DB

@@ -484,7 +484,8 @@ class PolymetallicResults(Base):
     metals_list (str): comma-separated list of unique metal types
                        - order should match ordering numbers
     composition_list (str): comma-separated list of metal counts
-                            - must match length of metals_list
+                            - must match length of
+    shape (str): shape of NP (defined by user)
     CE (float): cohesive energy of NP (in eV / atom)
     EE (float): excess energy of NP (in eV / atom)
     smix (float): ideal entropy of mixing (in eV / K atom)
@@ -533,6 +534,7 @@ class PolymetallicResults(Base):
     metals_list = db.Column(db.String, nullable=False)
     num_atoms = db.Column(db.Integer, nullable=False)
     composition_list = db.Column(db.Integer, nullable=False)
+    shape = db.Column(db.String, nullable=False)
     CE = db.Column(db.Float, nullable=False)
     EE = db.Column(db.Float)
     smix = db.Column(db.Float)
@@ -559,7 +561,8 @@ class PolymetallicResults(Base):
     _atoms_obj = None
 
     def __init__(self, metals: Iterable[str], composition: Iterable[int],
-                 CE: float, EE: float, smix: float, ordering: Iterable[int]):
+                 shape: str, CE: float, EE: float, ordering: Iterable[int],
+                 smix: float = None):
         """
         Args:
         metals (Iterable[str]): ordered list of unique metal types
@@ -598,7 +601,8 @@ class PolymetallicResults(Base):
         # DB column is a comma-separated string of comps
         self.composition_list = ','.join(map(str, composition))
 
-        # set CE and EE, and smix
+        # set shape, CE and EE
+        self.shape = shape
         self.CE = CE
         self.EE = EE
 
