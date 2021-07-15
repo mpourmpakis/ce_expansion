@@ -2,6 +2,7 @@ import datetime
 import os
 import pickle
 import sys
+from typing import Iterable
 
 import ase
 import matplotlib
@@ -259,43 +260,6 @@ def build_shell_dist_fig(bimet, show=False):
     return fig
 
 
-def build_coefficient_dict(metals):
-    """
-    Creates coefficient dictionary used to calc CE
-
-    Args:
-    - metals (string || iterable): string(s) containing two metal elements
-
-    Returns:
-    - (dict): coefficient dictionary for GA sim
-    """
-    metal1, metal2 = db_utils.sort_metals(metals)
-
-    # homoatomic half bond energies
-    res_aa = get_model_coefficient(metal1, metal1)
-    res_bb = get_model_coefficient(metal2, metal2)
-
-    # heteroatomic half bond energies
-    res_ab = get_model_coefficient(metal1, metal2)
-    res_ba = get_model_coefficient(metal2, metal1)
-
-    # raise error if coefficients are not found
-    errors = []
-    for res, ms in zip([res_aa, res_bb, res_ab, res_bb],
-                       ((metal1, metal1), (metal2, metal2),
-                        (metal1, metal2), (metal2, metal1))):
-        if not res:
-            errors.append("no info for %s - %s coefficients" % ms)
-    if errors:
-        raise db_utils.NPDatabaseError('\n'.join(errors))
-
-    # return back coefficients as dictionary of dictionaries
-    return {metal1: {metal1: list(map(lambda i: i.bond_energy, res_aa)),
-                     metal2: list(map(lambda i: i.bond_energy, res_ab))},
-            metal2: {metal2: list(map(lambda j: j.bond_energy, res_bb)),
-                     metal1: list(map(lambda j: j.bond_energy, res_ba))}}
-
-
 def build_metal_pairs_list():
     """
     Returns all metal pairs found in BimetallicResults table
@@ -352,7 +316,7 @@ def build_new_structs_plot(metal_opts, shape_opts, pct=False,
     i = 0
     tot_lines = len(metal_opts) * len(shape_opts)
     for j, m in enumerate(metal_opts):
-        metal1, metal2 = db_utils.sort_metals(m)
+        metal1, metal2 = db_utils.sort_2metals(m)
         for point, shape in zip(['o', 'x', '^', 's'], shape_opts):
             # use abbreviated names for shapes
             lbl_shape = shape.upper()[:3]
@@ -455,7 +419,7 @@ def build_srf_plot(metals, shape, T=None):
     Returns:
     - (plt.figure): figure of 3D surface plot
     """
-    metal1, metal2 = db_utils.sort_metals(metals)
+    metal1, metal2 = db_utils.sort_2metals(metals)
 
     # build pd.DataFrame of all results that match criteria
     runs = session.query(tbl.BimetallicResults.diameter,
@@ -591,7 +555,7 @@ def build_shapes_list():
 
 
 def get_entry(datatable, lim=None, custom_filter=None,
-              return_query=False, **kwargs):
+              return_query=False, return_list=False, **kwargs):
     """
     GENERIC FUNCTION
     Returns entry/entries from table if criteria is matched
@@ -609,6 +573,8 @@ def get_entry(datatable, lim=None, custom_filter=None,
                     (default: None = no added filter)
     - return_query (bool): if True, return query and
                            not results
+    - return_list (bool): if True, function always returns list, else
+                          will only return list if (# results) != 1
     - **kwargs: arguments whose name(s) matches a column in the datatable
 
     Returns:
@@ -617,21 +583,22 @@ def get_entry(datatable, lim=None, custom_filter=None,
     match_ls = []
     for attr in kwargs:
         if kwargs[attr] is not None:
-            if attr == 'metals':
-                metal1, metal2 = db_utils.sort_metals(kwargs[attr])
-                match_ls.append(datatable.metal1 == metal1)
-                match_ls.append(datatable.metal2 == metal2)
-            else:
-                match_ls.append(getattr(datatable, attr) == kwargs[attr])
+            match_ls.append(getattr(datatable, attr) == kwargs[attr])
 
-    if type(custom_filter) != type(None):
+    if custom_filter is not None:
         match_ls.append(custom_filter)
     match = db.and_(*match_ls)
     qry = session.query(datatable).filter(match).limit(lim)
     if return_query:
         return qry
     res = qry.all()
-    return res if len(res) != 1 else res[0]
+
+    # return single result if return_list == False
+    if len(res) == 1 and not return_list:
+        return res[0]
+
+    # else return empty list or list of multiple reuslts
+    return res
 
 
 def get_bimet_log(metals=None, shape=None, date=None, lim=None,
@@ -653,12 +620,17 @@ def get_bimet_log(metals=None, shape=None, date=None, lim=None,
     Returns:
     - (BimetallicResults)(s) if match is found else (None)
     """
-    return get_entry(tbl.BimetallicLog, **locals())
+    # get sorted metals
+    metal1, metal2 = db_utils.sort_2metals(metals)
+    return get_entry(tbl.BimetallicLog, metal1=metal1, metal2=metal2,
+                     shape=shape, date=date, lim=lim,
+                     return_query=return_query)
 
 
 def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
                      n_metal1=None, only_bimet=False,
-                     lim=None, return_query=False, custom_filter=None):
+                     lim=None, return_query=False, custom_filter=None,
+                     return_list=False):
     """
     Returns BimetallicResults entry that matches criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -668,53 +640,42 @@ def get_bimet_result(metals=None, shape=None, num_atoms=None, num_shells=None,
     - metals (str || iterable): two metal elements
     - shape (str): shape of NP
     - num_atoms (int): number of atoms in NP
+    - num_shells (int): number of shells used to build NP
+                        from structure_gen module
     - n_metal1 (int): number of metal1 atoms in NP
     - lim (int): max number of entries returned
                  (default: None = no limit)
     - return_query (bool): if True, return query and
                            not results
+    - return_list (bool): if True, function always returns list, else
+                          will only return list if (# results) != 1
 
     Returns:
-    - (BimetallicResults)(s) if match is found else (None)
+    - (BimetallicResults)(s) if match is found else []
     """
-    if not num_atoms and (num_shells and shape):
-        num_atoms = get_shell2num(shape, num_shells)
+    if not num_atoms and num_shells:
+        if shape:
+            num_atoms = get_shell2num(shape, num_shells)
+        # if shape not defined, assume icosahedron shell->atoms mapping
+        else:
+            num_atoms = get_shell2num('icosahedron', num_shells)
 
     if only_bimet:
         only_bimet = db.and_(tbl.BimetallicResults.n_metal1 != 0,
                              tbl.BimetallicResults.n_metal2 != 0)
         custom_filter = only_bimet
 
-    return get_entry(tbl.BimetallicResults, metals=metals, shape=shape,
-                     num_atoms=num_atoms, n_metal1=n_metal1, lim=lim,
-                     return_query=return_query, custom_filter=custom_filter)
+    # get sorted metals
+    metal1, metal2 = db_utils.sort_2metals(metals)
 
-
-def get_model_coefficient(element1=None, element2=None, cn=None,
-                          lim=None, return_query=False):
-    """
-    Returns tbl.ModelCoefficients entries that match criteria
-    - if no criteria given, all data (up to <lim> amount)
-      returned
-    - query is always ordered by cn
-
-    Kargs:
-    - element1 (str): first element
-    - element2 (str): second element
-    - cn (int): coordination number of element 1
-    - lim (int): max number of entries returned
-                 (default: None = no limit)
-    - return_query (bool): if True, returns just the query
-                           and not the results
-
-    Returns:
-    - (tbl.ModelCoefficients)(s) if match else (None)
-    """
-    return get_entry(tbl.ModelCoefficients, **locals())
+    return get_entry(tbl.BimetallicResults, metal1=metal1, metal2=metal2,
+                     shape=shape, num_atoms=num_atoms, n_metal1=n_metal1,
+                     lim=lim, return_query=return_query,
+                     custom_filter=custom_filter, return_list=return_list)
 
 
 def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
-                     lim=None, return_query=False):
+                     lim=None, return_query=False, return_list=False):
     """
     Returns tbl.Nanoparticles entries that match criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -729,11 +690,45 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
                  (default: None = no limit)
     - return_query (bool): if True, returns just the query
                            and not the results
+    - return_list (bool): if True, function always returns list, else
+                          will only return list if (# results) != 1
 
     Returns:
-    - (tbl.Nanoparticles)(s) if match else (None)
+    - (tbl.Nanoparticles)(s) if match else []
     """
     return get_entry(tbl.Nanoparticles, **locals())
+
+
+def get_polymet_result(metals=None, composition=None, num_atoms=None,
+                       shape=None, lim=None, return_query=None,
+                       return_list=False):
+    """
+    Returns tbl.PolyMetallicResult entries that match criteria
+    - if no criteria given, all data (up to <lim> amount)
+      returned
+
+    KArgs:
+    - metals (Iterable[str]): ordered list of metal types
+    - composition (Iterable[int]): atomic counts (sums to num_atoms)
+    - num_atoms (int): total number of atoms in NP
+    - lim (int): max number of entries returned
+                 (default: None = no limit)
+    - return_query (bool): if True, returns just the query
+                           and not the results
+    - return_list (bool): if True, function always returns list, else
+                          will only return list if (# results) != 1
+
+    Returns:
+    - (tbl.PolymetallicResult)(s) if match else []
+    """
+    if metals is not None:
+        metals = ','.join(metals)
+    if composition is not None:
+        composition = ','.join(map(str, composition))
+    return get_entry(tbl.PolymetallicResults, metals_list=metals,
+                     composition_list=composition, num_atoms=num_atoms,
+                     shape=shape, lim=lim, return_query=return_query,
+                     return_list=return_list)
 
 
 def get_shell2num(shape, num_shells):
@@ -754,35 +749,6 @@ def get_shell2num(shape, num_shells):
 
 
 # INSERT FUNCTIONS
-
-
-def insert_model_coefficients(coeffs_dict=None):
-    """
-    Inserts model coefficients into ModelCoefficients
-    - checks DB to ensure entry does not already exist
-
-    Kargs:
-    - coeffs_dict (dict): dictionary of coefficients
-                          if None, read in from data directory
-                          (default: None)
-
-    Returns:
-    - (bool): True if successful insertion else False
-    """
-    if not coeffs_dict:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            '..', '..', 'data', 'coefs_set.pickle')
-        with open(path, 'rb') as fid:
-            coeffs_dict = pickle.load(fid)
-
-    # dict(element1=dict(element2=[bond_energies where index = cn]))
-    for e1 in coeffs_dict:
-        for e2 in coeffs_dict[e1]:
-            for cn in range(len(coeffs_dict[e1][e2])):
-                if not get_model_coefficient(e1, e2, cn, lim=1):
-                    session.add(tbl.ModelCoefficients(e1, e2, cn,
-                                                      coeffs_dict[e1][e2][cn]))
-    return db_utils.commit_changes(session)
 
 
 def insert_nanoparticle(atom, shape, num_shells=None):
@@ -865,7 +831,7 @@ def update_bimet_result(metals, shape, num_atoms,
     elif not allow_insert:
         return
     else:
-        metal1, metal2 = db_utils.sort_metals(metals)
+        metal1, metal2 = db_utils.sort_2metals(metals)
         res = tbl.BimetallicResults(
             metal1=metal1,
             metal2=metal2,
@@ -887,18 +853,73 @@ def update_bimet_result(metals, shape, num_atoms,
     return res
 
 
+def update_polymet_result(metals: Iterable[str], composition: Iterable[int],
+                          shape: str, CE: float, EE: float,
+                          ordering: Iterable[int], nanop: tbl.Nanoparticles,
+                          allow_insert=True, force_update=False):
+    """Update GA result of a polymetallic NP (3+ metal types)
+       or Insert new result (if no match is found)
+    """
+    if len(ordering) != nanop.num_atoms:
+        raise ValueError("Invalid ordering length.")
+
+    res = get_polymet_result(metals, composition, nanop.num_atoms, shape)
+    # Update result if matching NP is found
+    if res:
+        # only update if new NP has lower CE
+        if CE < res.CE:
+            res.CE = CE
+            res.EE = EE
+            res.ordering = ordering
+        elif not force_update:
+            return False
+
+    # else insert new result if allow_insert is True
+    elif allow_insert:
+        res = tbl.PolymetallicResults(metals, composition, shape, CE, EE,
+                                      ordering)
+        nanop.polymetallic_results.append(res)
+        session.add(nanop)
+    # else do not change DB and return False
+    else:
+        return False
+
+    session.add(res)
+    db_utils.commit_changes(session)
+    return True
+
+
 # REMOVE FUNCTIONS
 
 
-def remove_entry(entry_inst):
+def remove_entry(get_func, **kwargs):
     """
     GENERIC FUNCTION
     Deletes entry (and its children if applicable) from DB
 
     Args:
-    - entry_inst (DataTable instance): datarow to be deleted
+    - get_func (function): get_* function used to query datatable of interest
+
+    Kargs:
+    - **kwargs: arguments whose name(s) matches a column in the datatable
+                (used to find a single entry)
+
+    Raises:
+    - NPDatabaseError: query results != 1
+
+    Returns:
+    - True if successfully deleted entry from datatable of interest
     """
-    session.delete(entry_inst)
+    entry = get_func(**kwargs)
+
+    if not entry:
+        raise db_utils.NPDatabaseError('Unable to find matching entry.')
+    elif isinstance(entry, list):
+        raise db_utils.NPDatabaseError('Mulitple matches. '
+                                       'Can only remove one entry.')
+
+    # if single entry, delete it and its children
+    session.delete(entry)
     return db_utils.commit_changes(session)
 
 
@@ -916,70 +937,29 @@ def remove_nanoparticle(shape=None, num_atoms=None, num_shells=None):
     Returns:
     - True if successful
     """
-    res = get_nanoparticle(shape, num_atoms, num_shells)
-    if isinstance(res, list):
-        raise db_utils.NPDatabaseError('Can only remove one Nanoparticle')
-    elif not res:
-        raise db_utils.NPDatabaseError('Unable to find matching Nanoparticle')
-    else:
-        return remove_entry(res)
+    return remove_entry(get_nanoparticle, shape=shape, num_atoms=num_atoms,
+                        num_shells=num_shells)
 
 
-# HELPER FUNCTIONS
-
-
-def gen_coeffs_dict_from_raw(metal1, metal2, bulkce_m1, bulkce_m2,
-                             homo_bde_m1, homo_bde_m2, hetero_bde, cnmax=12):
+def remove_polymet_result(metals: Iterable[str] = None,
+                          composition: Iterable[int] = None,
+                          shape: str = None,
+                          num_atoms: int = None):
     """
-        Generates the Bond-Centric half bond energy terms for a bimetallic
-        pair AB. Coordination number 0 is given the value None. Dictionary is
-        used with AtomGraph to calculate total CE of bimetallic nanoparticles.
-        Relies on raw data arguments to create dictionary.
+    Removes a single polymetallic result from DB
+    - only commits if query matches a single result
 
-        Args:
-        - metal1 (str): atomic symbol of metal 1
-        - metal2 (str): atomic symbol of metal 2
-        - bulkce_m1 (float): bulk cohesive energy (in eV / atom) of metal1
-        - bulkce_m2 (float): bulk cohesive energy (in eV / atom) of metal2
-        - homo_bde_m1 (float): m1-m1 (homoatomic) bond dissociation energy
-        - homo_bde_m2 (float): m2-m2 (homoatomic) bond dissociation energy
-        - hetero_bde (float): m1-m2 (heteroatomic) bond dissociation energy
+    Kargs:
+    - shape (str): shape of NP
+    - num_atoms (int): number of atoms in NP
+    - num_shells (int): number of shells used to build NP
+                        from structure_gen module
 
-        KArgs:
-        - cnmax: maximum bulk coordination number (CN) of metals
-                 (Default: 12)
-
-        Returns:
-        - (dict): form dict[m1][m2][CN] = half bond energy term
+    Returns:
+    - True if successful
     """
-    metals = [metal1, metal2]
-
-    # calculate gammas
-    gamma_m1 = (2 * (hetero_bde - homo_bde_m2)) / (homo_bde_m1 - homo_bde_m2)
-    gamma_m2 = 2 - gamma_m1
-
-    # create bulkce and gamma dictionaries
-    bulkce = {metal1: bulkce_m1,
-              metal2: bulkce_m2}
-    gammas = {metal1: {metal1: 1, metal2: gamma_m1},
-              metal2: {metal2: 1, metal1: gamma_m2}}
-
-    # calculate "total gamma" params (part of BC model that is independent of
-    # current atomic CN)
-    totgamma = {}
-    for m in metals:
-        totgamma[m] = {}
-        for m2 in metals:
-            totgamma[m][m2] = gammas[m][m2] * bulkce[m] / np.sqrt(cnmax)
-
-    # create coefficient dictionary
-    coeffs = {}
-    for m in metals:
-        coeffs[m] = {}
-        for m2 in metals:
-            coeffs[m][m2] = [None if cn == 0 else totgamma[m][m2] / np.sqrt(cn)
-                             for cn in range(cnmax + 1)]
-    return coeffs
+    return remove_entry(get_polymet_result, metals=metals,
+                        composition=composition, num_atoms=num_atoms)
 
 
 if __name__ == '__main__':

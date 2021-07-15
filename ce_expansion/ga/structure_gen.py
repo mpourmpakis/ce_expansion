@@ -1,23 +1,10 @@
-#!/usr/bin/env python3
-import os
-import pathlib
-import pickle
-
 import ase.cluster
 import ase.lattice
-import numpy as np
 
-from ce_expansion.atomgraph import adjacency
 from ce_expansion.npdb import db_inter
 
-# build paths
-datapath = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        '..', 'data')
-atompath = os.path.join(datapath, 'atom_objects')
-bondpath = os.path.join(datapath, 'bond_lists')
 
-
-def build_structure_sql(shape, num_shells):
+def build_structure_sql(shape: str, num_shells: int):
     """
     Creates NP of specified shape and size (based on num_shells)
 
@@ -28,12 +15,13 @@ def build_structure_sql(shape, num_shells):
                  - elongated-trigonal-pyramid
                  - fcc-cube
                  - icosahedron
+                 - sphere
     num_shells (int): Number of shells in NP
                       e.g. icosahedron with 2 shells makes a 55-atom object
                       ( 1 in core (shell_0) + 12 in shell_1 + 42 in shell_2)
 
     Kargs:
-    build_bonds_list (bool): if True, builds bonds list attribute
+    build_bonds_arr (bool): if True, builds bonds list attribute
                              (default: True)
 
     Returns:
@@ -60,96 +48,6 @@ def build_structure_sql(shape, num_shells):
         nanop = db_inter.insert_nanoparticle(atom, shape, num_shells)
 
     return nanop
-
-    # # can return atoms obj and bond list or just atoms obj
-    # if build_bonds_list:
-
-    #     # make sure bond_list directory exists (if not, make one)
-    #     pathlib.Path(os.path.join(bondpath, shape)).mkdir(parents=True,
-    #                                                       exist_ok=True)
-
-    #     # if bond_list file (fname) exists, read it in
-    #     # else make and save bond_list
-    #     fname = os.path.join(bondpath, shape, '%i.npy' % num_shells)
-    #     if os.path.isfile(fname):
-    #         bonds_list = np.load(fname)
-    #     else:
-    #         bonds_list = adjacency.build_bonds_list(atom)
-    #         np.save(fname, bonds_list)
-    #     nanop.bonds_list = bonds_list
-    # return nanop
-
-
-def build_structure(shape, num_shells,
-                    build_bonds_list=True):
-    """
-    Creates NP of specified shape and size (based on num_shells)
-
-    Args:
-    shape (str): shape of NP
-                 NOTE: currently supported methods (found in NPBuilder)
-                 - cuboctahedron
-                 - elongated-trigonal-pyramid
-                 - fcc-cube
-                 - icosahedron
-    num_shells (int): Number of shells in NP
-                      e.g. icosahedron with 2 shells makes a 55-atom object
-                      ( 1 in core (shell_0) + 12 in shell_1 + 42 in shell_2)
-
-    Kargs:
-    build_bonds_list (bool): if True, also returns bond_list of Atoms obj
-                             (default: True)
-
-    Returns:
-            if return_bond_list:
-                (ase.Atoms), (list): atom obj and bond_list
-            else:
-                (ase.Atoms): atom obj of structure
-
-    Raises:
-            NotImplementedError: given shape has not been implemented
-    """
-    if num_shells <= 0:
-        raise ValueError('Can only build NPs with at least one shell.')
-
-    # ensure necessary directories exist within local repository
-    pathlib.Path(os.path.join(atompath, shape)).mkdir(parents=True,
-                                                      exist_ok=True)
-
-    apath = os.path.join(atompath, shape, '%i.pickle' % num_shells)
-    if os.path.isfile(apath):
-        with open(apath, 'rb') as fidr:
-            atom = pickle.load(fidr)
-    else:
-        try:
-            # build atom object
-            atom = getattr(NPBuilder, shape.replace('-', '_'))(num_shells)
-        except:
-            raise NotImplementedError('%s has not been implemented' % shape)
-
-        # only save NPs with at least 1 shell
-        if num_shells > 0:
-            with open(apath, 'wb') as fidw:
-                pickle.dump(atom, fidw)
-
-    # can return atoms obj and bond list or just atoms obj
-    if build_bonds_list:
-
-        # make sure bond_list directory exists (if not, make one)
-        pathlib.Path(os.path.join(bondpath, shape)).mkdir(parents=True,
-                                                          exist_ok=True)
-
-        # if bond_list file (fname) exists, read it in
-        # else make and save bond_list
-        fname = os.path.join(bondpath, shape, '%i.npy' % num_shells)
-        if os.path.isfile(fname):
-            bond_list = np.load(fname)
-        else:
-            bond_list = adjacency.buildBondsList(atom)
-            np.save(fname, bond_list)
-        return atom, bond_list
-    else:
-        return atom
 
 
 class NPBuilder(object):
@@ -285,66 +183,3 @@ class NPBuilder(object):
                 sphere += atom
 
         return sphere
-
-
-if __name__ == '__main__':
-    res = db_inter.get_bimet_result('AgAu', num_atoms=55)[10]
-    res.get_atoms_obj()
-    a1 = res.atoms_obj
-    print(a1.get_chemical_formula())
-    # exit()
-
-    nanop = db_inter.get_nanoparticle(num_atoms=309, shape='icosahedron')
-    # print(nanop.atoms_obj)
-    print(nanop.bonds_list[-1])
-    print(nanop.bonds_list[-1])
-    # exit()
-
-    """
-    Testing new get_bonds_list function
-    """
-
-    # atom = NPBuilder.icosahedron(20)
-    nanop = build_structure_sql('icosahedron', 2)
-    atom = nanop.atoms_obj
-
-    # 1: original bond list
-    # 2: new bond list
-    import time
-    s = time.time()
-    oldb = adjacency.buildBondsList(atom)
-    print(f'{"Original B:":>13} {time.time()-s:.3f}s')
-
-    s = time.time()
-    newb = nanop.bonds_list
-    print(f'{"New B:":>13} {time.time()-s:.3f}s')
-
-    import ce_expansion.atomgraph as ag
-    oldb_graph = ag.AtomGraph(oldb, 'Ag', 'Au')
-    newb_graph = ag.AtomGraph(newb, 'Ag', 'Au')
-
-    # TEST new bond list
-    print('     N atoms:', oldb_graph.num_atoms == newb_graph.num_atoms)
-    print('         CNS:', (oldb_graph.cns == newb_graph.cns).all())
-    print('Diff-monoCE0:', oldb_graph.mono_ce0 - newb_graph.mono_ce0)
-    print('Diff-monoCE1:', oldb_graph.mono_ce1 - newb_graph.mono_ce1)
-
-    """
-    use_sql = False
-    shapes = ['cuboctahedron', 'elongated-pentagonal-bipyramid',
-              'fcc-cube', 'icosahedron']
-    for shape in shapes:
-        print('-' * 50)
-        print(shape)
-        for num_shells in range(1, 16):
-            if use_sql:
-                nanop = build_structure_sql(shape, num_shells,
-                                            build_bonds_list=True)
-                atom = nanop.get_atoms_obj_skel()
-                bonds = nanop.load_bonds_list()
-            else:
-                atom, bonds = build_structure(shape, num_shells,
-                                              build_bonds_list=True)
-            print('%02i: %i' % (num_shells, len(atom)))
-        print('-' * 50)
-    """
