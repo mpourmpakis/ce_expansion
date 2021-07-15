@@ -882,7 +882,7 @@ class Nanoparticles(Base):
                 # Ensure directory actually exists before we save to it
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                self._bonds_list = adjacency.build_bonds_list(self.atoms_obj)
+                self._bonds_list = adjacency.build_bonds_arr(self.atoms_obj)
                 np.save(path, self._bonds_list)
 
         if self.num_bonds is None:
