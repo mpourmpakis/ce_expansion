@@ -34,6 +34,6 @@ setuptools.setup(name="ce_expansion",
                               "Topic :: Scientific/Engineering :: Chemistry",
                               "Topic :: Scientific/Engineering :: Physics",
                               "Topic :: Scientific/Engineering :: Visualization"],
-                 python_requires=">=2.7",
-                 install_requires=["numpy", "ase>=3.18.1", "matplotlib", "seaborn", "sqlalchemy"],
+                 python_requires=">=3.7",
+                 install_requires=["ase>=3.18.1", "numpy", "matplotlib", "seaborn", "sqlalchemy"],
                  zip_safe=False)
