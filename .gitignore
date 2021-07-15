@@ -9,3 +9,4 @@ __pycache__/
 /ce_expansion/data
 /ce_expansion.egg-info
 /build
+.vscode/
