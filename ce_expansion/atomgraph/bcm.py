@@ -1,9 +1,11 @@
-from ce_expansion.data.gamma import GammaValues
-import numpy as np
 import itertools
-from ce_expansion.data.gamma import GammaValues
 import collections.abc
+
+import numpy as np
 import ase.units
+
+from ce_expansion.atomgraph import adjacency
+from ce_expansion.data.gamma import GammaValues
 
 
 def recursive_update(d, u):
@@ -31,21 +33,21 @@ def recursive_update(d, u):
 
 
 class BCModel:
-    def __init__(self, atoms, bond_list, metal_types=None):
+    def __init__(self, atoms, metal_types=None, bond_list=None):
         """
         Based on metal_types, create ce_bulk and gamma dicts from the data given
 
         Args:
-            atoms: ASE atoms object which contains the data of the NP being tested
-            bond_list: a CSV containing the bond data
+        atoms: ASE atoms object which contains the data of the NP being tested
+        bond_list: list of atom indices involved in each bond
+
         KArgs:
             metal_types: List of metals found within the nano-particle
                 - If not passed, will use elements provided by the atoms object
         """
 
-        self.atoms = atoms
-        self.bond_list = bond_list
-        self.cn = np.bincount(self.bond_list[:, 0])
+        self.atoms = atoms.copy()
+        self.atoms.pbc = False
 
         if metal_types is None:
             # get metal_types from atoms object
@@ -54,15 +56,25 @@ class BCModel:
             # ensure metal_types to unique, sorted list of metals
             self.metal_types = sorted(set(m.title() for m in metal_types))
 
+        self.bond_list = bond_list
+        if self.bond_list is None:
+            self.bond_list = adjacency.build_bonds_arr(self.atoms)
+
+        self.cn = np.bincount(self.bond_list[:, 0])
+
         # creating gamma list for every possible atom pairing
         self.gamma = None
         self.ce_bulk = None
         self._get_bcm_params()
 
+        # get bonded atom columns
+        self.a1 = self.bond_list[:, 0]
+        self.a2 = self.bond_list[:, 1]
+
         # Calculate and set the precomps matrix
         self.precomps = None
         self.precomps = self._calc_precomps()
-        self.cn_precomps = np.sqrt(self.cn * 12)
+        self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
 
     def __len__(self):
         return len(self.atoms)
@@ -128,14 +140,8 @@ class BCModel:
                 - Will use ardering defined by atom if not given an ordering
 
         Returns: Cohesive Energy
-
         """
-
-        a1 = self.bond_list[:, 0]
-        a2 = self.bond_list[:, 1]
-
-        # creating bond orderings
-        return (self.precomps[orderings[a1], orderings[a2]] / self.cn_precomps[a1]).sum() / len(self.atoms)
+        return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
 
     def calc_ee(self, orderings):
         """
@@ -206,18 +212,6 @@ class BCModel:
 
         return gmix
 
-    def get_adjacency_list(self):
-        '''
-        Calculates an adjacency list given the bonds list.
-
-        Returns:
-        The NxM adjacency list represented by the bonds list
-        '''
-        adjacency_list = [[]] * len(self)
-        for bond in self.bond_list:
-            adjacency_list[bond[0]] = adjacency_list[bond[0]] + [bond[1]]
-        return adjacency_list
-
     def metropolis(self, ordering,
                    num_steps=1000,
                    swap_any=False):
@@ -245,7 +239,8 @@ class BCModel:
         energy_history = np.zeros(num_steps)
         energy_history[0] = best_energy
         if not swap_any:
-            adj_list = self.get_adjacency_list()
+            adj_list = [self.bond_list[self.bond_list[:, 0] == i][:, 1].tolist()
+                        for i in range(len(self.atoms))]
         for step in range(1, num_steps):
             # Determine where the ones and zeroes are currently
             ones = np.where(ordering == 1)[0]
@@ -286,4 +281,3 @@ class BCModel:
                 energy_history[step] = prev_energy
 
         return best_ordering, best_energy, energy_history
-
