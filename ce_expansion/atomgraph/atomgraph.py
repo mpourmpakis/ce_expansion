@@ -18,7 +18,7 @@ class AtomGraph(object):
     Args:
     bond_list (np.array): An Nx2 numpy array containing a list of bonds in the
                           nanoparticle. Zero indexed. Assumed to come from
-                          adjacency.buildBondList.
+                          adjacency.build_bonds_arr.
     kind0 (str): A string indicating the atomic symbol a "0" represents.
     kind1 (str): A string indicating the atomic symbol a "1" represents.
 
@@ -377,7 +377,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     # Create a nanoparticle and its graph object
     nanoparticle = ase.cluster.Icosahedron('Cu', 3)
-    bond_list = adjacency.buildBondsList(nanoparticle)
+    bond_list = adjacency.build_bonds_arr(nanoparticle)
 
     graph = AtomGraph(bond_list, 'Cu', 'Au')
 
