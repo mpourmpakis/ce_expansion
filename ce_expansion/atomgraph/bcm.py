@@ -1,14 +1,16 @@
 import itertools
 import collections.abc
+from typing import Iterable
 
 import numpy as np
+import ase
 import ase.units
 
 from ce_expansion.atomgraph import adjacency
 from ce_expansion.data.gamma import GammaValues
 
 
-def recursive_update(d, u):
+def recursive_update(d : dict, u : dict) -> dict:
     """
     recursively updates 'dict of dicts'
     Ex)
@@ -33,7 +35,7 @@ def recursive_update(d, u):
 
 
 class BCModel:
-    def __init__(self, atoms, metal_types=None, bond_list=None):
+    def __init__(self, atoms: ase.Atoms, metal_types: Iterable = None, bond_list: Iterable = None):
         """
         Based on metal_types, create ce_bulk and gamma dicts from the data given
 
@@ -42,10 +44,9 @@ class BCModel:
         bond_list: list of atom indices involved in each bond
 
         KArgs:
-            metal_types: List of metals found within the nano-particle
-                - If not passed, will use elements provided by the atoms object
+        metal_types: List of metals found within the nano-particle
+                     If not passed, will use elements provided by the atoms object
         """
-
         self.atoms = atoms.copy()
         self.atoms.pbc = False
 
@@ -73,19 +74,19 @@ class BCModel:
 
         # Calculate and set the precomps matrix
         self.precomps = None
-        self.precomps = self._calc_precomps()
+        self._calc_precomps()
         self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.atoms)
 
     def _get_bcm_params(self):
         """
-            Creates gamma and ce_bulk dictionaries which are then used to created precomputed values for the BCM calculation
+        Creates gamma and ce_bulk dictionaries which are then used to created precomputed values for the BCM calculation
 
-        Sets:   Gamma: Weighting factors of the computed elements within the BCM
-                ce_bulk: Bulk Cohesive energy values
-
+        Sets:
+        gamma: Weighting factors of the computed elements within the BCM
+        ce_bulk: Bulk Cohesive energy values
         """
         gamma = {}
         ce_bulk = {}
@@ -106,12 +107,12 @@ class BCModel:
 
     def _calc_precomps(self):
         """
-            Uses the Gamma and ce_bulk dictionaries to create a precomputed BCM matrix of gammas and ce_bulk values
+        Uses the Gamma and ce_bulk dictionaries to create a precomputed BCM matrix of gammas and ce_bulk values
 
-            [precomps] = [gamma of element 1] * [ce_bulk of element 1 to element 2]
+        [precomps] = [gamma of element 1] * [ce_bulk of element 1 to element 2]
 
-        Returns: Precomp Matrix
-
+        Sets:
+        precomps: Precomp Matrix
         """
         # precompute values for BCM calc
         n_met = len(self.metal_types)
@@ -127,60 +128,61 @@ class BCModel:
                 precomp_gamma = self.gammas[M1][M2]
 
                 precomps[i, j] = precomp_gamma * precomp_bulk
-        return precomps
+        self.precomps = precomps
 
-    def calc_ce(self, orderings):
+    def calc_ce(self, orderings: np.ndarray) -> float:
         """
-        Calculates the Cohesive energy of the ordering given or of the default ordering of the NP
+        Calculates the Cohesive energy (in eV / atom) of the ordering given or of the default ordering of the NP
 
         [Cohesive Energy] = ( [precomp values of element A and B] / sqrt(12 * CN) ) / [num atoms]
 
         Args:
-            orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
-                - Will use ardering defined by atom if not given an ordering
+        orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
 
-        Returns: Cohesive Energy
+        Returns:
+        Cohesive Energy (eV / atom)
         """
         return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
 
-    def calc_ee(self, orderings):
+    def calc_ee(self, orderings: np.ndarray) -> float:
         """
-            Calculates the Excess energy of the ordering given or of the default ordering of the NP
+        Calculates the Excess energy (in eV / atom) of the ordering given or of the default ordering of the NP
 
-            [Excess Energy] = [CE of NP] - sum([Pure Element NP] * [Comp of Element in NP])
+        [Excess Energy] = [CE of NP] - sum([Pure Element NP] * [Comp of Element in NP])
 
         Args:
-            orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
+        orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
 
-        Returns: Excess Energy
-
+        Returns:
+        Excess Energy (eV / atom)
         """
 
         metals = np.bincount(orderings)
 
         #Obtain atom fractions of each tested element
-        x_i =  metals / len(orderings)
+        x_i = np.zeros(len(self.metal_types)).astype(float)
+        x_i[:len(metals)] = metals / metals.sum()
 
         #Calculate energy of tested NP first;
         ee = self.calc_ce(orderings)
 
-       # Then, subtract calculated pure NP energies multiplied by respective fractions to get Excess Energy
-        for ele in range(len(metals)):
+        # Then, subtract calculated pure NP energies multiplied by respective fractions to get Excess Energy
+        for ele in range(len(self.metal_types)):
             x_ele = x_i[ele]
             o_mono_x = np.ones(len(self), int) * ele
 
             ee -= self.calc_ce(o_mono_x) * x_ele
-        return(ee)
+        return ee
 
-    def calc_smix(self, orderings):
+    def calc_smix(self, orderings: np.ndarray) -> float:
         """
-
         Uses boltzman constant, orderings, and element compositions to determine the smix of the nanoparticle
 
         Args:
-            orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
+        orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
 
-        Returns: entropy of mixing (smix)
+        Returns:
+        entropy of mixing (smix)
 
         """
 
@@ -195,41 +197,27 @@ class BCModel:
 
         return smix
 
-    def calc_gmix(self, orderings, T=298):
+    def calc_gmix(self, orderings: np.ndarray, T: float = 298.15):
         """
-
-        gmix = self.ee - T * self.calc_smix(ordering)
+        gmix (eV / atom) = self.ee - T * self.calc_smix(ordering)
 
         Args:
-            T: Temperature of the system in Kelvin; Defaults at room temp of 25 C
-            orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
+        T: Temperature of the system in Kelvin; Defaults at room temp of 25 C
+        orderings: The ordering of atoms within the NP; ordering key is based on Metals in alphabetical order
 
-        Returns: free energy of mixing (gmix)
-
+        Returns:
+        free energy of mixing (gmix)
         """
+        return self.calc_ee(orderings) - T * self.calc_smix(orderings)
 
-        gmix = self.calc_ee(orderings) - T * self.calc_smix(orderings)
-
-        return gmix
-
-    def metropolis(self, ordering,
-                   num_steps=1000,
-                   swap_any=False):
-        '''
+    def metropolis(self, ordering: np.ndarray, num_steps: int = 1000):
+        """
         Metropolis-Hastings-based exploration of similar NPs
 
         Args:
-        atomgraph (atomgraph.AtomGraph) : An atomgraph representing the NP
-        ordering (np.array) : 1D chemical ordering array
-        num_steps (int) : How many steps to simulate for
-        swap_any (bool) : Determines whether to restrict the algorithm's swaps
-                          to only atoms directly bound to  the atom of interest.
-                          If set to 'True', the algorithm chooses any two atoms
-                          in the NP regardless of where they are. Selecting
-                          'False' yields a slightly-more-physical case of
-                          atomic diffusion.
-
-        '''
+        ordering: 1D chemical ordering array
+        num_steps: How many steps to simulate for
+        """
         # Initialization
         # create new instance of ordering array
         ordering = ordering.copy()
