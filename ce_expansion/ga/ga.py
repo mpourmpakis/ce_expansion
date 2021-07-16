@@ -282,12 +282,8 @@ class Nanoparticle:
                     should not be mutated
         """
         if not self.bcm:
-            raise ValueError("Mutating Chromo should only be done through"
-                             "Pop simulations")
-
-        if self.n_metals.size == 1:
-            print('Warning: attempting to mutate, but system is monometallic')
-            return
+            raise GAError("Mutating Chromo should only be done through"
+                          "Pop simulations")
 
         # keep track of indices used so there are no repeats
         used = [None, None] * n_swaps
