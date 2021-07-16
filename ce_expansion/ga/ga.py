@@ -816,6 +816,7 @@ class GA(object):
         worst = self.stats[:, 0].max()
 
         res =  f' Form: {self.formula}\n'
+        res += f'nAtom: {len(self.bcm)}\n'
         res += f'nGens: {self.max_gens}\n'
         res += f'Start: {worst:.5f} eV/atom\n'
         res += f' Best: {best:.5f} eV/atom\n'
