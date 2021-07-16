@@ -61,7 +61,10 @@ class Nanoparticle:
             self.ordering = np.array(ordering).astype(int)
 
             # make sure ordering has correct composition
-            if (np.bincount(self.ordering) != self.composition).any():
+            comp = np.zeros(len(self.bcm.metal_types))
+            counts = np.bincount(self.ordering)
+            comp[:len(counts)] = counts
+            if (counts != self.composition).any():
                 raise GAError("Nanoparticle ordering has incorrect composition"
                               f" (should be {self.composition}).")
         else:
