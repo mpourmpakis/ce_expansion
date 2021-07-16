@@ -37,16 +37,16 @@ class Nanoparticle:
         Represents a single structure with a given chemical ordering (arr)
 
         Args:
-        - bcm: instantiated BCModel to compute score as function of ordering
-        - composition: array of metal compositions:
-                       [# metal1, # metal2, ..., # metaln]
+        bcm: instantiated BCModel to compute score as function of ordering
+        composition: array of metal compositions:
+                     [# metal1, # metal2, ..., # metaln]
 
         KArgs:
-        - ordering: array representing positions in
-                    nanoparticle and whether they're
-                    occupied by metal1 (0),
-                    metal2 (1), ..., or metaln (n-1)
-                    (Default: None - random generated)
+        ordering: array representing positions in
+                  nanoparticle and whether they're
+                  occupied by metal1 (0),
+                  metal2 (1), ..., or metaln (n-1)
+                  (Default: None - random generated)
 
         Raises:
         GAError: ordering kwarg does not match composition arg
@@ -106,10 +106,10 @@ class Nanoparticle:
                 (a-b at pos i can only swap with b-a at other pos j!=i)
 
         Args:
-        - nanop2: second parent Nanoparticle
+        nanop2: second parent Nanoparticle
 
         Returns:
-        - two children Nanoparticles with new orderings
+        two children Nanoparticles with new orderings
         """
         # parents = parent ordering arrays
         parent1 = self.ordering
@@ -175,8 +175,8 @@ class Nanoparticle:
         - O(n) scaling [n == number of atoms]
 
         Args:
-        - n_swaps (int): number of swaps to make
-                         (Default: 1)
+        n_swaps: number of swaps to make
+                 (Default: 1)
         """
         # get all indices of ordering positions
         indices = np.arange(self.num_atoms)
@@ -201,10 +201,10 @@ class Nanoparticle:
         - about O(N^2) scaling
 
         Args:
-        - chromo2 (Chromo): second parent Chromo obj
+        nanop2: second parent Chromo obj
 
         Returns:
-        - (list): two children Chromo objs with new ordering <arr>s
+        two children Chromo objs with new ordering <arr>s
         """
         child1 = self.ordering.copy()
         child2 = nanop2.ordering.copy()
@@ -271,12 +271,12 @@ class Nanoparticle:
         - about O(n) scaling
 
         Args:
-        - n_swaps (int): number of swaps to make
-                         (Default: 1)
+        n_swaps: number of swaps to make
+                 (Default: 1)
 
         Raises:
-        - ValueError: if not bcm, Chromo can not and
-                      should not be mutated
+        ValueError: if not bcm, Chromo can not and
+                    should not be mutated
         """
         if not self.bcm:
             raise ValueError("Mutating Chromo should only be done through"
@@ -346,30 +346,30 @@ class GA(object):
         - if random=True, self.run() will conduct a random search
 
         Args:
-        - bcm: BCModel containing atom skeleton info + metal_types
-        - composition: metal counts
-        - shape (str): nanoparticle shape
+        bcm: BCModel containing atom skeleton info + metal_types
+        composition: metal counts
+        shape (str): nanoparticle shape
 
         KArgs:
-        - popsize (int): size of population (Default: 50)
-        - mute_pct: percentage of population to mutate each generation
-                    (Default: 0.8 = 80%)
-        - n_mute_atomswaps: number of atom swaps to make
-                            during a mutation
-                            (Default: None: half min(n_metal1, n_metal2))
-        - spike: if True, following structures are added to generation 0
-                 - if same structure and composition found in DB,
-                   it is added to population
-                 - minCN-filled or maxCN-filled nanoparticle
-                   (depending on which is more fit) also added
-                   to population - structure created using
-                   fill_cn function
-        - random: if True, self.run does a random search and
-                  does not perform a GA simulation
-        - e: exploration - exploitation factor used to bias parent
-             selection probabilities (Default: 1 = No effect)
-        - save_every: choose how often pop CEs are stored in all_data
-        - use_metropolis: use metropolis algorithm at end of GA sim
+        popsize (int): size of population (Default: 50)
+        mute_pct: percentage of population to mutate each generation
+                  (Default: 0.8 = 80%)
+        n_mute_atomswaps: number of atom swaps to make
+                          during a mutation
+                          (Default: None: half min(n_metal1, n_metal2))
+        spike: if True, following structures are added to generation 0
+               - if same structure and composition found in DB,
+                 it is added to population
+               - minCN-filled or maxCN-filled nanoparticle
+                 (depending on which is more fit) also added
+                 to population - structure created using
+                 fill_cn function
+        random: if True, self.run does a random search and
+                does not perform a GA simulation
+        e: exploration - exploitation factor used to bias parent
+           selection probabilities (Default: 1 = No effect)
+        save_every: choose how often pop CEs are stored in all_data
+        use_metropolis: use metropolis algorithm at end of GA sim
         """
         # store the datetime GA was instantiated
         self.dt_created = dt.now()
@@ -459,14 +459,14 @@ class GA(object):
         Main method to run a GA simulation
 
         KArgs:
-        - max_gens: maximum generations the GA will run
-                    -1: the GA only stops based on <max_nochange>
-        - max_nochange: specifies max number of generations GA will run
-                        without finding a better NP
-                        -1: GA will run to <max_gens>
-        - min_gens: minimum generations that the GA runs before checking
-                    the max_nochange criteria
-                    -1: no minimum
+        max_gens: maximum generations the GA will run
+                  -1: the GA only stops based on <max_nochange>
+        max_nochange: specifies max number of generations GA will run
+                      without finding a better NP
+                      -1: GA will run to <max_gens>
+        min_gens: minimum generations that the GA runs before checking
+                  the max_nochange criteria
+                  -1: no minimum
 
         Raises:
         - GAError: can only call run for first GA sim
@@ -534,10 +534,9 @@ class GA(object):
             print('Running metropolis.')
             best = min(self)
             best_ordering = best.ordering.copy()
-            opt_order, opt_ce, en_hist = self.bcm.metropolis(
+            opt_order, opt_ce, _ = self.bcm.metropolis(
                 best_ordering,
-                num_steps=5000,
-                swap_any=False)
+                num_steps=5000)
 
             # if metropolis alg finds a new minimum,
             # drop bottom one from pop
@@ -567,9 +566,9 @@ class GA(object):
         max_nochange: specifies max number of generations GA will run
                       without finding a better NP
                       -1: GA will run to <max_gens>
-        - min_gens: minimum generations that the GA runs before checking
-                    the max_nochange criteria
-                    -1: no minimum
+        min_gens: minimum generations that the GA runs before checking
+                  the max_nochange criteria
+                  -1: no minimum
         """
         self.has_run = False
         self.stats = self.stats.tolist()
@@ -633,8 +632,8 @@ class GA(object):
         Makes atoms object of the calculated optimized atom
 
         KArgs:
-        - np_index (int): Creates atoms object of the desired nanoparticle
-                          (0 being the most optimized nanoparticle)
+        np_index (int): Creates atoms object of the desired nanoparticle
+                        (0 being the most optimized nanoparticle)
 
         Returns:
         the desired atoms object
@@ -660,10 +659,10 @@ class GA(object):
           of the population at each step
 
         KArgs:
-        - save_path: path and file name to save the figure
-                          - if None, figure is not saved
-        - ax: if given, results will be plotted on axis
-        - show: if True, call plt.show()
+        save_path: path and file name to save the figure
+                        - if None, figure is not saved
+        ax: if given, results will be plotted on axis
+        show: if True, call plt.show()
 
         Returns:
         fig and ax objs
@@ -803,7 +802,7 @@ class GA(object):
             - structure formula
 
         KArgs:
-        - display: if True, results string is printed to console
+        display: if True, results string is printed to console
 
         Returns:
         result string
@@ -842,8 +841,8 @@ class GA(object):
         Views the selected nanoparticle of the last genenration
 
         KArgs:
-        - np_index (int): Creates atoms object of the desired nanoparticle
-                                       (0 being the most optimized nanoparticle)
+        np_index (int): Creates atoms object of the desired nanoparticle
+                        (0 being the most optimized nanoparticle)
         """
         ase.visualize.view(self.make_atoms_object(np_index))
 
@@ -899,9 +898,9 @@ class GA(object):
         Prints info on current generation of GA
 
         KArgs:
-        - end: string used to end print statement
-               - \r allows generations to overwrite on same line
-                 during simulation
+        end: string used to end print statement
+             - \r allows generations to overwrite on same line
+               during simulation
         """
         # format of string to be written to console during sim
         string = f' Min: {self.stats[-1][0]:.5f} eV/atom'
@@ -944,10 +943,10 @@ class GA(object):
     def _step(self):
         """
         Wrapper method that takes GA to next generation
-        - mates the population
-        - mutates the population
-        - calculates statistics of new population
-        - resorts population and increments self.generation
+        mates the population
+        mutates the population
+        calculates statistics of new population
+        resorts population and increments self.generation
         """
         if self.random:
             self._initialize_pop()
@@ -985,15 +984,16 @@ def build_ga(atoms: ase.Atoms, metal_types: Iterable[str],
     - **kwargs gets passed directly into Pop.__init__
 
     Args:
-    - atoms: atoms object of NP skeleton (holds atomic positions)
-    - metal_types: list of metal types that should make up NP
-                   NOTE: this list will get sorted by BCModel
-    - composition: list of metal counts | % composition of each metal
+    atoms: atoms object of NP skeleton (holds atomic positions)
+    metal_types: list of metal types that should make up NP
+                 NOTE: this list will get sorted by BCModel
+    composition: list of metal counts | % composition of each metal
 
     KArgs:
-    - shape: shape/name of NP
-    - **ga_kwargs: valid arguments to initialize GA object
-                   e.g. popsize=50, save_every=25
+    shape: shape/name of NP
+    bonds: array of atom indices that make up bonds
+    **ga_kwargs: valid arguments to initialize GA object
+                 e.g. popsize=50, save_every=25
 
     Returns:
     GA instance
@@ -1033,43 +1033,42 @@ def fill_cn(bcm, n_metal2, max_search=50, low_first=True, return_n=None,
     Algorithm to fill the lowest (or highest) coordination sites with 'metal2'
 
     Args:
-    - bcm (atomgraph.AtomGraph | atomgraph.BCModel): bcm obj
-    - n_metal2 (int): number of dopants
+    bcm (atomgraph.AtomGraph | atomgraph.BCModel): bcm obj
+    n_metal2 (int): number of dopants
 
     KArgs:
-    - max_search (int): if there are a number of possible structures with
-                        partially-filled sites, the function will search
-                        max_search options and return lowest CE structure
-                        (Default: 50)
-    - low_first (bool): if True, fills low CNs, else fills high CNs
-                        (Default: True)
-    - return_n (bool): if > 0, function will return a list of possible
-                       structures
-                       (Default: None)
-    - verbose (bool): if True, function will print info to console
-                      (Default: False)
+    max_search (int): if there are a number of possible structures with
+                      partially-filled sites, the function will search
+                      max_search options and return lowest CE structure
+                      (Default: 50)
+    low_first (bool): if True, fills low CNs, else fills high CNs
+                      (Default: True)
+    return_n (bool): if > 0, function will return a list of possible
+                     structures
+                     (Default: None)
+    verbose (bool): if True, function will print info to console
+                    (Default: False)
 
     Returns:
     if return_n > 0:
-    - (list): list of chemical ordering np.ndarrays
+        (list): list of chemical ordering np.ndarrays
     else:
-    - (np.ndarray), (float): chemical ordering np.ndarray with its
-                             calculated CE
+        (np.ndarray), (float): chemical ordering np.ndarray with its                             calculated CE
 
     Raises:
-    - ValueError: not enough options to produce <return_n> sample size
+    ValueError: not enough options to produce <return_n> sample size
     """
 
-    def ncr(n, r):
+    def ncr(n: int, r: int) -> int:
         """
         N choose r function (combinatorics)
 
         Args:
-        - n (int): from 'n' choices
-        - r (int): choose r without replacement
+        n: from 'n' choices
+        r: choose r without replacement
 
         Returns:
-        - (int): total combinations
+        total combinations
         """
         r = min(r, n - r)
         numer = functools.reduce(op.mul, range(n, n - r, -1), 1)
