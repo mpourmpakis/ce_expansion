@@ -379,9 +379,8 @@ class GA(object):
         self.composition = np.array(composition).astype(int)
 
         # GA only works with polymetallic NPs (# metal > 1)
-        nanop_is_monometallic = (self.composition == self.composition.sum()).any()
-        if nanop_is_monometallic:
-            raise GAError("GA is unnecessary for a monometallic Nanoparticle.")
+        # if mono, run() will just return CE
+        self.is_monometallic = np.count_nonzero(self.composition) == 1
 
         # make sure composition adds up to number of atoms
         if self.composition.sum() != len(self.bcm):
@@ -447,7 +446,7 @@ class GA(object):
         self.initialize_new_run()
 
     def __len__(self) -> int:
-        return self.popsize
+        return len(self.pop)
 
     def __getitem__(self, i: int) -> Nanoparticle:
         return self.pop[i]
@@ -476,6 +475,10 @@ class GA(object):
         elif max_gens == max_nochange == -1:
             raise GAError("max_gens and max_nochange cannot both be "
                           "turned off (equal: -1)")
+
+        # if GA is initialized as monometallic
+        if self.is_monometallic:
+            max_gens = max_nochange = 0
 
         self.max_gens = max_gens
 
