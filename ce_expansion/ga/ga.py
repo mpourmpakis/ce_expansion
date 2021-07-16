@@ -9,7 +9,7 @@ import time
 import warnings
 from datetime import datetime as dt
 from datetime import timedelta
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import Iterable, List, Union
 
 import ase
@@ -973,9 +973,9 @@ class GA(object):
                            s.std()]) # STD CE
 
 
-def build_ga(atoms: ase.Atoms, metal_types: Iterable[str],
-             composition: Iterable, shape: str = '',
-             **ga_kwargs) -> GA:
+def build_ga(atoms: ase.Atoms, metal_types: Iterable[str] = None,
+             composition: Iterable = None, shape: str = '',
+             bonds: Iterable[int] = None, **ga_kwargs) -> GA:
     """
     Initializes a GA for the specified shape,
     metals, and number of shells
@@ -997,13 +997,23 @@ def build_ga(atoms: ase.Atoms, metal_types: Iterable[str],
     Returns:
     GA instance
     """
+    # get metal info from atoms object if only atoms is given
+    if metal_types is None or composition is None:
+        metal_types = sorted(set(atoms.symbols))
+
+        # use a counter to get metal counts
+        counts = Counter(atoms.symbols)
+        composition = [counts[m] for m in metal_types]
+
     # if composition is metal %'s, convert to metal counts
-    if np.isclose(1, sum(composition)):
+    elif np.isclose(1, sum(composition)):
         composition = (np.array(composition) * len(atoms)).astype(int)
         composition[-1] += len(atoms) - composition.sum()
 
-    bonds = adjacency.build_bonds_arr(atoms)
-    bcm = BCModel(atoms, bonds, metal_types)
+    if bonds is None:
+        bonds = adjacency.build_bonds_arr(atoms)
+
+    bcm = BCModel(atoms, metal_types=metal_types, bond_list=bonds)
     ga = GA(bcm, composition, shape, **ga_kwargs)
     return ga
 
