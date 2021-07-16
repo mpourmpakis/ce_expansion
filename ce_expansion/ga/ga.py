@@ -1,5 +1,4 @@
 from __future__ import annotations
-from ce_expansion.atomgraph import adjacency
 import functools
 import itertools as it
 import operator as op
@@ -20,6 +19,7 @@ import ase.visualize
 
 from ce_expansion.atomgraph.bcm import BCModel
 from ce_expansion.atomgraph.atomgraph import AtomGraph
+from ce_expansion.atomgraph import adjacency
 from ce_expansion.ga import structure_gen
 from ce_expansion.npdb import db_inter
 
@@ -51,7 +51,6 @@ class Nanoparticle:
         Raises:
         GAError: ordering kwarg does not match composition arg
         """
-        self.bcm : BCModel
         self.bcm = bcm
         self.composition = np.array(composition).astype(int)
         self.num_atoms = len(self.bcm)
@@ -650,7 +649,7 @@ class GA(object):
 
         return atoms
 
-    def plot_results(self, save_path : str = None, ax: plt.Axes = None,
+    def plot_results(self, save_path: str = None, ax: plt.Axes = None,
                      show: bool = False) -> Union[plt.Figure, plt.Axes]:
         """
         Method to create a plot of GA simulation
@@ -1022,7 +1021,7 @@ def build_ga(atoms: ase.Atoms, metal_types: Iterable[str] = None,
     return ga
 
 
-def load_ga_pickle(path : str) -> GA:
+def load_ga_pickle(path: str) -> GA:
     """
     Load a pickled GA object
 
@@ -1163,27 +1162,3 @@ def fill_cn(bcm, n_metal2, max_search=50, low_first=True, return_n=None,
     if return_n:
         return [struct_min]
     return struct_min, ce
-
-
-if __name__ == '__main__':
-    np.random.seed(15213)
-
-    metal_types = ['Ag', 'Au', 'Cu']
-    num_shells = 1
-
-    # create icosahedron atoms objedct
-    shape = 'icosahedron'
-    atoms = structure_gen.NPBuilder.icosahedron(num_shells)
-
-    # create a random composition
-    comp = np.random.random(size=len(metal_types))
-    comp = (len(atoms) * comp / comp.sum()).astype(int)
-    comp[-1] += len(atoms) - comp.sum()
-
-    # set composition of atoms object to <comp>
-    atoms.symbols = np.repeat(metal_types, comp)
-
-    # create ga object and run simulation
-    ga = build_ga(atoms)
-    ga.run(max_gens=100)
-    ga.plot_results(show=True)
