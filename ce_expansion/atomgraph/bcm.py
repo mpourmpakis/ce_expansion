@@ -238,33 +238,14 @@ class BCModel:
         prev_energy = best_energy
         energy_history = np.zeros(num_steps)
         energy_history[0] = best_energy
-        if not swap_any:
-            adj_list = [self.bond_list[self.bond_list[:, 0] == i][:, 1].tolist()
-                        for i in range(len(self.atoms))]
-        for step in range(1, num_steps):
-            # Determine where the ones and zeroes are currently
-            ones = np.where(ordering == 1)[0]
-            zeros = np.where(ordering == 0)[0]
 
-            # Choose a random step
-            if swap_any:
-                chosen_one = np.random.choice(ones)
-                chosen_zero = np.random.choice(zeros)
-            else:
-                # Search the NP for a 1 with heteroatomic bonds
-                for chosen_one in np.random.permutation(ones):
-                    connected_atoms = np.array(adj_list[chosen_one])
-                    connected_zeros = np.intersect1d(connected_atoms, zeros,
-                                                     assume_unique=True)
-                    if connected_zeros.size != 0:
-                        # The atom has zeros connected to it
-                        chosen_zero = np.random.choice(connected_zeros)
-                        break
+        ordering_indices = np.arange(len(ordering))
+        for step in range(1, num_steps):
+            prev_ordering = ordering.copy()
+            i, j = np.random.choice(ordering_indices, 2, replace=False)
+            ordering[i], ordering[j] = ordering[j], ordering[i]
 
             # Evaluate the energy change
-            prev_ordering = ordering.copy()
-            ordering[chosen_one] = 0
-            ordering[chosen_zero] = 1
             energy = self.calc_ce(ordering)
 
             # Metropolis-related stuff
