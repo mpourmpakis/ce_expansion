@@ -707,8 +707,11 @@ class GA(object):
 
             # format latex formula for plot title
             tex_form = re.sub('([A-Z][a-z]?)([0-9]+)', '\\1_{\\2}', self.formula)
-            title = f'$\\rm{tex_form}$ -- {self.shape.title()}\n{low[-1]:.3f} eV/atom'
-            ax.set_title(title, fontdict=dict(weight='normal'))
+            title = f'$\\rm{tex_form}$'
+            if self.shape:
+                title += f' -- {self.shape.title()}'
+            title += f'\n{low[-1]:.3f} eV/atom'
+            ax.set_title(title, fontdict={'weight': 'normal'})
             fig.tight_layout()
 
         # save figure if <save_path> was specified
