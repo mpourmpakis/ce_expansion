@@ -645,7 +645,7 @@ class GA(object):
 
         elements = np.array(self.bcm.metal_types)[element_ordering]
 
-        atoms = self.atom.copy()
+        atoms = self.bcm.atoms.copy()
         atoms.symbols = elements
 
         return atoms
