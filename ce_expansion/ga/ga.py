@@ -1169,22 +1169,21 @@ if __name__ == '__main__':
     np.random.seed(15213)
 
     metal_types = ['Ag', 'Au', 'Cu']
-    num_shells = 5
+    num_shells = 1
 
-    # create icosahedron atoms object
+    # create icosahedron atoms objedct
     shape = 'icosahedron'
     atoms = structure_gen.NPBuilder.icosahedron(num_shells)
 
-    # get bonds list and make 
-    bonds = adjacency.build_bonds_arr(atoms)
-    bcm = BCModel(atoms, metal_types)
-
     # create a random composition
-    comp = np.random.randint(10, 100, size=len(metal_types)).astype(float)
+    comp = np.random.random(size=len(metal_types))
     comp = (len(atoms) * comp / comp.sum()).astype(int)
     comp[-1] += len(atoms) - comp.sum()
 
-    ga = GA(bcm, comp, shape)
-    ga.run(max_gens=50)
-    ga.save_to_db()
+    # set composition of atoms object to <comp>
+    atoms.symbols = np.repeat(metal_types, comp)
+
+    # create ga object and run simulation
+    ga = build_ga(atoms)
+    ga.run(max_gens=100)
     ga.plot_results(show=True)
