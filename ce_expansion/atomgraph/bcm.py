@@ -10,7 +10,7 @@ from ce_expansion.atomgraph import adjacency
 from ce_expansion.data.gamma import GammaValues
 
 
-def recursive_update(d : dict, u : dict) -> dict:
+def recursive_update(d: dict, u: dict) -> dict:
     """
     recursively updates 'dict of dicts'
     Ex)
