@@ -75,7 +75,7 @@ class BCModel:
 
         # Calculate and set the precomps matrix
         self.precomps = None
-        self._calc_precomps()
+        self._get_precomps()
         self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
 
     def __len__(self) -> int:
@@ -107,9 +107,10 @@ class BCModel:
         self.ce_bulk = ce_bulk
         self.gammas = gamma
 
-    def _calc_precomps(self):
+    def _get_precomps(self):
         """
-        Uses the Gamma and ce_bulk dictionaries to create a precomputed BCM matrix of gammas and ce_bulk values
+        Uses the Gamma and ce_bulk dictionaries to create a precomputed
+        BCM matrix of gammas and ce_bulk values
 
         [precomps] = [gamma of element 1] * [ce_bulk of element 1 to element 2]
 
