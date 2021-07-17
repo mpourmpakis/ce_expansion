@@ -408,8 +408,9 @@ class GA(object):
 
         # NOTE: spike currently does nothing. Warn user if spike is True
         if self.spike:
-            warnings.WarningMessage("spike=True does not change GA simulation -"
-                                    " still need to implement polymetallic spiking methods")
+            warnings.warn("spike=True does not change GA simulation -"
+                          " still need to implement polymetallic spiking methods",
+                          category=DeprecationWarning)
 
         # keep track of how many times the sim has been continued
         self.continued = 0
