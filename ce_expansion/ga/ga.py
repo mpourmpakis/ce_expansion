@@ -18,9 +18,7 @@ import numpy as np
 import ase.visualize
 
 from ce_expansion.atomgraph.bcm import BCModel
-from ce_expansion.atomgraph.atomgraph import AtomGraph
 from ce_expansion.atomgraph import adjacency
-from ce_expansion.ga import structure_gen
 from ce_expansion.npdb import db_inter
 
 
@@ -451,7 +449,8 @@ class GA(object):
     def __getitem__(self, i: int) -> Nanoparticle:
         return self.pop[i]
 
-    def run(self, max_gens: int = -1, max_nochange: int = 750, min_gens: int = -1):
+    def run(self, max_gens: int = -1, max_nochange: int = 750,
+            min_gens: int = -1):
         """
         Main method to run a GA simulation
 
@@ -557,7 +556,8 @@ class GA(object):
         self.summ_results(display=True)
         print(breakline)
 
-    def continue_run(self, max_gens: int = -1, max_nochange: int = 50, min_gens: int = -1):
+    def continue_run(self, max_gens: int = -1, max_nochange: int = 50,
+                     min_gens: int = -1):
         """
         Used to continue GA sim from where it left off
 
