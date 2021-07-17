@@ -35,9 +35,10 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 
 class BCModel:
-    def __init__(self, atoms: ase.Atoms, metal_types: Iterable = None, bond_list: Iterable = None):
+    def __init__(self, atoms: ase.Atoms, metal_types: Iterable = None,
+                 bond_list: Iterable = None):
         """
-        Based on metal_types, create ce_bulk and gamma dicts from the data given
+        Based on metal_types, create ce_bulk and gamma dicts from data given
 
         Args:
         atoms: ASE atoms object which contains the data of the NP being tested
@@ -45,7 +46,7 @@ class BCModel:
 
         KArgs:
         metal_types: List of metals found within the nano-particle
-                     If not passed, will use elements provided by the atoms object
+                     If not passed, use elements provided by the atoms object
         """
         self.atoms = atoms.copy()
         self.atoms.pbc = False
@@ -82,7 +83,8 @@ class BCModel:
 
     def _get_bcm_params(self):
         """
-        Creates gamma and ce_bulk dictionaries which are then used to created precomputed values for the BCM calculation
+        Creates gamma and ce_bulk dictionaries which are then used
+        to created precomputed values for the BCM calculation
 
         Sets:
         gamma: Weighting factors of the computed elements within the BCM
@@ -159,14 +161,15 @@ class BCModel:
 
         metals = np.bincount(orderings)
 
-        #Obtain atom fractions of each tested element
+        # obtain atom fractions of each tested element
         x_i = np.zeros(len(self.metal_types)).astype(float)
         x_i[:len(metals)] = metals / metals.sum()
 
-        #Calculate energy of tested NP first;
+        # calculate energy of tested NP first;
         ee = self.calc_ce(orderings)
 
-        # Then, subtract calculated pure NP energies multiplied by respective fractions to get Excess Energy
+        # Then, subtract calculated pure NP energies multiplied by respective
+        # fractions to get Excess Energy
         for ele in range(len(self.metal_types)):
             x_ele = x_i[ele]
             o_mono_x = np.ones(len(self), int) * ele
