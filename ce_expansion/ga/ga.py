@@ -329,7 +329,8 @@ class Nanoparticle:
 
 
 class GA(object):
-    def __init__(self, bcm: BCModel, composition: Iterable[int], shape: str,
+    def __init__(self, bcm: Union[BCModel, ase.Atoms],
+                 composition: Iterable[int], shape: str,
                  popsize: int = 50, mute_pct: float = 0.8,
                  n_mute_atomswaps: int = None, spike: bool = False,
                  random: bool = False, e: int = 1, save_every: int = 100,
@@ -341,12 +342,13 @@ class GA(object):
         - if random=True, self.run() will conduct a random search
 
         Args:
-        bcm: BCModel containing atom skeleton info + metal_types
-        composition: metal counts
-        shape (str): nanoparticle shape
+        bcm: BCModel OR ase.Atoms object
+             - either contain atom skeleton info + metal_types
+        composition: metal counts (should sum to # of atoms)
+        shape: nanoparticle shape / name ID for nanoparticle
 
         KArgs:
-        popsize (int): size of population (Default: 50)
+        popsize: size of population (Default: 50)
         mute_pct: percentage of population to mutate each generation
                   (Default: 0.8 = 80%)
         n_mute_atomswaps: number of atom swaps to make
@@ -371,6 +373,12 @@ class GA(object):
 
         # NP parameters
         self.bcm = bcm
+    
+        # if bcm is an Atoms object, use it to initialize BCModel
+        # NOTE: this will pull the metal types from the atoms object
+        if isinstance(self.bcm, ase.Atoms):
+            self.bcm = BCModel(self.bcm)
+    
         self.num_atoms = len(self.bcm)
 
         self.composition = np.array(composition).astype(int)
@@ -745,7 +753,7 @@ class GA(object):
         # pickle self
         with open(path, 'wb') as fidw:
             pickle.dump(self, fidw, protocol=pickle.HIGHEST_PROTOCOL)
-    
+
         return path
 
     def save_to_db(self):
