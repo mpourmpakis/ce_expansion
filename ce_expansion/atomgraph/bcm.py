@@ -62,6 +62,10 @@ class BCModel:
         if self.bond_list is None:
             self.bond_list = adjacency.build_bonds_arr(self.atoms)
 
+        # store information about atomic shells in NP (i.e. layers of atoms)
+        self._num_shells = None
+        self._shell_map = None
+
         self.cn = np.bincount(self.bond_list[:, 0])
 
         # creating gamma list for every possible atom pairing
@@ -254,3 +258,60 @@ class BCModel:
                 energy_history[step] = prev_energy
 
         return best_ordering, best_energy, energy_history
+
+    def _get_shell_map(self):
+        """
+        Calculates shell_map dict (see shell_map property for details)
+
+        Sets:
+        shell_map: dict of shell number and array of atom indices in shell
+        """
+        remaining_atoms = set(range(len(self.atoms)))
+
+        shell_map = {}
+        cur_shell = 0
+        srf = np.where(self.cn < 12)[0]
+        shell_map[cur_shell] = srf
+
+        remaining_atoms -= set(srf)
+
+        coord_dict = {i: set(self.bond_list[self.bond_list[:, 0] == i].flatten())
+                      for i in remaining_atoms}
+
+        while remaining_atoms:
+            cur_shell -= 1
+            shell = [i for i in remaining_atoms if coord_dict[i] - remaining_atoms]
+            shell_map[cur_shell] = np.array(shell)
+            remaining_atoms -= set(shell)
+
+        shell_map = {k - cur_shell: v for k, v in shell_map.items()}
+        self._shell_map = shell_map
+
+    @property
+    def num_shells(self) -> int:
+        """
+        Return number of shells in NP
+        Use calc_shell_map if user did not define num_shells
+        """
+        if self._num_shells is None:
+            self._num_shells = max(self.shell_map)
+        return self._num_shells
+
+    @property
+    def shell_map(self) -> dict:
+        """
+        Map of shell number and atom indices in shell
+
+        0: core atom(s)
+        1: shell (layer) 1 over core atom(s)
+        etc.
+
+        NOTE: automatically calculated using _get_shell_map
+              unless user defined num_shells during intialization
+
+        - If user defined num_shells, shell_map will always = {}
+        - Override original num_shells input by calling _get_shell_map
+        """
+        if self._shell_map is None:
+            self._get_shell_map()
+        return self._shell_map
