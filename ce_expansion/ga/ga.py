@@ -206,14 +206,14 @@ class Nanoparticle:
         Returns:
         two children Chromo objs with new ordering <arr>s
         """
+        if len(self.composition) != 2:
+            raise GAError("_bimetallic_mate only works with bimetallic systems.")
+
         child1 = self.ordering.copy()
         child2 = nanop2.ordering.copy()
 
-        assert (child1.sum() == child2.sum() ==
-                self.n_metal2 == nanop2.n_metal2)
-
         # if only one '1' or one '0' then mating is not possible
-        if self.n_metal2 in [1, self.num_atoms - 1]:
+        if self.composition[1] in [1, self.num_atoms - 1]:
             return [self.copy(), nanop2.copy()]
 
         # indices where a '1' is found in child1
@@ -257,12 +257,12 @@ class Nanoparticle:
                 break
 
         assert (child1.sum() == child2.sum() ==
-                self.n_metal2 == nanop2.n_metal2)
+                self.composition[1] == nanop2.n_metal2)
 
-        children = [Nanoparticle(self.bcm, n_metal2=self.n_metal2,
-                                 ordering=child1.copy()),
-                    Nanoparticle(self.bcm, n_metal2=self.n_metal2,
-                                 ordering=child2.copy())]
+        children = [Nanoparticle(self.bcm, composition=self.composition,
+                                 ordering=child1),
+                    Nanoparticle(self.bcm, composition=self.composition,
+                                 ordering=child2)]
         return children
 
     def _bimetallic_mutate(self, n_swaps: int = 1):
@@ -278,9 +278,8 @@ class Nanoparticle:
         ValueError: if not bcm, Chromo can not and
                     should not be mutated
         """
-        if not self.bcm:
-            raise GAError("Mutating Chromo should only be done through"
-                          "Pop simulations")
+        if len(self.composition) != 2:
+            raise GAError("_bimetallic_mutate only works with bimetallic systems.")
 
         # keep track of indices used so there are no repeats
         used = [None, None] * n_swaps
@@ -323,7 +322,7 @@ class Nanoparticle:
 
     def _calc_score(self):
         """
-        Returns CE of structure based on Bond-Centric Model
+        Sets CE of structure based on Bond-Centric Model:
         - Yan, Z. et al., Nano Lett. 2018, 18 (4), 2696-2704.
         """
         self.ce = self.bcm.calc_ce(self.ordering)
