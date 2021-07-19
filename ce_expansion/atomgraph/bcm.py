@@ -35,9 +35,10 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 
 class BCModel:
-    def __init__(self, atoms: ase.Atoms, metal_types: Iterable = None, bond_list: Iterable = None):
+    def __init__(self, atoms: ase.Atoms, metal_types: Iterable = None,
+                 bond_list: Iterable = None):
         """
-        Based on metal_types, create ce_bulk and gamma dicts from the data given
+        Based on metal_types, create ce_bulk and gamma dicts from data given
 
         Args:
         atoms: ASE atoms object which contains the data of the NP being tested
@@ -45,7 +46,7 @@ class BCModel:
 
         KArgs:
         metal_types: List of metals found within the nano-particle
-                     If not passed, will use elements provided by the atoms object
+                     If not passed, use elements provided by the atoms object
         """
         self.atoms = atoms.copy()
         self.atoms.pbc = False
@@ -61,6 +62,10 @@ class BCModel:
         if self.bond_list is None:
             self.bond_list = adjacency.build_bonds_arr(self.atoms)
 
+        # store information about atomic shells in NP (i.e. layers of atoms)
+        self._num_shells = None
+        self._shell_map = None
+
         self.cn = np.bincount(self.bond_list[:, 0])
 
         # creating gamma list for every possible atom pairing
@@ -74,61 +79,11 @@ class BCModel:
 
         # Calculate and set the precomps matrix
         self.precomps = None
-        self._calc_precomps()
+        self._get_precomps()
         self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
 
     def __len__(self) -> int:
         return len(self.atoms)
-
-    def _get_bcm_params(self):
-        """
-        Creates gamma and ce_bulk dictionaries which are then used to created precomputed values for the BCM calculation
-
-        Sets:
-        gamma: Weighting factors of the computed elements within the BCM
-        ce_bulk: Bulk Cohesive energy values
-        """
-        gamma = {}
-        ce_bulk = {}
-        for item in itertools.combinations_with_replacement(self.metal_types, 2):
-            # Casting metals and setting keys for dictionary
-            metal_1, metal_2 = item
-
-            gamma_obj = GammaValues(metal_1, metal_2)
-
-            # using Update function to create clean Gamma an bulk dictionaries
-            gamma = recursive_update(gamma, gamma_obj.gamma)
-            # add ce_bulk vals
-            ce_bulk[gamma_obj.element_a] = gamma_obj.ce_a
-            ce_bulk[gamma_obj.element_b] = gamma_obj.ce_b
-
-        self.ce_bulk = ce_bulk
-        self.gammas = gamma
-
-    def _calc_precomps(self):
-        """
-        Uses the Gamma and ce_bulk dictionaries to create a precomputed BCM matrix of gammas and ce_bulk values
-
-        [precomps] = [gamma of element 1] * [ce_bulk of element 1 to element 2]
-
-        Sets:
-        precomps: Precomp Matrix
-        """
-        # precompute values for BCM calc
-        n_met = len(self.metal_types)
-
-        precomps = np.ones((n_met, n_met))
-
-        for i in range(n_met):
-            for j in range(n_met):
-
-                M1 = self.metal_types[i]
-                M2 = self.metal_types[j]
-                precomp_bulk = self.ce_bulk[M1]
-                precomp_gamma = self.gammas[M1][M2]
-
-                precomps[i, j] = precomp_gamma * precomp_bulk
-        self.precomps = precomps
 
     def calc_ce(self, orderings: np.ndarray) -> float:
         """
@@ -159,14 +114,15 @@ class BCModel:
 
         metals = np.bincount(orderings)
 
-        #Obtain atom fractions of each tested element
+        # obtain atom fractions of each tested element
         x_i = np.zeros(len(self.metal_types)).astype(float)
         x_i[:len(metals)] = metals / metals.sum()
 
-        #Calculate energy of tested NP first;
+        # calculate energy of tested NP first;
         ee = self.calc_ce(orderings)
 
-        # Then, subtract calculated pure NP energies multiplied by respective fractions to get Excess Energy
+        # Then, subtract calculated pure NP energies multiplied by respective
+        # fractions to get Excess Energy
         for ele in range(len(self.metal_types)):
             x_ele = x_i[ele]
             o_mono_x = np.ones(len(self), int) * ele
@@ -250,3 +206,112 @@ class BCModel:
                 energy_history[step] = prev_energy
 
         return best_ordering, best_energy, energy_history
+
+    @property
+    def num_shells(self) -> int:
+        """
+        Return number of shells in NP
+        Use calc_shell_map if user did not define num_shells
+        """
+        if self._num_shells is None:
+            self._num_shells = max(self.shell_map)
+        return self._num_shells
+
+    @property
+    def shell_map(self) -> dict:
+        """
+        Map of shell number and atom indices in shell
+
+        0: core atom(s)
+        1: shell (layer) 1 over core atom(s)
+        etc.
+
+        NOTE: automatically calculated using _get_shell_map
+              unless user defined num_shells during intialization
+
+        - If user defined num_shells, shell_map will always = {}
+        - Override original num_shells input by calling _get_shell_map
+        """
+        if self._shell_map is None:
+            self._get_shell_map()
+        return self._shell_map
+
+    def _get_bcm_params(self):
+        """
+        Creates gamma and ce_bulk dictionaries which are then used
+        to created precomputed values for the BCM calculation
+
+        Sets:
+        gamma: Weighting factors of the computed elements within the BCM
+        ce_bulk: Bulk Cohesive energy values
+        """
+        gamma = {}
+        ce_bulk = {}
+        for item in itertools.combinations_with_replacement(self.metal_types, 2):
+            # Casting metals and setting keys for dictionary
+            metal_1, metal_2 = item
+
+            gamma_obj = GammaValues(metal_1, metal_2)
+
+            # using Update function to create clean Gamma an bulk dictionaries
+            gamma = recursive_update(gamma, gamma_obj.gamma)
+            # add ce_bulk vals
+            ce_bulk[gamma_obj.element_a] = gamma_obj.ce_a
+            ce_bulk[gamma_obj.element_b] = gamma_obj.ce_b
+
+        self.ce_bulk = ce_bulk
+        self.gammas = gamma
+
+    def _get_precomps(self):
+        """
+        Uses the Gamma and ce_bulk dictionaries to create a precomputed
+        BCM matrix of gammas and ce_bulk values
+
+        [precomps] = [gamma of element 1] * [ce_bulk of element 1 to element 2]
+
+        Sets:
+        precomps: Precomp Matrix
+        """
+        # precompute values for BCM calc
+        n_met = len(self.metal_types)
+
+        precomps = np.ones((n_met, n_met))
+
+        for i in range(n_met):
+            for j in range(n_met):
+
+                M1 = self.metal_types[i]
+                M2 = self.metal_types[j]
+                precomp_bulk = self.ce_bulk[M1]
+                precomp_gamma = self.gammas[M1][M2]
+
+                precomps[i, j] = precomp_gamma * precomp_bulk
+        self.precomps = precomps
+
+    def _get_shell_map(self):
+        """
+        Calculates shell_map dict (see shell_map property for details)
+
+        Sets:
+        shell_map: dict of shell number and array of atom indices in shell
+        """
+        remaining_atoms = set(range(len(self.atoms)))
+
+        shell_map = {}
+        cur_shell = 0
+        srf = np.where(self.cn < 12)[0]
+        shell_map[cur_shell] = srf
+
+        remaining_atoms -= set(srf)
+
+        coord_dict = {i: set(self.bond_list[self.bond_list[:, 0] == i].flatten())
+                      for i in remaining_atoms}
+
+        while remaining_atoms:
+            cur_shell -= 1
+            shell = [i for i in remaining_atoms if coord_dict[i] - remaining_atoms]
+            shell_map[cur_shell] = np.array(shell)
+            remaining_atoms -= set(shell)
+
+        shell_map = {k - cur_shell: v for k, v in shell_map.items()}
+        self._shell_map = shell_map

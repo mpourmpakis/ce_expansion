@@ -18,9 +18,7 @@ import numpy as np
 import ase.visualize
 
 from ce_expansion.atomgraph.bcm import BCModel
-from ce_expansion.atomgraph.atomgraph import AtomGraph
 from ce_expansion.atomgraph import adjacency
-from ce_expansion.ga import structure_gen
 from ce_expansion.npdb import db_inter
 
 
@@ -208,14 +206,14 @@ class Nanoparticle:
         Returns:
         two children Chromo objs with new ordering <arr>s
         """
+        if len(self.composition) != 2:
+            raise GAError("_bimetallic_mate only works with bimetallic systems.")
+
         child1 = self.ordering.copy()
         child2 = nanop2.ordering.copy()
 
-        assert (child1.sum() == child2.sum() ==
-                self.n_metal2 == nanop2.n_metal2)
-
         # if only one '1' or one '0' then mating is not possible
-        if self.n_metal2 in [1, self.num_atoms - 1]:
+        if self.composition[1] in [1, self.num_atoms - 1]:
             return [self.copy(), nanop2.copy()]
 
         # indices where a '1' is found in child1
@@ -259,12 +257,12 @@ class Nanoparticle:
                 break
 
         assert (child1.sum() == child2.sum() ==
-                self.n_metal2 == nanop2.n_metal2)
+                self.composition[1] == nanop2.n_metal2)
 
-        children = [Nanoparticle(self.bcm, n_metal2=self.n_metal2,
-                                 ordering=child1.copy()),
-                    Nanoparticle(self.bcm, n_metal2=self.n_metal2,
-                                 ordering=child2.copy())]
+        children = [Nanoparticle(self.bcm, composition=self.composition,
+                                 ordering=child1),
+                    Nanoparticle(self.bcm, composition=self.composition,
+                                 ordering=child2)]
         return children
 
     def _bimetallic_mutate(self, n_swaps: int = 1):
@@ -280,9 +278,8 @@ class Nanoparticle:
         ValueError: if not bcm, Chromo can not and
                     should not be mutated
         """
-        if not self.bcm:
-            raise GAError("Mutating Chromo should only be done through"
-                          "Pop simulations")
+        if len(self.composition) != 2:
+            raise GAError("_bimetallic_mutate only works with bimetallic systems.")
 
         # keep track of indices used so there are no repeats
         used = [None, None] * n_swaps
@@ -325,14 +322,15 @@ class Nanoparticle:
 
     def _calc_score(self):
         """
-        Returns CE of structure based on Bond-Centric Model
+        Sets CE of structure based on Bond-Centric Model:
         - Yan, Z. et al., Nano Lett. 2018, 18 (4), 2696-2704.
         """
         self.ce = self.bcm.calc_ce(self.ordering)
 
 
 class GA(object):
-    def __init__(self, bcm: BCModel, composition: Iterable[int], shape: str,
+    def __init__(self, bcm: Union[BCModel, ase.Atoms],
+                 composition: Iterable[int], shape: str,
                  popsize: int = 50, mute_pct: float = 0.8,
                  n_mute_atomswaps: int = None, spike: bool = False,
                  random: bool = False, e: int = 1, save_every: int = 100,
@@ -344,12 +342,13 @@ class GA(object):
         - if random=True, self.run() will conduct a random search
 
         Args:
-        bcm: BCModel containing atom skeleton info + metal_types
-        composition: metal counts
-        shape (str): nanoparticle shape
+        bcm: BCModel OR ase.Atoms object
+             - either contain atom skeleton info + metal_types
+        composition: metal counts (should sum to # of atoms)
+        shape: nanoparticle shape / name ID for nanoparticle
 
         KArgs:
-        popsize (int): size of population (Default: 50)
+        popsize: size of population (Default: 50)
         mute_pct: percentage of population to mutate each generation
                   (Default: 0.8 = 80%)
         n_mute_atomswaps: number of atom swaps to make
@@ -374,6 +373,12 @@ class GA(object):
 
         # NP parameters
         self.bcm = bcm
+    
+        # if bcm is an Atoms object, use it to initialize BCModel
+        # NOTE: this will pull the metal types from the atoms object
+        if isinstance(self.bcm, ase.Atoms):
+            self.bcm = BCModel(self.bcm)
+    
         self.num_atoms = len(self.bcm)
 
         self.composition = np.array(composition).astype(int)
@@ -411,8 +416,9 @@ class GA(object):
 
         # NOTE: spike currently does nothing. Warn user if spike is True
         if self.spike:
-            warnings.WarningMessage("spike=True does not change GA simulation -"
-                                    " still need to implement polymetallic spiking methods")
+            warnings.warn("spike=True does not change GA simulation -"
+                          " still need to implement polymetallic spiking methods",
+                          category=DeprecationWarning)
 
         # keep track of how many times the sim has been continued
         self.continued = 0
@@ -451,7 +457,8 @@ class GA(object):
     def __getitem__(self, i: int) -> Nanoparticle:
         return self.pop[i]
 
-    def run(self, max_gens: int = -1, max_nochange: int = 750, min_gens: int = -1):
+    def run(self, max_gens: int = -1, max_nochange: int = 750,
+            min_gens: int = -1):
         """
         Main method to run a GA simulation
 
@@ -557,7 +564,8 @@ class GA(object):
         self.summ_results(display=True)
         print(breakline)
 
-    def continue_run(self, max_gens: int = -1, max_nochange: int = 50, min_gens: int = -1):
+    def continue_run(self, max_gens: int = -1, max_nochange: int = 50,
+                     min_gens: int = -1):
         """
         Used to continue GA sim from where it left off
 
@@ -745,7 +753,7 @@ class GA(object):
         # pickle self
         with open(path, 'wb') as fidw:
             pickle.dump(self, fidw, protocol=pickle.HIGHEST_PROTOCOL)
-    
+
         return path
 
     def save_to_db(self):
