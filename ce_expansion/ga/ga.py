@@ -419,6 +419,7 @@ class GA(object):
             warnings.warn("spike=True does not change GA simulation -"
                           " still need to implement polymetallic spiking methods",
                           category=DeprecationWarning)
+            self.spike = False
 
         # keep track of how many times the sim has been continued
         self.continued = 0
