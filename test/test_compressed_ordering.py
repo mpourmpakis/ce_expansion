@@ -11,6 +11,6 @@ for i, r in enumerate(res):
     test = datatables.BimetallicResults(r.metal1, r.metal2, r.shape,
                                         r.num_atoms, r.diameter, r.n_metal1,
                                         r.n_metal2, r.CE, r.EE, r.ordering)
-    assert test.ordering == r.ordering
+    assert (test.ordering == r.ordering).all()
     assert test.n_metal2 == r.n_metal2 == sum(map(int, test.ordering))
     assert len(r.ordering) == r.num_atoms
