@@ -1,7 +1,7 @@
 import itertools
 import collections.abc
 import functools
-from typing import Iterable
+from typing import Iterable, Optional, Dict
 
 import numpy as np
 import ase
@@ -36,8 +36,8 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 
 class BCModel:
-    def __init__(self, atoms: ase.Atoms, metal_types: Iterable = None,
-                 bond_list: Iterable = None):
+    def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
+                 bond_list: Optional[Iterable] = None):
         """
         Based on metal_types, create ce_bulk and gamma dicts from data given
 
@@ -150,7 +150,7 @@ class BCModel:
 
         return smix
 
-    def calc_gmix(self, orderings: np.ndarray, T: float = 298.15):
+    def calc_gmix(self, orderings: np.ndarray, T: float = 298.15) -> float:
         """
         gmix (eV / atom) = self.ee - T * self.calc_smix(ordering)
 
@@ -163,7 +163,7 @@ class BCModel:
         """
         return self.calc_ee(orderings) - T * self.calc_smix(orderings)
 
-    def metropolis(self, ordering: np.ndarray, num_steps: int = 1000):
+    def metropolis(self, ordering: np.ndarray, num_steps: int = 1000) -> None:
         """
         Metropolis-Hastings-based exploration of similar NPs
 
@@ -213,7 +213,7 @@ class BCModel:
         return max(self.shell_map)
 
     @functools.cached_property
-    def shell_map(self) -> dict:
+    def shell_map(self) -> Dict[int, Iterable[int]]:
         """
         Map of shell number and atom indices in shell
 
@@ -246,7 +246,7 @@ class BCModel:
         shell_map = {k - cur_shell: v for k, v in shell_map.items()}
         return shell_map
 
-    def _get_bcm_params(self):
+    def _get_bcm_params(self) -> None:
         """
         Creates gamma and ce_bulk dictionaries which are then used
         to created precomputed values for the BCM calculation
@@ -272,7 +272,7 @@ class BCModel:
         self.ce_bulk = ce_bulk
         self.gammas = gamma
 
-    def _get_precomps(self):
+    def _get_precomps(self) -> None:
         """
         Uses the Gamma and ce_bulk dictionaries to create a precomputed
         BCM matrix of gammas and ce_bulk values
