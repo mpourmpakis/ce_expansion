@@ -66,7 +66,7 @@ class BCModel:
         self.cn = np.bincount(self.bond_list[:, 0])
 
         # creating gamma list for every possible atom pairing
-        self.gamma = None
+        self.gammas = None
         self.ce_bulk = None
         self._get_bcm_params()
 
@@ -76,8 +76,8 @@ class BCModel:
 
         # Calculate and set the precomps matrix
         self.precomps = None
+        self.cn_precomps = None
         self._get_precomps()
-        self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
 
     def __len__(self) -> int:
         return len(self.atoms)
@@ -255,7 +255,7 @@ class BCModel:
         gamma: Weighting factors of the computed elements within the BCM
         ce_bulk: Bulk Cohesive energy values
         """
-        gamma = {}
+        gammas = {}
         ce_bulk = {}
         for item in itertools.combinations_with_replacement(self.metal_types, 2):
             # Casting metals and setting keys for dictionary
@@ -264,13 +264,13 @@ class BCModel:
             gamma_obj = GammaValues(metal_1, metal_2)
 
             # using Update function to create clean Gamma an bulk dictionaries
-            gamma = recursive_update(gamma, gamma_obj.gamma)
+            gammas = recursive_update(gammas, gamma_obj.gamma)
             # add ce_bulk vals
             ce_bulk[gamma_obj.element_a] = gamma_obj.ce_a
             ce_bulk[gamma_obj.element_b] = gamma_obj.ce_b
 
         self.ce_bulk = ce_bulk
-        self.gammas = gamma
+        self.gammas = gammas
 
     def _get_precomps(self) -> None:
         """
@@ -297,3 +297,4 @@ class BCModel:
 
                 precomps[i, j] = precomp_gamma * precomp_bulk
         self.precomps = precomps
+        self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
