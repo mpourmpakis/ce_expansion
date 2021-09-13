@@ -21,7 +21,7 @@ metal_types = ['Cu', 'Au', "Ag"]
 #TODO: account for this case in bcm
 #metal_types = ['Cu', 'Au', 'au', 'ag']
 
-bcm = BCModel(atoms, bond_list, metal_types)
+bcm = BCModel(atoms, metal_types=metal_types, bond_list=bond_list)
 assert bcm.metal_types == ['Ag', 'Au', 'Cu']
 
 print("STEP 1")
