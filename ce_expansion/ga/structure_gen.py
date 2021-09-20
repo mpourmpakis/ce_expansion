@@ -1,7 +1,31 @@
+from functools import lru_cache
+
 import ase.cluster
 import ase.lattice
 
 from ce_expansion.npdb import db_inter
+
+
+@lru_cache
+def num_atoms_in_shell(shell: int) -> int:
+    """Calculates number of atoms in a magic number NP shell
+    - icosahedron shells
+    - cuboctahedron shells
+    - elongated-pentagonal-bipyramid shells
+    """
+    if shell == 0:
+        return 1
+    return 10 * (shell + 1) * (shell - 1) + 12
+
+
+@lru_cache
+def shell_to_magic_number(num_shells: int) -> int:
+    """Calculates the number of atoms in magic number:
+    - icoshaedron NPs
+    - cuboctahedron NPs
+    - elongated-pentagonal-bipyramid NPs
+    """
+    return sum(num_atoms_in_shell(s) for s in range(num_shells + 1))
 
 
 def build_structure_sql(shape: str, num_shells: int):
@@ -84,6 +108,7 @@ class NPBuilder(object):
             return ase.Atoms(kind)
         return ase.Atoms(ase.cluster.Octahedron(kind, 2 * num_shells + 1,
                                                 cutoff=num_shells), pbc=False)
+
     @staticmethod
     def elongated_pentagonal_bipyramid(num_shells,
                                        kind="Cu"):
@@ -151,7 +176,7 @@ class NPBuilder(object):
 
     # WIP - sphere is not perfectly symmetric
     @staticmethod
-    def sphere(num_layers, kind="Cu",
+    def _sphere(num_layers, kind="Cu",
                unit_cell_length=3.61):
         """
         Inscribes a sphere inside a cube and makes it a nanoparticle.
