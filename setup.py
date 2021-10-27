@@ -1,10 +1,16 @@
 import setuptools
 
+# read in version of canela package
+v = {}
+with open('ce_expansion/_version.py', 'r') as fid:
+    # this will create the __version__ variable to be used below
+    exec(fid.read(), v)
+
 with open("README.md", "r") as readme:
     long_description = readme.read()
 
 setuptools.setup(name="ce_expansion",
-                 version="1.0.1",
+                 version=v["__version__"],
                  author="CANELa",
                  author_email="gmpourmp@pitt.edu",
                  description="Global optimization of ground-state NP chemical ordering",

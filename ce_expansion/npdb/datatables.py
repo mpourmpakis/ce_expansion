@@ -771,7 +771,9 @@ class PolymetallicResults(Base):
             atom.info['shape'] = self.nanoparticle.shape
             atom.info['CE'] = self.CE
             atom.info['EE'] = self.EE
-            atom.info['composition'] = self.composition
+            atom.info['Smix'] = self.smix
+            atom.info['runtype'] = 'ga-opt'
+            # atom.info['composition'] = self.composition
             atom.write(path)
         return True
 
