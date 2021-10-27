@@ -149,7 +149,7 @@ class NPBuilder(object):
         assert num_units >= 0
         if num_units == 0:
             return ase.Atoms(kind)
-        atom = ase.Atoms(ase.cluster.FaceCenteredCubic('Cu', [(1, 0, 0),
+        atom = ase.Atoms(ase.cluster.FaceCenteredCubic(kind, [(1, 0, 0),
                                                               (0, 1, 0),
                                                               (0, 0, 1)],
                                                        [num_units] * 3))
@@ -191,9 +191,9 @@ class NPBuilder(object):
 
         :return: An ASE atoms object containing the sphere skeleton.
         """
-        raise NotImplementedError
+        # raise NotImplementedError
         # Create the cube
-        trimmed_cube = fcc_cube(num_layers, kind)
+        trimmed_cube = NPBuilder.fcc_cube(num_layers, kind)
 
         # Simple geometry
         center = trimmed_cube.positions.mean(0)

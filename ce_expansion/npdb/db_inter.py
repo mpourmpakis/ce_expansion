@@ -516,8 +516,8 @@ def build_radial_distributions(metals=None, shape=None, num_atoms=None,
         element1 = system.metal1
         element2 = system.metal2
         radius = system.diameter / 2
-        np = system.nanoparticle
-        atoms = np.atoms_obj
+        nanop = system.nanoparticle
+        atoms = nanop.atoms_obj
 
         # Todo: Figure out why atoms is an ase.Atoms object in console, but is NoneType when running the script
         assert type(atoms) == ase.Atoms
@@ -701,7 +701,7 @@ def get_nanoparticle(shape=None, num_atoms=None, num_shells=None,
 
 def get_polymet_result(metals=None, composition=None, num_atoms=None,
                        shape=None, lim=None, return_query=None,
-                       return_list=False):
+                       return_list=False) -> tbl.PolymetallicResults:
     """
     Returns tbl.PolyMetallicResult entries that match criteria
     - if no criteria given, all data (up to <lim> amount)
@@ -974,30 +974,30 @@ if __name__ == '__main__':
               'fcc-cube': 'violet'}
     posee = tbl.BimetallicResults.EE > 0
 
-    res = get_bimet_result(metals=metals, shape=None, custom_filter=posee)
-    res = sorted(res, key=lambda i: i.num_atoms)
+    # res = get_bimet_result(metals=metals, shape=None, custom_filter=posee)
+    # res = sorted(res, key=lambda i: i.num_atoms)
 
-    def Smix(x):
-        """Entropy of mixing (eV / atom K) for binary system"""
-        return -8.617333262145E-5 * (x * np.log(x) + (1 - x) * np.log(1 - x))
+    # def Smix(x):
+    #     """Entropy of mixing (eV / atom K) for binary system"""
+    #     return -8.617333262145E-5 * (x * np.log(x) + (1 - x) * np.log(1 - x))
 
-    # create 3D scatter plot
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    # # create 3D scatter plot
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
 
-    ax.set_xlabel('$\\rm N_{Atoms}$')
-    ax.set_ylabel('$\\rm X_{Cu}$')
-    ax.set_zlabel('$\\rm T_{mix}$')
+    # ax.set_xlabel('$\\rm N_{Atoms}$')
+    # ax.set_ylabel('$\\rm X_{Cu}$')
+    # ax.set_zlabel('$\\rm T_{mix}$')
 
-    for s in shapes:
-        temp = [r for r in res if r.shape == s]
-        ns = [t.num_atoms for t in temp]
-        conc = [t.n_metal2 / t.num_atoms for t in temp]
-        Ts = [t.EE / Smix(t.n_metal2 / t.num_atoms) for t in temp]
-        ax.scatter(ns, conc, Ts, alpha=1, c=shapes[s], label=s.upper()[:3],
-                   edgecolor='k', s=50)
+    # for s in shapes:
+    #     temp = [r for r in res if r.shape == s]
+    #     ns = [t.num_atoms for t in temp]
+    #     conc = [t.n_metal2 / t.num_atoms for t in temp]
+    #     Ts = [t.EE / Smix(t.n_metal2 / t.num_atoms) for t in temp]
+    #     ax.scatter(ns, conc, Ts, alpha=1, c=shapes[s], label=s.upper()[:3],
+    #                edgecolor='k', s=50)
 
-    ax.set_title('$\\rm AgCu\\ NPs$')
-    ax.legend()
-    fig.tight_layout()
-    plt.show()
+    # ax.set_title('$\\rm AgCu\\ NPs$')
+    # ax.legend()
+    # fig.tight_layout()
+    # plt.show()

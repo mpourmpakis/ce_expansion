@@ -11,6 +11,14 @@ from ce_expansion.atomgraph import adjacency
 from ce_expansion.data.gamma import GammaValues
 
 
+class read_only_cached_property(functools.cached_property):
+    """Create a property that caches results based on args
+    and *cannot be set*
+    """
+    def __set__(self, *_):
+        raise AttributeError("can't set the read only property")
+
+
 def recursive_update(d: dict, u: dict) -> dict:
     """
     recursively updates 'dict of dicts'
@@ -66,13 +74,16 @@ class BCModel:
         self.cn = np.bincount(self.bond_list[:, 0])
 
         # creating gamma list for every possible atom pairing
-        self.gammas = None
-        self.ce_bulk = None
+        self._gammas = None
+        self._ce_bulk = None
         self._get_bcm_params()
 
         # get bonded atom columns
         self.a1 = self.bond_list[:, 0]
         self.a2 = self.bond_list[:, 1]
+
+        self.coord_dict = {i: set(self.bond_list[self.bond_list[:, 0] == i].ravel()) - set([i])
+                           for i in range(len(self.atoms))}
 
         # Calculate and set the precomps matrix
         self.precomps = None
@@ -81,6 +92,24 @@ class BCModel:
 
     def __len__(self) -> int:
         return len(self.atoms)
+
+    @property
+    def ce_bulk(self) -> dict:
+        return self._ce_bulk
+
+    @ce_bulk.setter
+    def ce_bulk(self, values: dict):
+        self._ce_bulk = values.copy()
+        self._get_precomps()
+
+    @property
+    def gammas(self) -> dict:
+        return self._gammas
+
+    @gammas.setter
+    def gammas(self, values: dict):
+        self._gammas = values.copy()
+        self._get_precomps()
 
     def calc_ce(self, orderings: np.ndarray) -> float:
         """
@@ -204,7 +233,7 @@ class BCModel:
 
         return best_ordering, best_energy, energy_history
 
-    @functools.cached_property
+    @read_only_cached_property
     def num_shells(self) -> int:
         """
         Return number of shells in NP
@@ -212,7 +241,7 @@ class BCModel:
         """
         return max(self.shell_map)
 
-    @functools.cached_property
+    @read_only_cached_property
     def shell_map(self) -> Dict[int, Iterable[int]]:
         """
         Map of shell number and atom indices in shell
@@ -269,8 +298,8 @@ class BCModel:
             ce_bulk[gamma_obj.element_a] = gamma_obj.ce_a
             ce_bulk[gamma_obj.element_b] = gamma_obj.ce_b
 
-        self.ce_bulk = ce_bulk
-        self.gammas = gammas
+        self._ce_bulk = ce_bulk
+        self._gammas = gammas
 
     def _get_precomps(self) -> None:
         """
