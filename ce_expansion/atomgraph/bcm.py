@@ -1,7 +1,7 @@
 import itertools
 import collections.abc
 import functools
-from typing import Iterable
+from typing import Iterable, Optional, Dict
 
 import numpy as np
 import ase
@@ -36,8 +36,8 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 
 class BCModel:
-    def __init__(self, atoms: ase.Atoms, metal_types: Iterable = None,
-                 bond_list: Iterable = None):
+    def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
+                 bond_list: Optional[Iterable] = None):
         """
         Based on metal_types, create ce_bulk and gamma dicts from data given
 
@@ -66,7 +66,7 @@ class BCModel:
         self.cn = np.bincount(self.bond_list[:, 0])
 
         # creating gamma list for every possible atom pairing
-        self.gamma = None
+        self.gammas = None
         self.ce_bulk = None
         self._get_bcm_params()
 
@@ -76,8 +76,8 @@ class BCModel:
 
         # Calculate and set the precomps matrix
         self.precomps = None
+        self.cn_precomps = None
         self._get_precomps()
-        self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
 
     def __len__(self) -> int:
         return len(self.atoms)
@@ -150,7 +150,7 @@ class BCModel:
 
         return smix
 
-    def calc_gmix(self, orderings: np.ndarray, T: float = 298.15):
+    def calc_gmix(self, orderings: np.ndarray, T: float = 298.15) -> float:
         """
         gmix (eV / atom) = self.ee - T * self.calc_smix(ordering)
 
@@ -163,7 +163,7 @@ class BCModel:
         """
         return self.calc_ee(orderings) - T * self.calc_smix(orderings)
 
-    def metropolis(self, ordering: np.ndarray, num_steps: int = 1000):
+    def metropolis(self, ordering: np.ndarray, num_steps: int = 1000) -> None:
         """
         Metropolis-Hastings-based exploration of similar NPs
 
@@ -213,7 +213,7 @@ class BCModel:
         return max(self.shell_map)
 
     @functools.cached_property
-    def shell_map(self) -> dict:
+    def shell_map(self) -> Dict[int, Iterable[int]]:
         """
         Map of shell number and atom indices in shell
 
@@ -246,7 +246,7 @@ class BCModel:
         shell_map = {k - cur_shell: v for k, v in shell_map.items()}
         return shell_map
 
-    def _get_bcm_params(self):
+    def _get_bcm_params(self) -> None:
         """
         Creates gamma and ce_bulk dictionaries which are then used
         to created precomputed values for the BCM calculation
@@ -255,7 +255,7 @@ class BCModel:
         gamma: Weighting factors of the computed elements within the BCM
         ce_bulk: Bulk Cohesive energy values
         """
-        gamma = {}
+        gammas = {}
         ce_bulk = {}
         for item in itertools.combinations_with_replacement(self.metal_types, 2):
             # Casting metals and setting keys for dictionary
@@ -264,15 +264,15 @@ class BCModel:
             gamma_obj = GammaValues(metal_1, metal_2)
 
             # using Update function to create clean Gamma an bulk dictionaries
-            gamma = recursive_update(gamma, gamma_obj.gamma)
+            gammas = recursive_update(gammas, gamma_obj.gamma)
             # add ce_bulk vals
             ce_bulk[gamma_obj.element_a] = gamma_obj.ce_a
             ce_bulk[gamma_obj.element_b] = gamma_obj.ce_b
 
         self.ce_bulk = ce_bulk
-        self.gammas = gamma
+        self.gammas = gammas
 
-    def _get_precomps(self):
+    def _get_precomps(self) -> None:
         """
         Uses the Gamma and ce_bulk dictionaries to create a precomputed
         BCM matrix of gammas and ce_bulk values
@@ -297,3 +297,4 @@ class BCModel:
 
                 precomps[i, j] = precomp_gamma * precomp_bulk
         self.precomps = precomps
+        self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
