@@ -1,7 +1,7 @@
-#Data
+# Data
 This folder contains a brief description of the data we utilize in this package, in addition to an appropriate citation.
 
-##Gamma Coefficient Estimation
+## Gamma Coefficient Estimation
 * experimental_hbe.csv
   * The preferred source of experimental heterolyitc bond dissociation energy.
   * Morse, M. D., *Clusters of transition-metal atoms.* Chem. Rev. 1986, 86 (6), 1049-1109.
