@@ -651,13 +651,22 @@ class GA(object):
         self.sort_pop()
 
         # Get atom ordering and number of unique atoms
-        element_ordering = self.pop[np_index].ordering
+        nanop = self.pop[np_index]
+        nanop: Nanoparticle
+        element_ordering = nanop.ordering
+
         # makes new array of strings which can be used with ASE's ".symbols"
 
         elements = np.array(self.bcm.metal_types)[element_ordering]
 
         atoms = self.bcm.atoms.copy()
+        
+        # add relevant info to atoms object
         atoms.symbols = elements
+        atoms.info['shape'] = self.shape
+        atoms.info['CE'] = nanop.ce
+        atoms.info['EE'] = self.bcm.calc_ee(element_ordering)
+        atoms.info['Smix'] = self.bcm.calc_smix(element_ordering)
 
         return atoms
 
