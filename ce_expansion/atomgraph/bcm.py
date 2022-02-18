@@ -37,7 +37,7 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 class BCModel:
     def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
-                 bond_list: Optional[Iterable] = None):
+                 bond_list: Optional[Iterable] = None, info: dict = {}):
         """
         Based on metal_types, create ce_bulk and gamma dicts from data given
 
@@ -51,7 +51,7 @@ class BCModel:
         """
         self.atoms = atoms.copy()
         self.atoms.pbc = False
-
+        self.info = info
         if metal_types is None:
             # get metal_types from atoms object
             self.metal_types = sorted(set(atoms.symbols))
@@ -245,7 +245,23 @@ class BCModel:
 
         shell_map = {k - cur_shell: v for k, v in shell_map.items()}
         return shell_map
-
+    
+    def get_info(self):
+        """
+        Prints out and returns the information stored in the bcm object on how the model
+        was parameterized.  This can be any info that may be relevant but some good info to store
+        are:
+        1. What method was used to calculate the Gamma values (e.g. NP or Dimer method)
+        2. Other info on how the gamma values were calculated (were energies from DFT (if so then what functional was used), experimental or approximated)
+        3. Information on the CE_Bulk value being used
+       
+        Returns:
+        Info [dict]: Original info dictionary used to initialize the bcm instance
+        """
+        for key in self.info:
+           print(f'{key}: {self.info[key]}\n')
+        return self.info
+          
     def _get_bcm_params(self) -> None:
         """
         Creates gamma and ce_bulk dictionaries which are then used
