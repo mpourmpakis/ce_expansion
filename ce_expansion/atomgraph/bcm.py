@@ -37,21 +37,26 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 class BCModel:
     def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
-                 bond_list: Optional[Iterable] = None, info: dict = {}):
+                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None):
         """
         Based on metal_types, create ce_bulk and gamma dicts from data given
 
         Args:
         atoms: ASE atoms object which contains the data of the NP being tested
         bond_list: list of atom indices involved in each bond
-
+        info: Information on how the model was parameterized
         KArgs:
         metal_types: List of metals found within the nano-particle
                      If not passed, use elements provided by the atoms object
         """
         self.atoms = atoms.copy()
         self.atoms.pbc = False
-        self.info = info
+        
+        if info is None:
+            self.info = {}
+        else:
+            self.info = info
+         
         if metal_types is None:
             # get metal_types from atoms object
             self.metal_types = sorted(set(atoms.symbols))
