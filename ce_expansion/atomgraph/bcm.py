@@ -37,7 +37,7 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 class BCModel:
     def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
-                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None):
+                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None, CN_Method='frac'):
         """
         Based on metal_types, create ce_bulk and gamma dicts from data given
 
@@ -48,6 +48,7 @@ class BCModel:
         KArgs:
         metal_types: List of metals found within the nano-particle
                      If not passed, use elements provided by the atoms object
+        CN_Method:  Options "frac" or "int"
         """
         self.atoms = atoms.copy()
         self.atoms.pbc = False
@@ -63,12 +64,18 @@ class BCModel:
         else:
             # ensure metal_types to unique, sorted list of metals
             self.metal_types = sorted(set(m.title() for m in metal_types))
-
+            
+        self.syms = atoms.symbols # atom symbols
         self.bond_list = bond_list
+        radius = {'Au':1.47,'Pd':1.38}
+        
         if self.bond_list is None:
             self.bond_list = adjacency.build_bonds_arr(self.atoms)
-
-        self.cn = np.bincount(self.bond_list[:, 0])
+        if CN_Method=='int':
+            self.cn = np.bincount(self.bond_list[:, 0])
+        elif CN_Method = 'frac':
+            cns = np.bincount(self.bond_list[:, 0])
+            self.cn = self._calc_cn_frac(cns,radius) # fractional CN
 
         # creating gamma list for every possible atom pairing
         self.gammas = None
@@ -86,6 +93,19 @@ class BCModel:
 
     def __len__(self) -> int:
         return len(self.atoms)
+    
+    def _calc_cn_frac(self,cns,radius):
+        """Calculate the fractional CN of each atom
+
+        Args:
+            cns (np.ndarray): coordination numbers of each atom
+            radius (dict): Radii for each unique atom type
+
+        Returns:
+            cn_frac (np.ndarray): Fractional CN of each atom based on the coordination number and the radius
+        
+        """
+        return [cns[i]+(1/radius[self.syms[i]]) for i in range(len(cns))]
 
     def calc_ce(self, orderings: np.ndarray) -> float:
         """
