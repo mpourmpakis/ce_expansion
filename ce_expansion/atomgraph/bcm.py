@@ -37,7 +37,7 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 class BCModel:
     def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
-                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None, CN_Method='frac'):
+                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None, CN_Method='int'):
         """
         Based on metal_types, create ce_bulk and gamma dicts from data given
 
