@@ -1,8 +1,8 @@
 import itertools
 import collections.abc
 import functools
-from typing import Iterable, Optional, Dict
-
+from typing import Iterable, Optional, Dict, List
+ # Dict[key,value]
 import numpy as np
 import ase
 import ase.units
@@ -37,7 +37,7 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 class BCModel:
     def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
-                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None, CN_Method='int'):
+                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None, CN_Method='frac'):
         """
         Based on metal_types, create ce_bulk and gamma dicts from data given
 
@@ -67,15 +67,21 @@ class BCModel:
             
         self.syms = atoms.symbols # atom symbols
         self.bond_list = bond_list
-        radius = {'Au':1.47,'Pd':1.38}
+        self.radius = {'Au':1.47,'Pd':1.38,'Pt':1.38}
+        if CN_Method=='int':
+            self.inv_radii = np.zeros(len(self.metal_types))
+        elif CN_Method == 'frac':
+            self.inv_radii = np.array([1/self.radius[m] for m in self.metal_types])
         
+
         if self.bond_list is None:
             self.bond_list = adjacency.build_bonds_arr(self.atoms)
+
         if CN_Method=='int':
             self.cn = np.bincount(self.bond_list[:, 0])
-        elif CN_Method = 'frac':
-            cns = np.bincount(self.bond_list[:, 0])
-            self.cn = self._calc_cn_frac(cns,radius) # fractional CN
+        elif CN_Method == 'frac':
+            self.cn = np.bincount(self.bond_list[:, 0])
+            #self.cn = self._calc_cn_frac(self.cns) # fractional CN
 
         # creating gamma list for every possible atom pairing
         self.gammas = None
@@ -94,7 +100,8 @@ class BCModel:
     def __len__(self) -> int:
         return len(self.atoms)
     
-    def _calc_cn_frac(self,cns,radius):
+
+    def _calc_cn_frac(self,cns) -> List[float]:
         """Calculate the fractional CN of each atom
 
         Args:
@@ -105,7 +112,7 @@ class BCModel:
             cn_frac (np.ndarray): Fractional CN of each atom based on the coordination number and the radius
         
         """
-        return [cns[i]+(1/radius[self.syms[i]]) for i in range(len(cns))]
+        return np.array([cns[i]+(1/self.radius[self.syms[i]]) for i in range(len(cns))])
 
     def calc_ce(self, orderings: np.ndarray) -> float:
         """
@@ -119,7 +126,17 @@ class BCModel:
         Returns:
         Cohesive Energy (eV / atom)
         """
-        return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
+        return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps[self.cn[self.a1], orderings[self.a1]]).sum() / len(self.atoms)
+
+       #  return (self.precomps[orderings[self.a1], orderings[self.a2]] / (self.cnf_precomps[orderings[self.a1], orderings[self.a2]])).sum() / len(self.atoms)
+        # num_sum = 0
+        # for i,j in self.bond_list:
+        #     A = self.atoms.symbols[i]
+        #     B = self.atoms.symbols[j]
+        #     part_1 = self.gammas[A][B]*(self.ce_bulk[A]/self.cn[i])*np.sqrt(self.cn[i]/12) 
+        #     part_2 = self.gammas[B][A]*(self.ce_bulk[B]/self.cn[j])*np.sqrt(self.cn[j]/12) 
+        #     num_sum += (part_1 + part_2)
+        # return num_sum/(len(self.atoms)*2)
 
     def calc_ee(self, orderings: np.ndarray) -> float:
         """
@@ -327,15 +344,20 @@ class BCModel:
         n_met = len(self.metal_types)
 
         precomps = np.ones((n_met, n_met))
+        # cnf_precomps = np.ones((12 , n_met))
 
         for i in range(n_met):
             for j in range(n_met):
-
+                
                 M1 = self.metal_types[i]
                 M2 = self.metal_types[j]
                 precomp_bulk = self.ce_bulk[M1]
                 precomp_gamma = self.gammas[M1][M2]
+                # cnf_precomps[i, j] = np.sqrt((self.cns[i] + (1/self.radius[M1])) * 12)
 
                 precomps[i, j] = precomp_gamma * precomp_bulk
+        
+        self.cn_precomps = np.sqrt((self.inv_radii + np.vstack(range(13))) * 12)
         self.precomps = precomps
-        self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
+        # self.cnf_precomps = cnf_precomps
+        # self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]

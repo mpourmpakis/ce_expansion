@@ -4,7 +4,7 @@ import ctypes
 
 import numpy as np
 
-from ce_expansion.bin import interface
+#from ce_expansion.bin import interface
 from ce_expansion.npdb import db_inter
 from ce_expansion import data
 

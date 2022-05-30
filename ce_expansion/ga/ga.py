@@ -388,6 +388,7 @@ class GA(object):
         self.is_monometallic = np.count_nonzero(self.composition) == 1
 
         # make sure composition adds up to number of atoms
+
         if self.composition.sum() != len(self.bcm):
             raise GAError("Composition passed to GA does not match number of atoms")
 
