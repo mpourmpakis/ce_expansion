@@ -50,6 +50,7 @@ class BCModel:
                      If not passed, use elements provided by the atoms object
         CN_Method:  Options "frac" or "int"
         """
+        self.CN_Method = CN_Method
         self.atoms = atoms.copy()
         self.atoms.pbc = False
         
@@ -67,11 +68,14 @@ class BCModel:
             
         self.syms = atoms.symbols # atom symbols
         self.bond_list = bond_list
-        self.radius = {'Au':1.47,'Pd':1.38,'Pt':1.38}
+        self.radius = {'Au':1.47,'Pd':1.38,'Pt':1.38} # From DFT calculations
+
+        self.avg_radius =np.mean([self.radius[m] for m in self.syms])
+
         if CN_Method=='int':
-            self.inv_radii = np.zeros(len(self.metal_types))
+            self.inv_radii = np.ones(len(self.metal_types))
         elif CN_Method == 'frac':
-            self.inv_radii = np.array([1/self.radius[m] for m in self.metal_types])
+            self.inv_radii = np.array([self.radius[m]/self.avg_radius for m in self.metal_types])
         
 
         if self.bond_list is None:
@@ -99,7 +103,6 @@ class BCModel:
 
     def __len__(self) -> int:
         return len(self.atoms)
-    
 
     def _calc_cn_frac(self,cns) -> List[float]:
         """Calculate the fractional CN of each atom
@@ -126,7 +129,13 @@ class BCModel:
         Returns:
         Cohesive Energy (eV / atom)
         """
-        return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps[self.cn[self.a1], orderings[self.a1]]).sum() / len(self.atoms)
+        if self.CN_Method == 'int':
+            return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
+        else:
+            return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps[self.cn[self.a1], orderings[self.a1]]).sum() / len(self.atoms)
+
+        # return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
+
 
        #  return (self.precomps[orderings[self.a1], orderings[self.a2]] / (self.cnf_precomps[orderings[self.a1], orderings[self.a2]])).sum() / len(self.atoms)
         # num_sum = 0
@@ -357,7 +366,11 @@ class BCModel:
 
                 precomps[i, j] = precomp_gamma * precomp_bulk
         
-        self.cn_precomps = np.sqrt((self.inv_radii + np.vstack(range(13))) * 12)
+        if self.CN_Method == 'int':
+            self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
+        else:
+            self.cn_precomps = np.sqrt((self.inv_radii * np.vstack(range(15))) * 12)
+        
         self.precomps = precomps
         # self.cnf_precomps = cnf_precomps
-        # self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]
+         # self.cn_precomps = np.sqrt(self.cn * 12)[self.a1]

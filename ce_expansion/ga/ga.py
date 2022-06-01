@@ -594,6 +594,7 @@ class GA(object):
           then running this method
         """
         # search for previous polymetallic result
+
         self.prev_results = db_inter.get_polymet_result(
             metals=self.bcm.metal_types,
             composition=self.composition,
