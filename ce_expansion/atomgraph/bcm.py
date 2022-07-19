@@ -68,7 +68,7 @@ class BCModel:
             
         self.syms = atoms.symbols # atom symbols
         self.bond_list = bond_list
-        self.radius = {'Au':1.47,'Pd':1.38,'Pt':1.38} # From DFT calculations
+        self.radius = {'Au':1.44,'Pd':1.31,'Pt':1.28} # From DFT calculations
 
         self.avg_radius =np.mean([self.radius[m] for m in self.syms])
 
