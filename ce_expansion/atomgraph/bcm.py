@@ -4,6 +4,7 @@ import functools
 from typing import Iterable, Optional, Dict, List
  # Dict[key,value]
 import numpy as np
+import pandas as pd
 import ase
 import ase.units
 
@@ -34,6 +35,12 @@ def recursive_update(d: dict, u: dict) -> dict:
             d[k] = v
     return d
 
+def get_cutoffs(atoms,x):
+    """Custom Cutoffs from custom Radii"""
+    radii = {'Au':1.47*x,
+             'Pd':1.38*x,
+             'Pt':1.38*x}
+    return [radii[atom_type] for atom_type in atoms.symbols]
 
 class BCModel:
     def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
@@ -68,7 +75,11 @@ class BCModel:
             
         self.syms = atoms.symbols # atom symbols
         self.bond_list = bond_list
-        self.radius = {'Au':1.44,'Pd':1.31,'Pt':1.28} # From DFT calculations
+        self.radius = {'Au':1.47,'Pd':1.38,'Pt':1.38} # From DFT calculations
+        df = pd.read_html('http://crystalmaker.com/support/tutorials/atomic-radii/index.html',header=0)[0]
+        for element in np.unique(self.atoms.symbols):
+            if element not in self.radius.keys():
+                self.radius[element] = df[df['Element']==element]['Covalent Radius'].values[0]
 
         self.avg_radius =np.mean([self.radius[m] for m in self.syms])
 
@@ -78,8 +89,14 @@ class BCModel:
             self.inv_radii = np.array([self.radius[m]/self.avg_radius for m in self.metal_types])
         
 
+        
+
         if self.bond_list is None:
-            self.bond_list = adjacency.build_bonds_arr(self.atoms)
+            if CN_Method == 'frac':
+                self.radii_bond_list = get_cutoffs(self.atoms,1.2)
+                self.bond_list = adjacency.build_bonds_arr(self.atoms,self.radii_bond_list)
+            else:
+                self.bond_list = adjacency.build_bonds_arr(self.atoms)
 
         if CN_Method=='int':
             self.cn = np.bincount(self.bond_list[:, 0])
@@ -104,18 +121,18 @@ class BCModel:
     def __len__(self) -> int:
         return len(self.atoms)
 
-    def _calc_cn_frac(self,cns) -> List[float]:
-        """Calculate the fractional CN of each atom
+    # def _calc_cn_frac(self,cns) -> List[float]:
+    #     """Calculate the fractional CN of each atom
 
-        Args:
-            cns (np.ndarray): coordination numbers of each atom
-            radius (dict): Radii for each unique atom type
+    #     Args:
+    #         cns (np.ndarray): coordination numbers of each atom
+    #         radius (dict): Radii for each unique atom type
 
-        Returns:
-            cn_frac (np.ndarray): Fractional CN of each atom based on the coordination number and the radius
+    #     Returns:
+    #         cn_frac (np.ndarray): Fractional CN of each atom based on the coordination number and the radius
         
-        """
-        return np.array([cns[i]+(1/self.radius[self.syms[i]]) for i in range(len(cns))])
+    #     """
+    #     return np.array([cns[i]+(1/self.radius[self.syms[i]]) for i in range(len(cns))])
 
     def calc_ce(self, orderings: np.ndarray) -> float:
         """
@@ -132,6 +149,7 @@ class BCModel:
         if self.CN_Method == 'int':
             return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
         else:
+            
             return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps[self.cn[self.a1], orderings[self.a1]]).sum() / len(self.atoms)
 
         # return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
