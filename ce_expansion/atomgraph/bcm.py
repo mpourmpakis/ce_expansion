@@ -79,7 +79,7 @@ class BCModel:
         df = pd.read_html('http://crystalmaker.com/support/tutorials/atomic-radii/index.html',header=0)[0]
         for element in np.unique(self.atoms.symbols):
             if element not in self.radius.keys():
-                self.radius[element] = df[df['Element']==element]['Covalent Radius'].values[0]
+                self.radius[element] = df[df['ElementSymbol']==element]['"Crystal"Radius [Å]'].values[0]
 
         self.avg_radius =np.mean([self.radius[m] for m in self.syms])
 
