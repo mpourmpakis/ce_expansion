@@ -79,7 +79,7 @@ class BCModel:
         df = pd.read_html('http://crystalmaker.com/support/tutorials/atomic-radii/index.html',header=0)[0]
         for element in np.unique(self.atoms.symbols):
             if element not in self.radius.keys():
-                self.radius[element] = df[df['ElementSymbol']==element]['"Crystal"Radius [Å]'].values[0]
+                self.radius[element] = df[df['Element Symbol']==element]['Covalent Radius [Å]'].values[0]
 
         self.avg_radius =np.mean([self.radius[m] for m in self.syms])
 
@@ -121,18 +121,6 @@ class BCModel:
     def __len__(self) -> int:
         return len(self.atoms)
 
-    # def _calc_cn_frac(self,cns) -> List[float]:
-    #     """Calculate the fractional CN of each atom
-
-    #     Args:
-    #         cns (np.ndarray): coordination numbers of each atom
-    #         radius (dict): Radii for each unique atom type
-
-    #     Returns:
-    #         cn_frac (np.ndarray): Fractional CN of each atom based on the coordination number and the radius
-        
-    #     """
-    #     return np.array([cns[i]+(1/self.radius[self.syms[i]]) for i in range(len(cns))])
 
     def calc_ce(self, orderings: np.ndarray) -> float:
         """
@@ -149,7 +137,6 @@ class BCModel:
         if self.CN_Method == 'int':
             return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
         else:
-            
             return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps[self.cn[self.a1], orderings[self.a1]]).sum() / len(self.atoms)
 
         # return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
@@ -299,12 +286,9 @@ class BCModel:
         cur_shell = 0
         srf = np.where(self.cn < 12)[0]
         shell_map[cur_shell] = srf
-
         remaining_atoms -= set(srf)
-
         coord_dict = {i: set(self.bond_list[self.bond_list[:, 0] == i].ravel())
                       for i in remaining_atoms}
-
         while remaining_atoms:
             cur_shell -= 1
             shell = [i for i in remaining_atoms
