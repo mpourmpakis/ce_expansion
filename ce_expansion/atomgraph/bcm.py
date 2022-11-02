@@ -44,7 +44,7 @@ def get_cutoffs(atoms,x):
 
 class BCModel:
     def __init__(self, atoms: ase.Atoms, metal_types: Optional[Iterable] = None,
-                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None, CN_Method='frac'):
+                 bond_list: Optional[Iterable] = None, info: Optional[dict] = None, CN_Method='frac',metal=True):
         """
         Based on metal_types, create ce_bulk and gamma dicts from data given
 
@@ -56,7 +56,10 @@ class BCModel:
         metal_types: List of metals found within the nano-particle
                      If not passed, use elements provided by the atoms object
         CN_Method:  Options "frac" or "int"
+        metal:      If False, then functionality involving gamma values is disabled
         """
+        
+
         self.CN_Method = CN_Method
         self.atoms = atoms.copy()
         self.atoms.pbc = False
@@ -106,20 +109,19 @@ class BCModel:
         elif CN_Method == 'frac':
             self.cn = np.bincount(self.bond_list[:, 0])
             #self.cn = self._calc_cn_frac(self.cns) # fractional CN
-
-        # creating gamma list for every possible atom pairing
-        self.gammas = None
-        self.ce_bulk = None
-        self._get_bcm_params()
-
         # get bonded atom columns
         self.a1 = self.bond_list[:, 0]
         self.a2 = self.bond_list[:, 1]
+        if metal:
+            # creating gamma list for every possible atom pairing
+            self.gammas = None
+            self.ce_bulk = None
+            self._get_bcm_params()
 
-        # Calculate and set the precomps matrix
-        self.precomps = None
-        self.cn_precomps = None
-        self._get_precomps()
+            # Calculate and set the precomps matrix
+            self.precomps = None
+            self.cn_precomps = None
+            self._get_precomps()
 
     def __len__(self) -> int:
         return len(self.atoms)
