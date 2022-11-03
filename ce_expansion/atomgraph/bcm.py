@@ -40,6 +40,14 @@ def get_cutoffs(atoms,x):
     radii = {'Au':1.47*x,
              'Pd':1.38*x,
              'Pt':1.38*x}
+    df = pd.read_html('http://crystalmaker.com/support/tutorials/atomic-radii/index.html',header=0)[0]
+    for element in np.unique(atoms.symbols):
+        if element not in radii.keys():
+            try:
+                radii[element] = float(df[df['ElementSymbol']==element]['CovalentRadius [Å]'].values[0])
+            except:
+                radii[element] = float(df[df['Element Symbol']==element]['Covalent Radius [Å]'].values[0])
+
     return [radii[atom_type] for atom_type in atoms.symbols]
 
 class BCModel:
@@ -144,18 +152,7 @@ class BCModel:
         else:
             return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps[self.cn[self.a1], orderings[self.a1]]).sum() / len(self.atoms)
 
-        # return (self.precomps[orderings[self.a1], orderings[self.a2]] / self.cn_precomps).sum() / len(self.atoms)
 
-
-       #  return (self.precomps[orderings[self.a1], orderings[self.a2]] / (self.cnf_precomps[orderings[self.a1], orderings[self.a2]])).sum() / len(self.atoms)
-        # num_sum = 0
-        # for i,j in self.bond_list:
-        #     A = self.atoms.symbols[i]
-        #     B = self.atoms.symbols[j]
-        #     part_1 = self.gammas[A][B]*(self.ce_bulk[A]/self.cn[i])*np.sqrt(self.cn[i]/12) 
-        #     part_2 = self.gammas[B][A]*(self.ce_bulk[B]/self.cn[j])*np.sqrt(self.cn[j]/12) 
-        #     num_sum += (part_1 + part_2)
-        # return num_sum/(len(self.atoms)*2)
 
     def calc_ee(self, orderings: np.ndarray) -> float:
         """
